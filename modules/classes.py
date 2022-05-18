@@ -66,15 +66,67 @@ class plate():
                 return None
             
 
-class stiffener():
+class stiffener(): 
     ''' The stiffener class is child class of the plate's class. It is 
     consisted out of one to three plates '''
     def __init__(self,form:str,dimensions:dict,angle:float,material:str):
         #Support for only flat bars, T bars and angled bars
-        if form=="fb":#flat bar
-            pl = plate(root,(root[0]+math.cos(angle)*dimensions["lw"],root[1]+math.sin(angle)*dimensions["lw"]), dimensions["bw"], material)
-            self.plates=()
-        
+        # if form=="fb":#flat bar
+        #     pl = plate(root,(root[0]+math.cos(angle)*dimensions["lw"],root[1]+math.sin(angle)*dimensions["lw"]), dimensions["bw"], material)
+        #     self.plates=()
+        print("SCAMMED")
 
-        
+
+class ship():
+
+    def __init__(self, LBP, B, T, D, Cb, Cp, Cm, DWT):
+        self.LBP = LBP
+        self.B  = B
+        self.T = T
+        self.D = D
+        self.Cb = Cb
+        self.Cp = Cp
+        self.Cm = Cm
+        self.DWT = DWT
+        self.Mwh = 0
+        self.Mws = 0
+        self.Msw_h_mid = 0
+        self.Msw_s_mid = 0
+        self.Moments_wave()
+        self.Moments_still()
+        pass 
+
+    def Moments_wave(self):
+        # CSR PART 1 CHAPTER 4.3
+        if self.LBP <= 300 and self.LBP >= 90: 
+            C1 = 10.75-((300-self.LBP)/100)**1.5
+        elif self.LBP <= 350 and self.LBP >= 300: 
+            C1 = 10.75
+        elif self.LBP <= 300 and self.LBP >= 90: 
+            C1 = 10.75-((self.LBP-350)/150)**1.5
+        else:
+            print("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            quit()
+
+        self.Mws = -110*C1*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
+        self.Mwh =  190*C1*self.LBP**2*self.B*self.Cb*1e-3
+
+    def Moments_still(self):
+        # CSR PART 1 CHAPTER 4.2
+        if self.LBP <= 300 and self.LBP >= 90: 
+            C1 = 10.75-((300-self.LBP)/100)**1.5
+        elif self.LBP <= 350 and self.LBP >= 300: 
+            C1 = 10.75
+        elif self.LBP <= 300 and self.LBP >= 90: 
+            C1 = 10.75-((self.LBP-350)/150)**1.5
+        else:
+            print("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            quit()
+        # Legacy calc
+        # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*C1*self.LBP**2*self.B*1e-3
+        # self.Msw_s_mid =  -51.85*C1*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
+        # CSR page 187
+        self.Msw_h_mid = 171*(self.Cb+0.7)*C1*self.LBP**2*self.B*1e-3 - self.Mwh
+        self.Msw_s_mid = -0.85*(171*(self.Cb+0.7)*C1*self.LBP**2*self.B*1e-3 + self.Mws)
+
 
