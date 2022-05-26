@@ -13,7 +13,7 @@ MATERIALS = {
     'AH40' : 390
 
 }
-# {'Reh' : 235, 'Rm' : 400}
-def scantling_req(st_plate : stif_plate, ship : ship) :
+# # {'Reh' : 235, 'Rm' : 400}
+# def scantling_req(st_plate : stif_plate, ship : ship) :
 
-def net_scantling(plate : plate,  ):
+# def net_scantling(plate : plate,  ):

@@ -1,0 +1,31 @@
+{
+    "LBP": 242,
+    "B":45,
+    "geometry":[
+        {
+            "plate":[[0,0],[1,0],15,"A"],
+            "stiffeners":{
+                "type":"fb",
+                "dimensions":[100,15],
+                "spacing": 0.5
+            }
+        },
+        {
+            "plate":[[1,0],[2,0],12,"AH32"],
+            "stiffeners":{
+                "type":"fb",
+                "dimensions":[100,15],
+                "spacing": 0.5
+            }
+        },
+        {
+            "plate":[[2,0],[3,0],15,"A"],
+            "stiffeners":{
+                "type":"fb",
+                "dimensions":[100,15],
+                "spacing": 0.5
+            }
+        }
+    ]
+
+}
