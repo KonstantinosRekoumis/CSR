@@ -4,7 +4,6 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from cgi import test
 import matplotlib.pyplot as plt
 import math
 
@@ -30,7 +29,7 @@ class plate():
         dy = self.end[1]-self.start[1]
         dx = self.end[0]-self.start[0]
         try:
-            a = math.atan(dy/dx)
+            a = math.atan2(dy,dx)
         except ZeroDivisionError:
             if dy > 0:
                 a = math.pi/2
@@ -60,6 +59,9 @@ class plate():
         """
         if r_m == 'w':
             plt.plot((self.start[0], self.end[0]),(self.start[1], self.end[1]),color = "b")
+        elif r_m == 'wb':
+            plt.plot((self.start[0], self.end[0]),(self.start[1], self.end[1]),color = "b",marker = 3)
+
         out = [(self.start[0], self.end[0]),(self.start[1], self.end[1]), self.thickness,self.material]
         return out
 
@@ -105,12 +107,12 @@ class stiffener():
         self.Iyy_c = 0
         self.area = 0
         if self.type=="fb":#flat bar
-            pw = plate(root,(root[0]+math.cos(angle+math.pi/2)*dimensions["lw"],root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]), dimensions["bw"], material)
+            pw = plate(root,(root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3), dimensions["bw"], material)
             self.plates = [pw]
         elif self.type=="g":#angled bar
-            end_web = (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"],root[1]+math.sin(angle+math.pi/2)*dimensions["lw"])
+            end_web = (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3)
             pw = plate(root,end_web, dimensions["bw"], material)
-            end_flange = (end_web[0]+math.cos(angle)*dimensions["lf"],end_web[1]+math.sin(angle)*dimensions["lf"])
+            end_flange = (end_web[0]+math.cos(angle)*dimensions["lf"]*1e-3,end_web[1]+math.sin(angle)*dimensions["lf"]*1e-3)
             pf = plate(end_web,end_flange,dimensions["bf"],material)
             self.plates = [pw,pf]
 
@@ -185,7 +187,7 @@ class stiff_plate():
         N = math.floor(self.plate.length/self.spacing)
         for i in range(1,N):
             root = (self.plate.start[0]+math.cos(self.plate.angle)*self.spacing*i,self.plate.start[1]+math.sin(self.plate.angle)*self.spacing*i)
-            self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dims'],self.plate.angle,stiffener_['mat'],root)) 
+            self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root)) 
 
         self.CoA , self.area = self.CenterOfArea()
         self.Ixx, self.Iyy = self.calc_I()
@@ -212,7 +214,7 @@ class stiff_plate():
         return Ixx, Iyy
     def render(self):
         plt.axis('square')
-        self.plate.render()
+        self.plate.render(r_m='wb')
         [i.render() for i in self.stiffeners]
         # self.CoA = self.plate.area*shhhhhhhhh
 
@@ -290,8 +292,13 @@ class ship():
         Ixx = 0
         Iyy = 0
         for i in self.stiff_plates:
-            Ixx += i.Ixx + (i.CoA[1]-self.yo)**2*self.area
-            Iyy += i.Iyy + (i.CoA[0]-self.xo)**2*self.area
+            Ixx += i.Ixx + (i.CoA[1]-self.yo)**2*i.area
+            Iyy += i.Iyy + (i.CoA[0]-self.xo)**2*i.area
 
         return Ixx, Iyy        
-
+    def render(self):
+        fig = plt.figure()
+        for i in self.stiff_plates:
+            i.render()
+        plt.axis([-1,self.B/2+1,-1,self.D+3])
+        plt.show()

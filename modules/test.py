@@ -6,7 +6,7 @@ import IO
 
 if __name__ == "__main__":
     # fig = plt.figure()
-    test_class = True
+    test_class = False
     if test_class:
         #testing plates seems ok 24/5/2022
         test1 = cls.plate((0,0),(10,0),15,"AH32")
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         
         #testing stiffener
         print("\n######## TEST3 ##############")
-        test3 = cls.stiffener("g",{'lw':.525,'bw':1,'lf':.25,'bf':1},0,"A",(5,0))
+        test3 = cls.stiffener("g",{'lw':525,'bw':1,'lf':250,'bf':1},0,"A",(5,0))
         print(test3.CoA)
         print(test3.area)
         print(test3.Ixx_c)
@@ -39,15 +39,16 @@ if __name__ == "__main__":
         [print(i.end) for i in test3.plates]
         
         print("\n######## TEST4 ##############")
-        test4 = cls.stiff_plate(test1,1000,{'type':"g",'dims':{'lw':.525,'bw':1,'lf':.25,'bf':1},'mat':"A"})
+        test4 = cls.stiff_plate(test1,1000,{'type':"g",'dimensions':{'lw':525,'bw':1,'lf':250,'bf':1},'material':"A"})
         test4.render()
         # print(test4.stiffeners)
         print(IO.stiff_pl_save(test4))
         
         plt.show()
     else:
-        data = IO.file_load("test.json")
-        print(type(data))
-        print(data['LBP'])
-        print(type(data['geometry']))
-        print(type(data['geometry'][0]))
+        papor = IO.load_ship("test.json")
+        print(type(papor.Ixx))
+        print(papor.stiff_plates)
+        papor.render()
+
+        IO.ship_save(papor,"blyat.json")
