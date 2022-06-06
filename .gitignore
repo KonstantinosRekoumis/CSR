@@ -1,2 +1,5 @@
+.gitignore
 /modules/__pycache__/
 blyat.json
+blyat1.json
+/modules/test.py
