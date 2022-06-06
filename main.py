@@ -8,10 +8,17 @@ Courtesy of iwannakillmeself and kys
 # #################################
 #_____ IMPORTS _____
 import ezdxf #to be installed 
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np 
 
 #_____ CALLS _______
-import classes as cl
-import rules as csr
-import render as rd
+import modules.classes as cl
+import modules.rules as csr
+import modules.render as rd
+import modules.IO as IO
+
+
+def main():
+    #import geometry data
+    file_path = "test.json"
+    ship  = IO.load_ship(file_path)

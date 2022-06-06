@@ -5,7 +5,7 @@ import json
 
 def plate_save(plate:cls.plate):
     # Save data to JSON format
-    return json.dumps([plate.start,plate.end,plate.thickness,plate.material])
+    return json.dumps([plate.start,plate.end,plate.thickness,plate.material,plate.tag])
 
 def stiff_save(stiff:cls.stiffener):
     # Save data to JSON format
@@ -14,12 +14,12 @@ def stiff_save(stiff:cls.stiffener):
         dim.append(i.length*1e3)
         dim.append(i.thickness*1e3)
 
-    return json.dumps({'type': stiff.type,'dimensions':dim})
+    return json.dumps({'type': stiff.type,'dimensions':dim,'material':stiff.plates[0].material})
 
 def stiff_pl_save(stiff_plate:cls.stiff_plate):
     save = ""
     save += '{\"plate\":'+plate_save(stiff_plate.plate)+","
-    save += '\"stiffener\":'+stiff_save(stiff_plate.stiffeners[0])+","
+    save += '\"stiffeners\":'+stiff_save(stiff_plate.stiffeners[0])+","
     save += '\"spacing\":'+json.dumps(stiff_plate.spacing*1e3)+"}"
 
     return save
@@ -72,11 +72,11 @@ def load_ship(filename):
 def geometry_parser(geo_t:list):
     out = []
     for i in geo_t:
-        # i['plate'] = [start,end,thickness,material]
+        # i['plate'] = [start,end,thickness,material,tag]
         # stiffener_dict = {type : str, dims : [float],mat:str}
         try:
-            if len(i['plate'] )== 4:
-                tmp_p = cls.plate(i['plate'][0],i['plate'][1],i['plate'][2],i['plate'][3])
+            if len(i['plate'] )== 5:
+                tmp_p = cls.plate(i['plate'][0],i['plate'][1],i['plate'][2],i['plate'][3],i['plate'][4])
                 tmp_d = i['stiffeners']["dimensions"]
                 if len(tmp_d)==2 and i['stiffeners']["type"] == 'fb':
                     dims = {'lw':tmp_d[0],'bw':tmp_d[1]}
