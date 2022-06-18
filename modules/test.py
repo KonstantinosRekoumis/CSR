@@ -1,4 +1,3 @@
-from cgi import test
 import classes as cls
 import render as rnr
 import matplotlib.pyplot as plt
@@ -29,7 +28,7 @@ if __name__ == "__main__":
         # print(test2.Ixx_c)
         # print(test2.Iyy_c)
         # # test2.render()
-        # [print(i.end) for i in test2.plates]
+        # [print(i.end) for i in test2.plates]#
         
         # #testing stiffener
         # print("\n######## TEST3 ##############")
@@ -52,8 +51,9 @@ if __name__ == "__main__":
         papor = IO.load_ship("test.json")
         print(papor.Ixx)
         # print(papor.stiff_plates)
-        [print(i.CoA) for i in papor.stiff_plates]
-        papor.render(r_m = 'wC')
-        # rnr.contour_plot(papor,show_w=True,key = 'material')
+        [print(i.plate) for i in papor.stiff_plates]
+        # papor.render(r_m = 'wC')
+        # rnr.contour_plot(papor,show_w=True,key = 'tag')
 
         IO.ship_save(papor,"blyat1.json")
+        

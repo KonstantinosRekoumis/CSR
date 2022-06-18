@@ -4,7 +4,7 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-import colorama as clrm
+from utilities import c_error,c_warn
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -24,12 +24,10 @@ _PLACE_ = {
     4:'Bilge',
     5:'WeatherDeck'
 }
-_WARNING_ = clrm.Back.YELLOW+clrm.Fore.RED
-_ERROR_ = clrm.Back.RED+clrm.Fore.WHITE
-_RESET_ = clrm.Style.RESET_ALL
+
 class plate():
 
-    def __init__(self,start:tuple,end:tuple,thickness:float,material:str,tag:str,bilge = False):
+    def __init__(self,start:tuple,end:tuple,thickness:float,material:str,tag:str):
         """
         The plate class is the bottom plate (no pun intended) class that is responsible for all geometry elements.
         Initializing a plate item requires the start and end point coordinates in meters, the plate's thickness in mm,
@@ -42,12 +40,12 @@ class plate():
         try:
             self.tag = _PLACE_[tag]
         except KeyError:
-            print(_WARNING_,"-- !! WARNING !! --",_RESET_)
-            print("The plate's tag is non existent. The existing tags are:")
-            [print(_PLACE_[i],") ->", i ) for i in _PLACE_ if type(i) == str]
-            print(_WARNING_,"The program defaults to Inner Bottom Plate",_RESET_)
             self.tag = _PLACE_["InnerBottom"] #Worst Case Scenario
-        self.angle, self.length = self.calc_lna(bilge)
+            warn = self.__str__+"\nThe plate's original tag is non existent. The existing tags are:"
+            c_warn(warn)
+            [print(_PLACE_[i],") ->", i ) for i in _PLACE_ if type(i) == str]
+            c_warn("The program defaults to Inner Bottom Plate")
+        self.angle, self.length = self.calc_lna()
         self.area = self.length*self.thickness
         self.Ixx_c, self.Iyy_c = self.calc_I_center()
         self.CoA = self.calc_CoA()
@@ -58,7 +56,7 @@ class plate():
         else: 
             return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {_PLACE_[self.tag]} "
 
-    def calc_lna(self,bilge):
+    def calc_lna(self):
         #calculate the plate's angle and length 
         dy = self.end[1]-self.start[1]
         dx = self.end[0]-self.start[0]
@@ -69,14 +67,13 @@ class plate():
                 a = math.pi/2
             elif dy <= 0:
                 a = -math.pi/2 
-        if not bilge:
+        if self.tag != 4:
             l = math.sqrt(dy**2+dx**2)
         else :
             if abs(dx) == abs(dy):
-                l = math.pi*dx/2
+                l = math.pi*abs(dx)/2
             else:
-                print(_ERROR_,"-- ERROR --")
-                print("Edit your design. As the only bilge type supported is quarter circle.",_RESET_)
+                c_error("-- ERROR --\n"+"Edit your design. As the only bilge type supported is quarter circle.")
                 quit()
                 
         return a,l
@@ -102,8 +99,22 @@ class plate():
             return (self.start[0]+self.length/2*math.cos(self.angle)),(self.start[1]+self.length/2*math.sin(self.angle))
         else :
             r = self.length/math.pi*2
-            # return (4r/3pi)
-            return (self.start[0]+(4*r/(3*math.pi))),(self.start[1]+(4*r/(3*math.pi)))
+            if self.angle > 0 and self.angle < math.pi/2:
+                startx = self.start[0]
+                starty = self.end[1]
+                return startx+(2*r/math.pi),starty-(2*r/math.pi)
+            elif self.angle > 0 and self.angle < math.pi:
+                startx = self.end[0]
+                starty = self.start[1]
+                return startx+(2*r/math.pi),starty+(2*r/math.pi)
+            elif self.angle < 0 and self.angle > -math.pi/2:
+                startx = self.end[0]
+                starty = self.start[1]
+                return startx-(2*r/math.pi),starty-(2*r/math.pi)
+            elif self.angle < 0 and self.angle > -math.pi:
+                startx = self.start[0]
+                starty = self.end[1]
+                return startx-(2*r/math.pi),starty+(2*r/math.pi)
 
     def render(self,r_m = "w"):
         """
@@ -115,17 +126,52 @@ class plate():
         if r_m == 'w':
             plt.plot(X,Y,color = "b")
         elif r_m == 'wb':
-            plt.plot(X,Y,color = "b",marker = 3)
+            marker = "."
+            if self.tag == 4:
+                marker = ''
+            plt.plot(X,Y,color = "b",marker = marker)
         elif r_m == 'wC':
-            plt.plot(X,Y,color = "b",marker = 3)
+            marker = "."
+            if self.tag == 4:
+                marker = ''
+            plt.plot(X,Y,color = "b",marker = marker)
             plt.plot(self.CoA[0],self.CoA[1],color = "red",marker = '+')
 
     def render_data(self):
-        out = [(self.start[0], self.end[0]),(self.start[1], self.end[1]), self.thickness,self.material]
-        # lin = np.linspace(self.start,self.end)
+        if self.tag != 4:
+            out = [(self.start[0],self.end[0]),(self.start[1],self.end[1]), self.thickness,self.material,_PLACE_[self.tag]]
+        else:
+            if self.angle > 0 and self.angle < math.pi/2:
+                start = -math.pi/2
+                end = 0
+                startx = self.start[0]
+                starty = self.end[1]
+            elif self.angle > 0 and self.angle < math.pi:
+                start = 0
+                end = math.pi/2
+                startx = self.end[0]
+                starty = self.start[1]
+            elif self.angle < 0 and self.angle > -math.pi/2:
+                start = -math.pi
+                end = -math.pi/2
+                startx = self.end[0]
+                starty = self.start[1]
+            elif self.angle < 0 and self.angle > -math.pi:
+                start = math.pi/2
+                end = math.pi
+                startx = self.start[0]
+                starty = self.end[1]
+                
+            lin = np.linspace(start,end,num = 10)
+            r =  self.end[0]-self.start[0]
+            X = startx+np.cos(lin)*abs(r)
+            Y = starty+np.sin(lin)*abs(r)
+            out = [X,Y, self.thickness,self.material,_PLACE_[self.tag]]
+
         return out
 
-
+    def save_data(self):
+        return [self.start,self.end,self.thickness,self.material,_PLACE_[self.tag]]
 
     def calc_I_global(self,axis = 'x'):
         ''' Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'(to indicate the Global Axis)
@@ -247,24 +293,31 @@ class stiffener():
         
         return X,Y,T,M
 
-
-        
-
-
 class stiff_plate():
-
-    def __init__(self, plate:plate, spacing:float, stiffener_:dict ):
+    def __init__(self,id:int,plate:plate, spacing:float,l_pad:float,r_pad:float, stiffener_:dict ):
         """
+        The stiff_plate class is the Union of the plate and the stiffener(s).
+        Its args are :
+        plate -> A plate object
+        spacing -> A float number, to express the distance between two stiffeners in mm.
+        l_pad, r_pad -> Float numbers, to express the padding distance (in mm) of the stiffeners with respect to the left and right 
+                        edge of the base plate.
+        stiffener_dict -> A dict containing data to create stiffeners : {type : str, dims : [float (in mm)],mat:str}
         Spacing is in mm.
         """
+        self.id = id
         self.plate = plate
+        self.tag = plate.tag #it doesn't make sense not too grab it here
         self.stiffeners = []
         self.spacing = spacing*1e-3 
-        N = math.floor(self.plate.length/self.spacing)
-        for i in range(1,N):
-            root = (self.plate.start[0]+math.cos(self.plate.angle)*self.spacing*i,self.plate.start[1]+math.sin(self.plate.angle)*self.spacing*i)
-            self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root,plate.tag)) 
-
+        self.l_pad = l_pad*1e-3
+        self.r_pad = r_pad*1e-3
+        if self.plate.tag != 4:
+            net_l = self.plate.length - self.l_pad - self.r_pad
+            N = math.floor(net_l/self.spacing)
+            for i in range(1,N):
+                root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
+                self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root,plate.tag)) 
         self.CoA , self.area = self.CenterOfArea()
         self.Ixx, self.Iyy = self.calc_I()
 
@@ -272,10 +325,11 @@ class stiff_plate():
         total_A = self.plate.area 
         total_Mx = self.plate.area*self.plate.CoA[1]
         total_My = self.plate.area*self.plate.CoA[0]
-        for i in self.stiffeners:
-            total_A += i.area
-            total_Mx += i.area*i.CoA[1]
-            total_My += i.area*i.CoA[0]
+        if len(self.stiffeners) != 0:
+            for i in self.stiffeners:
+                total_A += i.area
+                total_Mx += i.area*i.CoA[1]
+                total_My += i.area*i.CoA[0]
         
         return (total_Mx/total_A,total_My/total_A) , total_A
     
@@ -283,9 +337,10 @@ class stiff_plate():
         Ixx = self.plate.calc_I_global({'axis': 'x','offset': self.CoA[1]})
         Iyy = self.plate.calc_I_global({'axis': 'y','offset': self.CoA[0]})
 
-        for i in self.stiffeners:
-            Ixx += i.calc_I_global({'axis': 'x','offset': self.CoA[1]})
-            Iyy += i.calc_I_global({'axis': 'y','offset': self.CoA[0]})
+        if len(self.stiffeners) != 0:
+            for i in self.stiffeners:
+                Ixx += i.calc_I_global({'axis': 'x','offset': self.CoA[1]})
+                Iyy += i.calc_I_global({'axis': 'y','offset': self.CoA[0]})
 
         return Ixx, Iyy
     def render(self,r_m='w_b'):
@@ -293,11 +348,49 @@ class stiff_plate():
         self.plate.render(r_m=r_m)
         [i.render() for i in self.stiffeners]
 
+class long_stiff_plate():
+    def __init__(self,stiff_plates: list[stiff_plate],girders:list[plate]):
+        '''
+        The long_stiff_plate class exists to enwrap the cases where we want to create a longer 
+        stiffened plate with girders.
+        As arguments it requires :
+        stiff_plates -> A list containing the stiffened plates that consist the long plate
+        girders -> A list containing the long plate's girders,even if girders is empty the
+                   constructor introduces
 
+        '''
+        pass
+    # TO COMPLETE
+
+class block():
+    """
+    Block class can be usefull to evaluate the plates that consist a part of the Midship Section, ie. a Water Ballast tank, or Cargo Space.
+    This is done to further enhance the clarity of what substances are in contact with certain plates.
+    Currently are supported 5 Volume Categories :
+    1) Water Ballast -> type : WB
+    2) Dry Cargo -> type: DC
+    3) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL
+    4) Fresh Water -> type: FW
+    5) Dry/Void Space -> type: VOID
+    """
+
+    def __init__(self,space_type:str, list_plates_id : list[int],*args):
+        TAGS = ['WB','DC','OIL','FW','VOID']
+        """
+        We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
+        """
+        if space_type in TAGS:
+            self.space_type = space_type
+        else:
+            c_error("The block type is not currently supported or non-existent.")
+        self.list_plates_id = list_plates_id
+    
+    def __str__(self):
+        return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
 
 class ship():
 
-    def __init__(self, LBP:int, B, T, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate]):
+    def __init__(self, LBP:int, B, T, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
         self.LBP = LBP
         self.B  = B
         self.T = T
@@ -314,8 +407,19 @@ class ship():
         self.Moments_still()
         #Array to hold all of the stiffened plates
         self.stiff_plates = stiff_plates
+        self.blocks = self.validate_blocks(blocks)
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
         self.Ixx, self.Iyy = self.Calculate_I()
+
+    def validate_blocks(self,blocks :list[block]):
+        # The blocks are already constructed but we need to validate their responding plates' existence
+        ids = [i.id for i in self.stiff_plates]
+        for i in blocks:
+            for j in i.list_plates_id:
+                if j not in ids:
+                    c_error(f"The block: {i} has as boundaries non-existent plates.Program Terminates")
+                    quit()
+        return blocks
 
 
     def Moments_wave(self):
@@ -324,10 +428,10 @@ class ship():
             C1 = 10.75-((300-self.LBP)/100)**1.5
         elif self.LBP <= 350 and self.LBP >= 300: 
             C1 = 10.75
-        elif self.LBP <= 300 and self.LBP >= 90: 
+        elif self.LBP <= 500 and self.LBP >= 350: 
             C1 = 10.75-((self.LBP-350)/150)**1.5
         else:
-            print("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
 
         self.Mws = -110*C1*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
@@ -339,10 +443,10 @@ class ship():
             C1 = 10.75-((300-self.LBP)/100)**1.5
         elif self.LBP <= 350 and self.LBP >= 300: 
             C1 = 10.75
-        elif self.LBP <= 300 and self.LBP >= 90: 
+        elif self.LBP <= 500 and self.LBP >= 350: 
             C1 = 10.75-((self.LBP-350)/150)**1.5
         else:
-            print("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
         # Legacy calc
         # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*C1*self.LBP**2*self.B*1e-3

@@ -9,112 +9,58 @@
     "DWT":123045,
     "geometry":[
         {
-            "plate":[[0,0],[1,0],15,"A","Shell"],
-            "stiffeners":{
-                "type":"fb",
-                "dimensions":[100,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[1,0],[2,0],12,"AH32","Shell"],
+            "id":0,
+            "plate":[[0,0],[15.53,0],18.5,"A","Shell"],
             "stiffeners":{
                 "type":"g",
                 "dimensions":[300,15,300,15],
                 "material":"A"
             },
-            "spacing": 250
+            "spacing": 500,
+            "l_pad":100,
+            "r_pad":100
         },
         {
-            "plate":[[2,0],[3,0],15,"A","Shell"],
+            "id":1,
+            "plate":[[15.53,0],[20,0],19.5,"A","Shell"],
             "stiffeners":{
                 "type":"g",
                 "dimensions":[300,15,300,15],
                 "material":"A"
             },
-            "spacing": 500
+            "spacing": 500,
+            "l_pad":100,
+            "r_pad":100
         },
         {
-            "plate":[[3,0],[22.5,0],15,"A","Shell"],
+            "id":2,
+            "plate":[[15.53,2.5],[0,2.5],24.5,"A","InnerBottom"],
             "stiffeners":{
                 "type":"g",
                 "dimensions":[300,15,300,15],
                 "material":"A"
             },
-            "spacing": 500
+            "spacing": 500,
+            "l_pad":100,
+            "r_pad":100
         },
         {
-            "plate":[[22.5,0],[22.5,22.5],15,"A","Shell"],
+            "id":3,
+            "plate":[[20,0],[22.5,2.5],24.5,"A","Bilge"],
             "stiffeners":{
                 "type":"g",
                 "dimensions":[300,15,300,15],
                 "material":"A"
             },
-            "spacing": 500
-        },
+            "spacing": 500,
+            "l_pad":100,
+            "r_pad":100
+        }
+    ],
+    "blocks":[
         {
-            "plate":[[0,2.50],[1,2.50],15,"A","Shell"],
-            "stiffeners":{
-                "type":"fb",
-                "dimensions":[100,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[1,2.50],[2,2.50],12,"AH32","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 250
-        },
-        {
-            "plate":[[2,2.50],[3,2.50],15,"A","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[3,2.50],[18.5,2.50],15,"A","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[18.5,2.50],[22.5,8],15,"A","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[22.5,16],[18.5,22.75],15,"A","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 500
-        },
-        {
-            "plate":[[22.5,22.50],[0,23.55],15,"A","Shell"],
-            "stiffeners":{
-                "type":"g",
-                "dimensions":[300,15,300,15],
-                "material":"A"
-            },
-            "spacing": 500
+            "type":"WB",
+            "ids":[0,1,2,3]
         }
     ]
 
