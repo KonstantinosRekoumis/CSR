@@ -4,6 +4,8 @@
 '''
 Structural Calculator for Bulk Carriers 
 Courtesy of iwannakillmeself and kys
+
+STUDIES HSM and BSP conditions at midships
 '''
 # #################################
 #_____ IMPORTS _____

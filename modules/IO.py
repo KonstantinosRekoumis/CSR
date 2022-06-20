@@ -47,8 +47,10 @@ def section_save(ship:cls.ship):
 
 def ship_save(ship:cls.ship,filename:str):
     save = "{\"LBP\":"+str(ship.LBP)+',\n'
+    save += "\"Lsc\":"+str(ship.Lsc)+',\n'
     save += "\"B\":"+str(ship.B)+',\n'
-    save += "\"T\":"+str(ship.T)+',\n'
+    save += "\"Tmin\":"+str(ship.Tmin)+',\n'
+    save += "\"Tsc\":"+str(ship.Tsc)+',\n'
     save += "\"D\":"+str(ship.D)+',\n'
     save += "\"Cb\":"+str(ship.Cb)+',\n'
     save += "\"Cp\":"+str(ship.Cp)+',\n'
@@ -64,7 +66,7 @@ def ship_save(ship:cls.ship,filename:str):
 def load_ship(filename):
     with open(filename,'r') as file:
         data = json.loads(file.read())
-    tags = ['LBP','B','T','D','Cb','Cp','Cm','DWT']
+    tags = ['LBP','Lsc','B','Tmin','Tsc','D','Cb','Cp','Cm','DWT']
     particulars = []
     for i in tags:
         try:

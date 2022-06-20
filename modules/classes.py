@@ -390,10 +390,12 @@ class block():
 
 class ship():
 
-    def __init__(self, LBP:int, B, T, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
+    def __init__(self, LBP,Lsc, B, Tmin, Tsc, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
         self.LBP = LBP
+        self.Lsc = Lsc   # Rule Length
         self.B  = B
-        self.T = T
+        self.Tmin = Tmin # Minimum Draught at Ballast condition
+        self.Tsc = Tsc   # Scantling Draught
         self.D = D
         self.Cb = Cb
         self.Cp = Cp
@@ -403,6 +405,8 @@ class ship():
         self.Mws = 0
         self.Msw_h_mid = 0
         self.Msw_s_mid = 0
+        self.Cw = 0
+        self.Cw_calc()
         self.Moments_wave()
         self.Moments_still()
         #Array to hold all of the stiffened plates
@@ -421,39 +425,32 @@ class ship():
                     quit()
         return blocks
 
+    def Cw_calc(self):
+        #CSR PART 1 CHAPTER 4.2
+        if self.LBP <= 300 and self.LBP >= 90: 
+            self.Cw = 10.75-((300-self.LBP)/100)**1.5
+        elif self.LBP <= 350 and self.LBP >= 300: 
+            self.Cw = 10.75
+        elif self.LBP <= 500 and self.LBP >= 350: 
+            self.Cw = 10.75-((self.LBP-350)/150)**1.5
+        else:
+            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            quit()
 
     def Moments_wave(self):
         # CSR PART 1 CHAPTER 4.3
-        if self.LBP <= 300 and self.LBP >= 90: 
-            C1 = 10.75-((300-self.LBP)/100)**1.5
-        elif self.LBP <= 350 and self.LBP >= 300: 
-            C1 = 10.75
-        elif self.LBP <= 500 and self.LBP >= 350: 
-            C1 = 10.75-((self.LBP-350)/150)**1.5
-        else:
-            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
-            quit()
 
-        self.Mws = -110*C1*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
-        self.Mwh =  190*C1*self.LBP**2*self.B*self.Cb*1e-3
+        self.Mws = -110*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
+        self.Mwh =  190*self.Cw*self.LBP**2*self.B*self.Cb*1e-3
 
     def Moments_still(self):
         # CSR PART 1 CHAPTER 4.2
-        if self.LBP <= 300 and self.LBP >= 90: 
-            C1 = 10.75-((300-self.LBP)/100)**1.5
-        elif self.LBP <= 350 and self.LBP >= 300: 
-            C1 = 10.75
-        elif self.LBP <= 500 and self.LBP >= 350: 
-            C1 = 10.75-((self.LBP-350)/150)**1.5
-        else:
-            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
-            quit()
         # Legacy calc
-        # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*C1*self.LBP**2*self.B*1e-3
-        # self.Msw_s_mid =  -51.85*C1*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
+        # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*self.Cw*self.LBP**2*self.B*1e-3
+        # self.Msw_s_mid =  -51.85*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
         # CSR page 187
-        self.Msw_h_mid = 171*(self.Cb+0.7)*C1*self.LBP**2*self.B*1e-3 - self.Mwh
-        self.Msw_s_mid = -0.85*(171*(self.Cb+0.7)*C1*self.LBP**2*self.B*1e-3 + self.Mws)
+        self.Msw_h_mid = 171*(self.Cb+0.7)*self.Cw*self.LBP**2*self.B*1e-3 - self.Mwh
+        self.Msw_s_mid = -0.85*(171*(self.Cb+0.7)*self.Cw*self.LBP**2*self.B*1e-3 + self.Mws)
 
     def calc_CoA(self):
         area  = 0 
