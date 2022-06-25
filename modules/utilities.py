@@ -5,14 +5,18 @@ UTILITIES Module
 Utilities module contains various convenience functions
 '''
 _WARNING_ = clrm.Back.YELLOW+clrm.Fore.RED
+_SUCCESS_ = clrm.Back.GREEN+clrm.Fore.BLACK
 _ERROR_ = clrm.Back.RED+clrm.Fore.WHITE
 _RESET_ = clrm.Style.RESET_ALL
 
-def c_warn(text:str):
-    print(_WARNING_,"-- !! WARNING !! --\n",text,_RESET_)
+def c_warn(*text,default = True):
+    print(_WARNING_,"-- !! WARNING !! --\n",*text,_RESET_) if default else print(_WARNING_,*text,_RESET_)
 
-def c_error(text:str):
-    print(_ERROR_,text,_RESET_)
+def c_error(*text,default = True):
+    print(_ERROR_,*text,_RESET_) if default else print(_ERROR_,*text,_RESET_)
+
+def c_success(*text,default = True):
+    print(_SUCCESS_,"-- !! SUCCESS !! --\n",*text,_RESET_) if default else print(_SUCCESS_,*text,_RESET_)
 
 def linear_inter(start,end,target_x) -> float:
     '''
@@ -20,19 +24,24 @@ def linear_inter(start,end,target_x) -> float:
     '''
     return (end[1]-start[1])/(end[0]-start[0])*(target_x-start[0])
 
-def lin_int_dict(dict:dict,key:float) -> float:
+def lin_int_dict(dict:dict,key:float,*f_args,suppress = False) -> float:
     '''
     Parses a dictionary of values and linear interpolates at key value accordingly
     '''
     #checks whether the function is presented to proper data
     try:
         for i in dict:
-            if type(i)!=float or type(i)!=int: raise KeyError
+            if not(type(i) ==float or type(i) ==int): 
+                c_warn(i,dict[i])
+                raise KeyError
             else:
-                if type(dict[i])!=float or type(dict[i])!=int: 
-                    if type(dict[i]) == function:
-                        c_warn("Detected a function. May result in error...")
+                if not(type(dict[i])==float or type(dict[i])==int): 
+                    if callable(dict[i]) :
+                        if not suppress:
+                            c_warn("Detected a function. May result in error...")
+                            c_warn(dict[i])
                     else:
+                        c_warn(i,dict[i])
                         raise KeyError
     except KeyError:
         c_error("Input dictionary expects both the keys and their values to be of type float or int.\nThus the program terminates....")
@@ -42,11 +51,28 @@ def lin_int_dict(dict:dict,key:float) -> float:
     if key in dict:
         out = dict[key]
     else :
-        tmp = [0,0] #first position holds the maximum minimum and the second position the minimum maximum
+        tmp_x = [0,0] #first position holds the maximum minimum and the second position the minimum maximum
+        tmp_y = [0,0] #first position holds the maximum minimum and the second position the minimum maximum
         for i in dict:
-            if key > i and  i > tmp[0]:
-                tmp[0] = i
-            elif key < i and i < tmp[0]:
-                tmp[1] = i
-        out = linear_inter((tmp[0],dict[tmp[0]]),(tmp[1],dict[tmp[1]]),key)
+            if key > i and  i > tmp_x[0]:
+                tmp_x[0] = i 
+                tmp_y[0]=dict[i] if not callable(i) else i(*f_args)
+            elif key < i and i < tmp_x[0]:
+                tmp_x[1] = i 
+                tmp_y[1]=dict[i] if not callable(i) else i(*f_args)
+        out = linear_inter((tmp_x[0],tmp_y[0]),(tmp_x[1],tmp_y[1]),key)
+    return out
+
+def linespace(start,end,step,skip=0):
+    """
+    A function that creates a linear space from start to end with step.
+    skip = N -> skips every other N element
+    """
+    out =[]
+    if skip !=0:
+        for i,j in enumerate(range(start,end,step)):
+            if i%skip != 0 and skip !=0:
+                out.append(j)
+    else:
+        out = [i for i in range(start,end,step)]
     return out

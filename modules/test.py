@@ -1,6 +1,7 @@
 import classes as cls
 import render as rnr
 import matplotlib.pyplot as plt
+import physics as phzx
 import IO 
 
 
@@ -51,9 +52,11 @@ if __name__ == "__main__":
         papor = IO.load_ship("test.json")
         print(papor.Ixx)
         # print(papor.stiff_plates)
-        [print(i.plate) for i in papor.stiff_plates]
-        # papor.render(r_m = 'wC')
-        # rnr.contour_plot(papor,show_w=True,key = 'tag')
-
+        [print(i.coords) for i in papor.blocks]
+        papor.render(r_m = 'wC')
+        # # rnr.contour_plot(papor,show_w=True,key = 'thickness')
+        # rnr.block_plot(papor,fill=True)
+        # phzx.BSP_total_eval(papor,15.3)
+        phzx.HSM_total_eval(papor,15.3)
         IO.ship_save(papor,"blyat1.json")
         

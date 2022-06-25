@@ -4,7 +4,7 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from utilities import c_error,c_warn
+from utilities import c_error,c_warn,linespace
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -213,6 +213,7 @@ class stiffener():
         self.Ixx_c = 0
         self.Iyy_c = 0
         self.area = 0
+        self.dimensions = dimensions
         if self.type=="fb":#flat bar
             pw = plate(root,(root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3), dimensions["bw"], material,tag)
             self.plates = [pw]
@@ -225,6 +226,8 @@ class stiffener():
 
         self.CoA,self.area = self.calc_CoA()
         self.calc_I()
+    def __repr__(self) -> str:
+        return f'stiffener(type: {self.type},dimensions : {self.dimensions}'
 
     def calc_CoA(self):
         area = 0
@@ -294,7 +297,7 @@ class stiffener():
         return X,Y,T,M
 
 class stiff_plate():
-    def __init__(self,id:int,plate:plate, spacing:float,l_pad:float,r_pad:float, stiffener_:dict ):
+    def __init__(self,id:int,plate:plate, spacing:float,l_pad:float,r_pad:float, stiffener_:dict, skip :int ):
         """
         The stiff_plate class is the Union of the plate and the stiffener(s).
         Its args are :
@@ -312,14 +315,19 @@ class stiff_plate():
         self.spacing = spacing*1e-3 
         self.l_pad = l_pad*1e-3
         self.r_pad = r_pad*1e-3
+        self.skip = skip
         if self.plate.tag != 4:
             net_l = self.plate.length - self.l_pad - self.r_pad
             N = math.floor(net_l/self.spacing)
-            for i in range(1,N):
+            _range = linespace(1,N,1,skip=skip)
+            for i in _range:
                 root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
                 self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root,plate.tag)) 
         self.CoA , self.area = self.CenterOfArea()
         self.Ixx, self.Iyy = self.calc_I()
+    def __repr__(self) -> str:
+        tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
+        return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
 
     def CenterOfArea(self):
         total_A = self.plate.area 
@@ -384,16 +392,83 @@ class block():
         else:
             c_error("The block type is not currently supported or non-existent.")
         self.list_plates_id = list_plates_id
+
+        self.coords = []
+        self.Pressure = {}
+
     
     def __str__(self):
         return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
+    
+    def get_coords(self,stiff_plates:list[stiff_plate]):
+        '''
+        Get the coordinates of the block from its list of plates. TO BE CALLED AFTER THE BLOCKS ARE VALIDATED!!!
+        If the block is not calculated correctly then you need to change the id order in the save file.
+        '''
+        for i in self.list_plates_id:
+            for j in stiff_plates:
+                if j.id == i:
+                    if len(self.coords)!= 0 and j.plate.start not in self.coords:
+                        self.coords.append(j.plate.start)
+                    elif len(self.coords) == 0:
+                        self.coords.append(j.plate.start)
+                    
+                    if len(self.coords)!= 0 and j.plate.end not in self.coords:
+                        if j.tag == 4: #Bilge
+                            X,Y = j.plate.render_data()[:2]
+                            [self.coords.append((X[i],Y[i])) for i in range(len(X))]
+                        else:
+                            self.coords.append(j.plate.end)
+    
+    def render_data(self):
+        X = [i[0] for i in self.coords]
+        Y = [i[1] for i in self.coords]
+        P = self.Pressure
+        X.append(X[0])
+        Y.append(Y[0])
+        center = (max(X)/2,max(Y)/2)
+        return X, Y , self.space_type , center
+        # return X, Y, P, self.space_type , center
+
+class Sea_Sur(block):
+    def __init__(self,list_plates_id: list[int]):
+        super().__init__('VOID',list_plates_id)
+        self.space_type = "SEA"
+
+    def get_coords(self, stiff_plates:list[stiff_plate]):
+        super().get_coords(stiff_plates)
+        #add a buffer zone for sea of 2 m
+        if len(self.coords) == 0:
+            c_error("SEA Boundary plates are missing!. The program terminates...")
+            quit()
+        end = self.coords[-1]
+        self.coords.append((end[0]+2,end[1]))
+        self.coords.append((end[0]+2,self.coords[0][1]-2))
+        self.coords.append((self.coords[0][0]-2,self.coords[0][1]-2))
+class Atm_Sur(block):
+    def __init__(self,list_plates_id: list[int]):
+        super().__init__('VOID',list_plates_id)
+        self.space_type = "ATM"
+
+    def get_coords(self, stiff_plates:list[stiff_plate]):
+        super().get_coords(stiff_plates)
+        #add a buffer zone for sea of 2 m
+        if len(self.coords) == 0:
+            c_error("WEATHER DECK Boundary plates are missing!. The program terminates...")
+            quit()
+        end = self.coords[-1]
+        self.coords.append((end[0],end[1]+2))
+        self.coords.append((self.coords[0][0]+2,self.coords[0][1]+2))
+        self.coords.append((self.coords[0][0]+2,self.coords[0][1]))
+
 
 class ship():
 
-    def __init__(self, LBP,Lsc, B, Tmin, Tsc, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
+    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
         self.LBP = LBP
         self.Lsc = Lsc   # Rule Length
         self.B  = B
+        self.T  = T
         self.Tmin = Tmin # Minimum Draught at Ballast condition
         self.Tsc = Tsc   # Scantling Draught
         self.D = D
@@ -412,6 +487,8 @@ class ship():
         #Array to hold all of the stiffened plates
         self.stiff_plates = stiff_plates
         self.blocks = self.validate_blocks(blocks)
+        self.evaluate_sea_n_air()
+        [i.get_coords(self.stiff_plates) for i in self.blocks]
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
         self.Ixx, self.Iyy = self.Calculate_I()
 
@@ -421,9 +498,21 @@ class ship():
         for i in blocks:
             for j in i.list_plates_id:
                 if j not in ids:
-                    c_error(f"The block: {i} has as boundaries non-existent plates.Program Terminates")
+                    c_error(f"ship.validate_blocks: The block: {i} has as boundaries non-existent plates.Program Terminates")
                     quit()
         return blocks
+    
+    def evaluate_sea_n_air(self):
+        shell_ = []
+        deck_ = []
+        for i in self.stiff_plates:
+            if i.tag == 0 or i.tag == 4:
+                shell_.append(i.id)
+            elif i.tag == 5:
+                deck_.append(i.id)
+        
+        self.blocks.append(Sea_Sur(shell_))
+        self.blocks.append(Atm_Sur(deck_))
 
     def Cw_calc(self):
         #CSR PART 1 CHAPTER 4.2
@@ -434,7 +523,7 @@ class ship():
         elif self.LBP <= 500 and self.LBP >= 350: 
             self.Cw = 10.75-((self.LBP-350)/150)**1.5
         else:
-            c_warn("The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            c_warn("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
 
     def Moments_wave(self):

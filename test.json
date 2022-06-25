@@ -4,6 +4,9 @@
     "T":15.3,
     "D":22.5,
     "Cb":0.843,
+    "Tmin":7.5,
+    "Tsc":16,
+    "Lsc":250,
     "Cp":0.846,
     "Cm":0.996,
     "DWT":123045,
@@ -17,6 +20,7 @@
                 "material":"A"
             },
             "spacing": 500,
+            "skip" : 4,
             "l_pad":100,
             "r_pad":100
         },
@@ -29,6 +33,7 @@
                 "material":"A"
             },
             "spacing": 500,
+            "skip" : 0,
             "l_pad":100,
             "r_pad":100
         },
@@ -41,6 +46,7 @@
                 "material":"A"
             },
             "spacing": 500,
+            "skip" : 4,
             "l_pad":100,
             "r_pad":100
         },
@@ -53,6 +59,137 @@
                 "material":"A"
             },
             "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":4,
+            "plate":[[22.5,2.5],[22.5,5.12],19,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":5,
+            "plate":[[22.5,5.12],[22.5,7.32],19,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":6,
+            "plate":[[22.5,7.32],[22.5,9.3],19,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":7,
+            "plate":[[22.5,9.3],[22.5,14.9],19,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":8,
+            "plate":[[22.5,14.9],[22.5,18.9],17.5,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":9,
+            "plate":[[22.5,18.9],[22.5,22.6],20,"A","Shell"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":10,
+            "plate":[[22.5,22.5],[9.7,23.22],20,"A","WeatherDeck"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":11,
+            "plate":[[22.5,8.763],[15.53,2.5],24.5,"A","Hopper"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":12,
+            "plate":[[22.5,15.22],[9.71,22.17],24.5,"A","Wing"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
+            "l_pad":100,
+            "r_pad":100
+        },
+        {
+            "id":13,
+            "plate":[[9.71,22.17],[9.71,23.22],24.5,"A","Wing"],
+            "stiffeners":{
+                "type":"g",
+                "dimensions":[300,15,300,15],
+                "material":"A"
+            },
+            "spacing": 500,
+            "skip" : 0,
             "l_pad":100,
             "r_pad":100
         }
@@ -60,7 +197,7 @@
     "blocks":[
         {
             "type":"WB",
-            "ids":[0,1,2,3]
+            "ids":[0,1,3,2]
         }
     ]
 

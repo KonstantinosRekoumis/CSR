@@ -14,7 +14,7 @@ def lines_plot(ship:cls.ship,show_w=False,color = "black"):
     color : String, describes the color to plot the lines
     """
     if show_w :
-        marker = 2
+        marker = '*'
     else:marker = ""
 
     fig,ax = plt.subplots(1,1)
@@ -25,6 +25,32 @@ def lines_plot(ship:cls.ship,show_w=False,color = "black"):
             ax.plot(*j.render_data()[:2],color = color)
     ax.set_ylim([-1,ship.D+3])
     ax.set_xlim([-1,ship.B/2+1])
+    # ax.set_aspect()
+    plt.show()
+
+def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
+    if show_w :
+        marker = '*'
+    else:marker = ""
+
+    colors = {
+        'SEA':'blue',
+        'ATM':'lightcyan',
+        'WB':'turquoise',
+        'DC':'tomato',
+        'OIL':'darkgoldenrod',
+        'FW':'aqua',
+        'VOID':'silver'
+    }
+
+    fig,ax = plt.subplots(1,1)
+    for i in ship.blocks:
+        X,Y,TAG,pos = i.render_data()
+        # pos = (X[(len(X)//2)],Y[(len(Y)//2)])
+        ax.fill(X,Y,color = colors[i.space_type]) if fill else ax.plot(X,Y,color = colors[i.space_type],marker = marker)
+        plt.annotate(TAG,pos,color=colors[i.space_type])
+    ax.set_ylim([-3,ship.D+3])
+    ax.set_xlim([-3,ship.B/2+3])
     # ax.set_aspect()
     plt.show()
 

@@ -23,6 +23,7 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
     if len(stiff_plate.stiffeners) != 0:
         save += '\"stiffeners\":'+stiff_save(stiff_plate.stiffeners[0])+","
     save += '\"spacing\":'+json.dumps(stiff_plate.spacing*1e3)+","
+    save += '\"skip\":'+json.dumps(stiff_plate.skip)+","
     save += '\"l_pad\":'+json.dumps(stiff_plate.l_pad*1e3)+","
     save += '\"r_pad\":'+json.dumps(stiff_plate.r_pad*1e3)+"}"
     return save
@@ -40,8 +41,8 @@ def section_save(ship:cls.ship):
     #Added Blocks feature
     save += ',\n\"blocks\":[\n'
     for i in ship.blocks:
-        save += blocks_save(i)
-    save+= '\n]'
+        save += blocks_save(i)+',\n'
+    save = save[:-2] + '\n]'
 
     return save
 
@@ -49,6 +50,7 @@ def ship_save(ship:cls.ship,filename:str):
     save = "{\"LBP\":"+str(ship.LBP)+',\n'
     save += "\"Lsc\":"+str(ship.Lsc)+',\n'
     save += "\"B\":"+str(ship.B)+',\n'
+    save += "\"T\":"+str(ship.T)+',\n'
     save += "\"Tmin\":"+str(ship.Tmin)+',\n'
     save += "\"Tsc\":"+str(ship.Tsc)+',\n'
     save += "\"D\":"+str(ship.D)+',\n'
@@ -66,7 +68,7 @@ def ship_save(ship:cls.ship,filename:str):
 def load_ship(filename):
     with open(filename,'r') as file:
         data = json.loads(file.read())
-    tags = ['LBP','Lsc','B','Tmin','Tsc','D','Cb','Cp','Cm','DWT']
+    tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT']
     particulars = []
     for i in tags:
         try:
@@ -117,21 +119,20 @@ def geometry_parser(geo_t:list):
                     tmp_s = {}
                 else:
                     print(_ERROR_)
-                if type(i['id'] ) != int: raise KeyError()
+                if type(i['id'] ) != int: raise KeyError() # Duplicate check
                 if i['id'] in temp_id: 
-                    c_error(f'There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
+                    c_error(f'IO.geometry_parser: There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
                     raise KeyError()
-                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s)
+                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s,i['skip'])
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:
                 raise KeyError()
-                # c_error(f"Loading stiffened plate {i} has resulted in an error. Thus the code will ignore its existence.")
+                # c_error(f"IO.geometry_parser: Loading stiffened plate {i} has resulted in an error. Thus the code will ignore its existence.")
         except KeyError:
-            c_error(f"KeyError: Loading stiffened plate {i} has resulted in an error. The program terminates.")
+            c_error(f"IO.geometry_parser: KeyError: Loading stiffened plate {i} has resulted in an error. The program terminates.")
             quit()
 
-    
     return out
 
 def blocks_parser(blocks_t:list):
@@ -141,5 +142,5 @@ def blocks_parser(blocks_t:list):
             tmp = cls.block(i['type'],i['ids'])
             out.append(tmp)
         except KeyError:
-            c_error(f"KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
+            c_error(f"IO.blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
     return out
