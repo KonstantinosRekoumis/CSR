@@ -125,6 +125,7 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
 
     ax.set_ylim([-1,ship.D+3])
     ax.set_xlim([-1,ship.B/2+1])
+
     _map_ = ScalarMappable(cmap="Set1")
     if key == "thickness":
         vals = []
@@ -157,6 +158,7 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
         _map_.set_array(vals)
         cb = fig.colorbar(_map_,ticks=vals)
         cb.ax.get_yaxis().set_ticks([])
+
         for j, lab in enumerate(mats):
             cb.ax.text(2,  j+1 , lab, ha='center', va='center')
 
@@ -171,7 +173,6 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
                 marker = '.'
         elif key == "thickness":
             val = T[i]
-
         plt.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
 
     plt.show()
@@ -188,11 +189,15 @@ def pressure_plot(ship:cls.ship, pressure_index :str, *args):
     """
     # Use the pressure distribution saved in each block
     fig,ax = lines_plot(ship,show_w=True,show=False,axis_padding=(10,10))
+    Plot_X = []
+    Plot_Y = []
+    Data = []
     for i in ship.blocks:
         _Px_ = []
         _Py_ = []
         try:
             X,Y,P = i.pressure_data(pressure_index)
+            Data = [*Data,math.nan,math.nan,*P,math.nan,math.nan]
             P = normalize(P)
         except KeyError:
             c_info(f"Pressure at block {i} is not calculated for condition {pressure_index}.")
@@ -208,14 +213,69 @@ def pressure_plot(ship:cls.ship, pressure_index :str, *args):
                 _Px_.append(eta[0,0]*P[j])
                 _Py_.append(eta[0,1]*P[j])
 
-        Plot_X = [X[0],*[X[i]+_Px_[i]*2 for i in range(len(X))],X[-1]]
-        Plot_Y = [Y[0],*[Y[i]+_Py_[i]*2 for i in range(len(X))],Y[-1]]
+        Plot_X = [*Plot_X,math.nan,X[0],*[X[i]+_Px_[i]*2 for i in range(len(X))],X[-1]]
+        Plot_Y = [*Plot_Y,math.nan,Y[0],*[Y[i]+_Py_[i]*2 for i in range(len(X))],Y[-1]]
 
-        ax.plot(Plot_X,Plot_Y)
+        # ax.plot(Plot_X,Plot_Y)
+    fig,ax=c_contour(Plot_X,Plot_Y,Data,"Pressure [kPa]",fig,ax,'jet',marker='.')
+    ax.plot((-3,ship.B/2+3),(ship.T,ship.T))
     ax.set_ylim([-3,ship.D+3])
     ax.set_xlim([-3,ship.B/2+3])
     plt.title(f"Pressure Distribution for {pressure_index}")
     plt.show()
+
+def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = True):
+    _map_ = ScalarMappable(cmap=cmap)
+    if key == "number":
+        vals = []
+        for i in data:
+            if type(i)==str: 
+                c_error("render/c_contour: Detected item of type <str>. Considering changing the key value to string.")
+                quit()
+            if (i not in vals) and (i != math.nan):
+                vals.append(i) 
+        vals.sort()
+        _map_.set_array(vals)
+        cb = fig.colorbar(_map_,cmap=cmap)
+        cb.ax.set_title(data_label)
+    elif key == "string":
+        vals = []
+        text = []
+        d_map = {}
+        c = 1
+        for i in data:
+            if i not in d_map:
+                d_map[i] = c
+                d_map[c] = i
+                vals.append(c)
+                text.append(i)
+                c += 1
+        
+        vals.sort()
+        _map_.set_array(vals)
+        cb = plt.colorbar(_map_,fig,ticks=vals)
+        cb.ax.set_title(data_label)
+        cb.ax.get_yaxis().set_ticks([])
+        for j, lab in enumerate(text):
+            cb.ax.text(2,  j+1 , lab, ha='center', va='center')
+
+    for i in range(len(X)):
+        breaks = 0 #Int to increment where a break by nan is encountered
+        if key == "string":
+            val = d_map[data[i-breaks]]
+        elif key == "number":
+            val = data[i-breaks]
+
+        if (X[i]!= math.nan) and (Y[i] != math.nan):
+            ax.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
+            if lines and (i>0): # situational based on the data type
+                ax.plot((X[i],X[i-1]),(Y[i],Y[i-1]),color = _map_.to_rgba(val))
+        else:
+            ax.plot(X[i],Y[i])
+            breaks+=1
+    
+    return fig,ax
+
 
 
 
