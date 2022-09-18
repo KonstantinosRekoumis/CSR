@@ -6,6 +6,7 @@ Utilities module contains various convenience functions
 '''
 _WARNING_ = clrm.Back.YELLOW+clrm.Fore.RED
 _SUCCESS_ = clrm.Back.GREEN+clrm.Fore.BLACK
+_INFO_ = clrm.Back.YELLOW+clrm.Fore.BLUE
 _ERROR_ = clrm.Back.RED+clrm.Fore.WHITE
 _RESET_ = clrm.Style.RESET_ALL
 
@@ -17,6 +18,9 @@ def c_error(*text,default = True):
 
 def c_success(*text,default = True):
     print(_SUCCESS_,"-- !! SUCCESS !! --\n",*text,_RESET_) if default else print(_SUCCESS_,*text,_RESET_)
+
+def c_info(*text,default = True):
+    print(_INFO_,"-- ! INFO ! --\n",*text,_RESET_) if default else print(_INFO_,*text,_RESET_)
 
 def linear_inter(start,end,target_x) -> float:
     '''
@@ -63,7 +67,7 @@ def lin_int_dict(dict:dict,key:float,*f_args,suppress = False) -> float:
         out = linear_inter((tmp_x[0],tmp_y[0]),(tmp_x[1],tmp_y[1]),key)
     return out
 
-def linespace(start,end,step,skip=0):
+def linespace(start:int,end:int,step:int,skip=0):
     """
     A function that creates a linear space from start to end with step.
     skip = N -> skips every other N element

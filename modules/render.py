@@ -1,11 +1,46 @@
+import math
 import ezdxf
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
 import classes as cls
 import numpy as np
+from utilities import c_error,c_warn,c_success,c_info
+
+def normalize(a:list):
+    max = -1
+    for i in a:
+        if (abs(i)>max) and (abs(i)!=0):
+            max = abs(i)
+    
+    return [x/max for x in a]
 
 
-def lines_plot(ship:cls.ship,show_w=False,color = "black"):
+def normals2D(geom,flip_n = False,show_norms = False):
+    eta = np.ndarray((len(geom)-1,2))
+    for i in range(len(geom)-1):
+        xba = geom[i+1,0]-geom[i,0]
+        yba = geom[i+1,1]-geom[i,1]
+        if flip_n:
+            yba = - yba
+            xba = - xba
+        nrm2 = np.sqrt(yba**2+xba**2)
+        if nrm2 == 0:
+            eta[i,0] = yba/nrm2
+            eta[i,1] = -xba/nrm2
+            c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
+        else:
+            eta[i,0] = yba/nrm2
+            eta[i,1] = -xba/nrm2
+
+
+    if show_norms:# Debug only
+        fig, ax = plt.subplots()
+        ax.plot(geom[0:-2,0],geom[0:-2,1])
+        ax.quiver(geom[0:-2,0],geom[0:-2,1],eta[:,0],eta[:,1])
+    return eta
+
+def lines_plot(ship:cls.ship,show_w=False,color = "black",
+                axis_padding = (3,1),show=True):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -23,10 +58,11 @@ def lines_plot(ship:cls.ship,show_w=False,color = "black"):
         ax.plot(X,Y,marker=marker,color = color)
         for j in i.stiffeners:
             ax.plot(*j.render_data()[:2],color = color)
-    ax.set_ylim([-1,ship.D+3])
-    ax.set_xlim([-1,ship.B/2+1])
+    ax.set_ylim([-1,ship.D+axis_padding[0]])
+    ax.set_xlim([-1,ship.B/2+axis_padding[1]])
     # ax.set_aspect()
-    plt.show()
+    if show:plt.show()
+    return fig,ax
 
 def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
     if show_w :
@@ -45,7 +81,7 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
 
     fig,ax = plt.subplots(1,1)
     for i in ship.blocks:
-        X,Y,TAG,pos = i.render_data()
+        X,Y,P,TAG,pos = i.render_data()
         # pos = (X[(len(X)//2)],Y[(len(Y)//2)])
         ax.fill(X,Y,color = colors[i.space_type]) if fill else ax.plot(X,Y,color = colors[i.space_type],marker = marker)
         plt.annotate(TAG,pos,color=colors[i.space_type])
@@ -139,6 +175,51 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
         plt.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
 
     plt.show()
+
+def pressure_plot(ship:cls.ship, pressure_index :str, *args):
+    """
+    Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
+    This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
+    ----------------- BE CAREFUL THAT A PRESSURE CASE HAS BEEN CALCULATED BEFORE PLOTTING -----------------
+    Input args:\n
+    ship-> A ship class item\n
+    pressure_index -> The pressure distribution case key (For example: 'HSM-1' -> HSM - 1 case).\n
+    args -> optional arguments passed to the base lines_plot func call
+    """
+    # Use the pressure distribution saved in each block
+    fig,ax = lines_plot(ship,show_w=True,show=False,axis_padding=(10,10))
+    for i in ship.blocks:
+        _Px_ = []
+        _Py_ = []
+        try:
+            X,Y,P = i.pressure_data(pressure_index)
+            P = normalize(P)
+        except KeyError:
+            c_info(f"Pressure at block {i} is not calculated for condition {pressure_index}.")
+            continue
+        
+        for j,x in enumerate(X):
+            if j == 0:
+                eta = normals2D(np.array([[X[0],Y[0]],[X[1],Y[1]]]),flip_n=True)
+                _Px_.append(eta[0,0]*P[j])
+                _Py_.append(eta[0,1]*P[j])
+            else:
+                eta = normals2D(np.array([[X[j],Y[j]],[X[j-1],Y[j-1]]]))
+                _Px_.append(eta[0,0]*P[j])
+                _Py_.append(eta[0,1]*P[j])
+
+        Plot_X = [X[0],*[X[i]+_Px_[i]*2 for i in range(len(X))],X[-1]]
+        Plot_Y = [Y[0],*[Y[i]+_Py_[i]*2 for i in range(len(X))],Y[-1]]
+
+        ax.plot(Plot_X,Plot_Y)
+    ax.set_ylim([-3,ship.D+3])
+    ax.set_xlim([-3,ship.B/2+3])
+    plt.title(f"Pressure Distribution for {pressure_index}")
+    plt.show()
+
+
+
+
 
 
 

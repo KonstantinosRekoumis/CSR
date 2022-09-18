@@ -50,13 +50,17 @@ if __name__ == "__main__":
         # plt.show()
     else:
         papor = IO.load_ship("test.json")
-        print(papor.Ixx)
-        # print(papor.stiff_plates)
-        [print(i.coords) for i in papor.blocks]
-        papor.render(r_m = 'wC')
-        # # rnr.contour_plot(papor,show_w=True,key = 'thickness')
+        # print(papor.Ixx)
+        # # print(papor.stiff_plates)
+        # [print(i.coords) for i in papor.blocks]
+        # papor.render(r_m = 'wC')
+        # rnr.contour_plot(papor,show_w=True,key = 'thickness')
         # rnr.block_plot(papor,fill=True)
-        # phzx.BSP_total_eval(papor,15.3)
+        phzx.BSP_total_eval(papor,15.3)
         phzx.HSM_total_eval(papor,15.3)
+        rnr.pressure_plot(papor,'HSM-1')
+        rnr.pressure_plot(papor,'HSM-2')
+        rnr.pressure_plot(papor,'BSP-1P')
+        rnr.pressure_plot(papor,'BSP-2P')
         IO.ship_save(papor,"blyat1.json")
         

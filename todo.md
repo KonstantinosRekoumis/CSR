@@ -2,6 +2,7 @@
 ## Major Importance
 1) Do the project
 1) Fix the input file for the Tmin, Lsc and Tsc  [x]
+1) Account for symmetry
 
 ## Medium Importance
 1) Not lose sanity

@@ -15,7 +15,7 @@ def hydrostatic_pressure(z:float,Tlc:float,rho:float):
     Convention is that the zero is located at the keel plate
     '''
     if 0<=z :
-        dT = z - Tlc 
+        dT = Tlc - z  
         return rho*G*dT
     # elif 0<z and z>Tlc:
     #     return 0
@@ -25,6 +25,19 @@ def hydrostatic_pressure(z:float,Tlc:float,rho:float):
         return 0
 
 def external_loadsC(Tlc:float,ship:cls.ship,cond:str,rho = RHO_S):
+    '''
+    -------------------------------------------------------------------------------------------------------------------
+    Function that holds data for the constants that need to be passed to the external forces calculating functions.
+    Input:\n
+        Tlc ->  <float> Loading Condition Draught\n
+        ship ->  A ship class object\n
+        cond -> <string> The target Forces Calculating Condition \n
+        rho -> <float> Target water's density (default : sea water @ 17 Celsius)\n
+    Output:
+        A tuple containing:
+        fxL, fps, fb, ft, rho, LBP, B, Cw, Lsc, Tlc, Draught
+    -------------------------------------------------------------------------------------------------------------------
+    '''
     fxL = 0.5 # As the middle section is the object of study
     fps = 1.0 # Extreme Loads Scenario pp. 180 (to fill the other cases)
     fbeta = {
@@ -86,38 +99,42 @@ def HSM_wave_pressure(cons_:list[float],_1_:bool,block:cls.block):
     fyz = lambda y,z : z/Tlc+fyB(y)+1
     Phs = lambda y,z : fbeta*fps*fnl*fh*fyz(y,z)*ka*kp_c*Cw*math.sqrt((l+Lsc-125)/LBP)
 
-    Pw = [None]*len(block.coords[:-3])
+    Pw = [None]*len(block.pressure_coords)
     # args = ((stiff_plate.plate.start[1],stiff_plate.plate.start[0]),
     #         (stiff_plate.plate.end[1]  ,stiff_plate.plate.end[0]  ))
     
     if block.space_type == 'SEA': # Weatherdeck has special rules according to Section 5.2.2
         if _1_:
-            for i,point in enumerate(block.coords[:-3]):#the last 3 coordinates are redundant
+            for i,point in enumerate(block.pressure_coords):#the last 3 coordinates pressure_are rent
                 kp_c = lin_int_dict(kp,fxL,fyB(point[0]),suppress=True)
                 # print(f'kp_c: {kp_c}')
-                hw  = Phs(Tlc,B/2)/rho/G
+                hw  = -1*Phs(B/2,Tlc)/rho/G
                 if point[1] < Tlc :            
-                    Pw[i] = max(-1*Phs(*point),hydrostatic_pressure(point[1],Tlc,rho))
+                    Pw[i] = max(-1*Phs(*point),-hydrostatic_pressure(point[1],Tlc,rho))
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = hw*rho*G - hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho) #PW = PW,WL - ρg(z - TLC)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho) #PW = PW,WL - ρg(z - TLC)
                     print('------ Tlc < x < Tlc+hw----')
-                    print(hw*rho*G)
-                    print(hydrostatic_pressure(point[1],Tlc,rho))
+                    print("Wave height : ",hw)
+                    print("Pw,wl : ",hw*rho*G)
+                    print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
                     print('---------------------------')
                 else:
                     Pw[i] =0
         else:
-            for i,point in enumerate(block.coords[:-3]):
+            for i,point in enumerate(block.pressure_coords):
                 kp_c = lin_int_dict(kp,fxL,fyB(point[0]),suppress=True)
                 # print(f'kp_c: {kp_c}')
-                hw  = Phs(Tlc,B/2)/rho/G
+                hw  = Phs(B/2,Tlc)/rho/G
                 if point[1] < Tlc :            
-                    Pw[i] = max(Phs(*point),hydrostatic_pressure(point[1],Tlc,rho))
+                    Pw[i] = max(Phs(*point),-hydrostatic_pressure(point[1],Tlc,rho))
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = hw*rho*G - hydrostatic_pressure(point[1],Tlc,rho)
-                    print('----- Tlc < x < Tlc+hw-----')
-                    print(hw*rho*G)
-                    print(hydrostatic_pressure(point[1],Tlc,rho))
+                    Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
+                    print('------ Tlc < x < Tlc+hw----')
+                    print("Wave height : ",hw)
+                    print("Pw,wl : ",hw*rho*G)
+                    print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
                     print('---------------------------')
                 else:
                     Pw[i]=0
@@ -131,20 +148,23 @@ def HSM_wave_pressure(cons_:list[float],_1_:bool,block:cls.block):
             Pmin = 14.9+0.195*LBP
 
         kp_c = lin_int_dict(kp,fxL,fyB(D),suppress=True)
-        hw  = Phs(Tlc,D)/rho/G
         if _1_:
-            for i,point in enumerate(block.coords[:-3]):
+            hw  = -1*Phs(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = -1*hw*rho*G - hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
                     Pw[i] = max(Pw[i],Pmin)
                 else:
                     Pw[i]=0
                     Pw[i] = max(Pw[i],Pmin)
                 Pw[i] *= x
         else:
-            for i,point in enumerate(block.coords[:-3]):
+            hw  = Phs(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = Phs(Tlc,point[1]) - hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
                     Pw[i] = max(Pw[i],Pmin)
                 else:
                     Pw[i]=0
@@ -180,26 +200,28 @@ def BSP_wave_pressure(cons_:list[float],_1_:bool,block:cls.block,Port=True):
         
     Pbsp = lambda y,z : 4.5*fbeta*fps*fnl*fyz(y,z)*Cw*math.sqrt((l+Lsc-125)/LBP)
 
-    Pw = [None]*len(block.coords[:-3])
+    Pw = [None]*len(block.pressure_coords)
     # args = ((stiff_plate.plate.start[1],stiff_plate.plate.start[0]),
     #         (stiff_plate.plate.end[1]  ,stiff_plate.plate.end[0]  ))
     if block.space_type == 'SEA': # Weatherdeck has special rules according to Section 5.2.2
         if _1_:
-            for i,point in enumerate(block.coords[:-3]):
-                hw  = Pbsp(Tlc,B/2)/rho/G
+            hw  = Pbsp(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] < Tlc :            
-                    Pw[i] = max(-1*Pbsp(*point),hydrostatic_pressure(point[1],Tlc,rho/G))
+                    Pw[i] = max(Pbsp(*point),-hydrostatic_pressure(point[1],Tlc,rho/G))
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = -1*hw*rho*G - hydrostatic_pressure(point[1],Tlc,rho/G)
+                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho/G)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho/G)
                 else:
                     Pw[i]=0
         else:
-            for i,point in enumerate(block.coords[:-3]):
-                hw  = Pbsp(Tlc,B/2)/rho/G
+            hw  = -Pbsp(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] < Tlc :            
-                    Pw[i] = max(Pbsp(*point),hydrostatic_pressure(point[1],Tlc,rho))
+                    Pw[i] = max(-Pbsp(*point),-hydrostatic_pressure(point[1],Tlc,rho))
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = Pbsp(Tlc,point[1]) - hydrostatic_pressure(point[1],Tlc,rho)
+                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
                 else:
                     Pw[i]=0
     elif block.space_type == 'ATM':
@@ -210,25 +232,32 @@ def BSP_wave_pressure(cons_:list[float],_1_:bool,block:cls.block,Port=True):
         else:
             Pmin = 14.9+0.195*LBP
 
-        hw  = Pbsp(Tlc,B)/rho/G
+        hw  = Pbsp(B/2,Tlc)/rho/G
         if _1_:
-            for i,point in enumerate(block.coords[:-3]):
+            hw  = Pbsp(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = hw*rho*G - hydrostatic_pressure(point[1],Tlc,rho)
+                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
                     Pw[i] = max(Pw[i],Pmin)
                 else:
                     Pw[i]=0
                 Pw[i]*=x
         else:
-            for i,point in enumerate(block.coords[:-3]):
+            hw  = -Pbsp(B/2,Tlc)/rho/G
+            for i,point in enumerate(block.pressure_coords):
                 if point[1] >= Tlc and point[1] < Tlc+hw:
-                    Pw[i] = Pbsp(Tlc,point[1]) - hydrostatic_pressure(point[1],Tlc,rho)
+                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
+                    Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
                     Pw[i] = max(Pw[i],Pmin)
                 else:
                     Pw[i]=0
                 Pw[i]*=x
+    if Port:
+        key = 'BSP-1P' if _1_ else 'BSP-2P'
+    else:
+        key = 'BSP-1S' if _1_ else 'BSP-2S'
 
-    key = 'BSP-1' if _1_ else 'BSP-2'
     block.Pressure[key] = Pw
     return Pw
 
@@ -242,7 +271,9 @@ def HSM_total_eval(ship:cls.ship,Tlc:float):
                     HSM = 'HSM-1' if j else 'HSM-2'
                     c_success(f'{HSM} CASE STUDY:\nCalculated block: ',i)
                     c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-                    [c_success(f'{round(i.coords[j][0],4): =11f}  {round(i.coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
+                    [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
+    
+    return Pd
 
 def BSP_total_eval(ship:cls.ship,Tlc:float):
     bsp_con = external_loadsC(Tlc,ship,'BSP')
@@ -254,5 +285,5 @@ def BSP_total_eval(ship:cls.ship,Tlc:float):
                     BSP = 'BSP-1' if j else 'BSP-2'
                     c_success(f'{BSP} CASE STUDY:\nCalculated block: ',i)
                     c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-                    [c_success(f'{round(i.coords[j][0],4): =11f}  {round(i.coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
+                    [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
 

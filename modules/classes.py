@@ -382,11 +382,12 @@ class block():
     5) Dry/Void Space -> type: VOID
     """
 
-    def __init__(self,space_type:str, list_plates_id : list[int],*args):
+    def __init__(self,name:str,space_type:str, list_plates_id : list[int],*args):
         TAGS = ['WB','DC','OIL','FW','VOID']
         """
         We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
         """
+        self.name = name
         if space_type in TAGS:
             self.space_type = space_type
         else:
@@ -394,45 +395,76 @@ class block():
         self.list_plates_id = list_plates_id
 
         self.coords = []
-        self.Pressure = {}
+        self.pressure_coords = []
+        self.Pressure = {} #Pass each Load Case index as key and values as a list
 
     
-    def __str__(self):
+    def __repr__(self):
         return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
-    
+    def __str__(self):
+        return f"BLOCK : {self.name} of type {self.space_type}"
     def get_coords(self,stiff_plates:list[stiff_plate]):
         '''
         Get the coordinates of the block from its list of plates. TO BE CALLED AFTER THE BLOCKS ARE VALIDATED!!!
         If the block is not calculated correctly then you need to change the id order in the save file.
         '''
-        for i in self.list_plates_id:
-            for j in stiff_plates:
-                if j.id == i:
-                    if len(self.coords)!= 0 and j.plate.start not in self.coords:
-                        self.coords.append(j.plate.start)
-                    elif len(self.coords) == 0:
-                        self.coords.append(j.plate.start)
-                    
-                    if len(self.coords)!= 0 and j.plate.end not in self.coords:
-                        if j.tag == 4: #Bilge
-                            X,Y = j.plate.render_data()[:2]
-                            [self.coords.append((X[i],Y[i])) for i in range(len(X))]
-                        else:
-                            self.coords.append(j.plate.end)
+        # for i in self.list_plates_id:
+        for j in stiff_plates:
+            if j.id in self.list_plates_id:
+                if len(self.coords)!= 0 and j.plate.start not in self.coords:
+                    self.coords.append(j.plate.start)
+                elif len(self.coords) == 0:
+                    self.coords.append(j.plate.start)
+                
+                if len(self.coords)!= 0 and j.plate.end not in self.coords:
+                    if j.tag == 4: #Bilge
+                        X,Y = j.plate.render_data()[:2]
+                        [self.coords.append((X[i],Y[i])) for i in range(1,len(X)-1)]
+                    else:
+                        self.coords.append(j.plate.end)
+        self.calculate_pressure_grid(10)
+
+    def calculate_pressure_grid(self,resolution:int):
+        '''
+        Create a 1D computational mesh to calculate the loads pressure distributions.
+        Simply calculating with the geometric coordinates doesnot hold enough precision.
+        The pressure coordinates are calculated on a standard Ds between two points using linear interpolation.
+        '''
+        for i in range(len(self.coords)-1):
+            if (self.coords[i] not in self.pressure_coords): #eliminate duplicate entries -> no problems with normal vectors
+                self.pressure_coords.append(self.coords[i])
+            temp = linespace(1,resolution,1)
+            dy = self.coords[i+1][1]-self.coords[i][1]
+            dx = self.coords[i+1][0]-self.coords[i][0]
+            span = math.sqrt(dy**2+dx**2)
+            phi = math.atan2(dy,dx)
+            [self.pressure_coords.append((self.coords[i][0]+span/resolution*j*math.cos(phi),self.coords[i][1]+span/resolution*j*math.sin(phi))) for j in temp]
+            self.pressure_coords.append(self.coords[i+1])
+        
     
     def render_data(self):
         X = [i[0] for i in self.coords]
         Y = [i[1] for i in self.coords]
-        P = self.Pressure
+        # P = self.Pressure
         X.append(X[0])
         Y.append(Y[0])
         center = (max(X)/2,max(Y)/2)
         return X, Y , self.space_type , center
-        # return X, Y, P, self.space_type , center
+    
+    def pressure_data(self,pressure_index):
+        '''
+        Returns the Pressure Data for plotting or file output
+        TO BE USED  WITH A TRY-EXCEPT STATEMENT
+        '''
+        X = [i[0] for i in self.pressure_coords]
+        Y = [i[1] for i in self.pressure_coords]
+        P = self.Pressure[pressure_index]
+
+        return X,Y,P
 
 class Sea_Sur(block):
     def __init__(self,list_plates_id: list[int]):
-        super().__init__('VOID',list_plates_id)
+        super().__init__("SEA",'VOID',list_plates_id)
         self.space_type = "SEA"
 
     def get_coords(self, stiff_plates:list[stiff_plate]):
@@ -447,12 +479,12 @@ class Sea_Sur(block):
         self.coords.append((self.coords[0][0]-2,self.coords[0][1]-2))
 class Atm_Sur(block):
     def __init__(self,list_plates_id: list[int]):
-        super().__init__('VOID',list_plates_id)
+        super().__init__("ATM",'VOID',list_plates_id)
         self.space_type = "ATM"
 
     def get_coords(self, stiff_plates:list[stiff_plate]):
         super().get_coords(stiff_plates)
-        #add a buffer zone for sea of 2 m
+        #add a buffer zone for atmosphere of 2 m
         if len(self.coords) == 0:
             c_error("WEATHER DECK Boundary plates are missing!. The program terminates...")
             quit()
@@ -516,18 +548,25 @@ class ship():
 
     def Cw_calc(self):
         #CSR PART 1 CHAPTER 4.2
-        if self.LBP <= 300 and self.LBP >= 90: 
-            self.Cw = 10.75-((300-self.LBP)/100)**1.5
-        elif self.LBP <= 350 and self.LBP >= 300: 
+        if self.Lsc <= 300 and self.Lsc >= 90: 
+            self.Cw = 10.75-((300-self.Lsc)/100)**1.5
+        elif self.Lsc <= 350 and self.Lsc >= 300: 
             self.Cw = 10.75
-        elif self.LBP <= 500 and self.LBP >= 350: 
-            self.Cw = 10.75-((self.LBP-350)/150)**1.5
+        elif self.Lsc <= 500 and self.Lsc >= 350: 
+            self.Cw = 10.75-((self.Lsc-350)/150)**1.5
         else:
             c_warn("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
 
     def Moments_wave(self):
         # CSR PART 1 CHAPTER 4.3
+        #
+        # fm = {
+        #     "<= 0" : 0.0,
+        #     0.4 : 1.0,
+        #     0.65: 1.0,
+        #     ">= Lbp": 0.0
+        # }
 
         self.Mws = -110*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
         self.Mwh =  190*self.Cw*self.LBP**2*self.B*self.Cb*1e-3
@@ -538,6 +577,14 @@ class ship():
         # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*self.Cw*self.LBP**2*self.B*1e-3
         # self.Msw_s_mid =  -51.85*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
         # CSR page 187
+        # fsw = {
+        #     "<= 0 " : 0.0,
+        #     0.1  : 0.15,
+        #     0.3 : 1.0,
+        #     0.7 : 1.0,
+        #     0.9 : 0.15,
+        #     ">= Lbp" : 0
+        # }
         self.Msw_h_mid = 171*(self.Cb+0.7)*self.Cw*self.LBP**2*self.B*1e-3 - self.Mwh
         self.Msw_s_mid = -0.85*(171*(self.Cb+0.7)*self.Cw*self.LBP**2*self.B*1e-3 + self.Mws)
 
@@ -567,3 +614,5 @@ class ship():
             i.render(r_m=r_m)
         # plt.axis([-1,self.B/2+1,-1,self.D+3])
         plt.show()
+
+#end of file

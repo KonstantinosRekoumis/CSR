@@ -30,7 +30,7 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
 
 def blocks_save(block:cls.block):
     save =""
-    save += "{\"type\":\""+block.space_type+"\",\"ids\":"+json.dumps(block.list_plates_id)+"}"
+    save += "{\"name\":\""+block.name+"\",\"type\":\""+block.space_type+"\",\"ids\":"+json.dumps(block.list_plates_id)+"}"
     return save
 
 def section_save(ship:cls.ship):
@@ -41,7 +41,8 @@ def section_save(ship:cls.ship):
     #Added Blocks feature
     save += ',\n\"blocks\":[\n'
     for i in ship.blocks:
-        save += blocks_save(i)+',\n'
+        if (i.space_type != "SEA")and(i.space_type != "ATM"):
+            save += blocks_save(i)+',\n'
     save = save[:-2] + '\n]'
 
     return save
@@ -139,7 +140,7 @@ def blocks_parser(blocks_t:list):
     out = []
     for i in blocks_t:
         try:
-            tmp = cls.block(i['type'],i['ids'])
+            tmp = cls.block(i['name'],i['type'],i['ids'])
             out.append(tmp)
         except KeyError:
             c_error(f"IO.blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
