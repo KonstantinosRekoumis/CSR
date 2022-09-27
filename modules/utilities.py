@@ -10,6 +10,8 @@ _INFO_ = clrm.Back.YELLOW+clrm.Fore.BLUE
 _ERROR_ = clrm.Back.RED+clrm.Fore.WHITE
 _RESET_ = clrm.Style.RESET_ALL
 
+_TITLE_ = clrm.Fore.RED
+
 def c_warn(*text,default = True):
     print(_WARNING_,"-- !! WARNING !! --\n",*text,_RESET_) if default else print(_WARNING_,*text,_RESET_)
 

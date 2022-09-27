@@ -2,9 +2,9 @@ import math
 import ezdxf
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
-import classes as cls
+import modules.classes as cls
 import numpy as np
-from utilities import c_error,c_warn,c_success,c_info
+from modules.utilities import c_error,c_warn,c_success,c_info
 
 def normalize(a:list):
     max = -1
@@ -81,7 +81,8 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
 
     fig,ax = plt.subplots(1,1)
     for i in ship.blocks:
-        X,Y,P,TAG,pos = i.render_data()
+        X,Y,TAG,pos = i.render_data()
+        # if TAG in ('SEA','ATM'): continue
         # pos = (X[(len(X)//2)],Y[(len(Y)//2)])
         ax.fill(X,Y,color = colors[i.space_type]) if fill else ax.plot(X,Y,color = colors[i.space_type],marker = marker)
         plt.annotate(TAG,pos,color=colors[i.space_type])
@@ -196,7 +197,9 @@ def pressure_plot(ship:cls.ship, pressure_index :str, *args):
         _Px_ = []
         _Py_ = []
         try:
-            X,Y,P = i.pressure_data(pressure_index)
+            if i.space_type not in ('SEA','ATM'): index = pressure_index+'_DLP'
+            else : index = pressure_index
+            X,Y,P = i.pressure_data(index)
             Data = [*Data,math.nan,math.nan,*P,math.nan,math.nan]
             P = normalize(P)
         except KeyError:
@@ -223,6 +226,8 @@ def pressure_plot(ship:cls.ship, pressure_index :str, *args):
     ax.set_xlim([-3,ship.B/2+3])
     plt.title(f"Pressure Distribution for {pressure_index}")
     plt.show()
+
+    return fig,ax
 
 def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = True):
     _map_ = ScalarMappable(cmap=cmap)

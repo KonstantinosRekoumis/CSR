@@ -1,5 +1,5 @@
-from utilities import _ERROR_,_RESET_,_WARNING_,c_error,c_warn
-import classes as cls
+from modules.utilities import _ERROR_,_RESET_,_WARNING_,c_error,c_warn
+import modules.classes as cls
 import json
 
 

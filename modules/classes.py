@@ -4,7 +4,8 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from utilities import c_error,c_warn,linespace
+from modules.constants import LOADS
+from modules.utilities import c_error,c_warn,linespace
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -356,7 +357,7 @@ class stiff_plate():
         self.plate.render(r_m=r_m)
         [i.render() for i in self.stiffeners]
 
-class long_stiff_plate():
+class long_stiff_plate(): # redundant probably
     def __init__(self,stiff_plates: list[stiff_plate],girders:list[plate]):
         '''
         The long_stiff_plate class exists to enwrap the cases where we want to create a longer 
@@ -377,13 +378,14 @@ class block():
     Currently are supported 5 Volume Categories :
     1) Water Ballast -> type : WB
     2) Dry Cargo -> type: DC
-    3) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL
-    4) Fresh Water -> type: FW
-    5) Dry/Void Space -> type: VOID
+    3) Liquid Cargo -> type: LC    
+    4) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL
+    5) Fresh Water -> type: FW
+    6) Dry/Void Space -> type: VOID
     """
 
     def __init__(self,name:str,space_type:str, list_plates_id : list[int],*args):
-        TAGS = ['WB','DC','OIL','FW','VOID']
+        TAGS = ['WB','DC','LC','OIL','FW','VOID']
         """
         We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
         """
@@ -394,8 +396,13 @@ class block():
             c_error("The block type is not currently supported or non-existent.")
         self.list_plates_id = list_plates_id
 
+        # containing the various coefficients to calculate internal pressures
+        # for the time being static initialization through space type var
+        self.payload = {} 
+
         self.coords = []
         self.pressure_coords = []
+        self.CG = []
         self.Pressure = {} #Pass each Load Case index as key and values as a list
 
     
@@ -403,26 +410,54 @@ class block():
         return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
     def __str__(self):
         return f"BLOCK : {self.name} of type {self.space_type}"
+
     def get_coords(self,stiff_plates:list[stiff_plate]):
         '''
         Get the coordinates of the block from its list of plates. TO BE CALLED AFTER THE BLOCKS ARE VALIDATED!!!
         If the block is not calculated correctly then you need to change the id order in the save file.
         '''
         # for i in self.list_plates_id:
-        for j in stiff_plates:
-            if j.id in self.list_plates_id:
-                if len(self.coords)!= 0 and j.plate.start not in self.coords:
-                    self.coords.append(j.plate.start)
-                elif len(self.coords) == 0:
-                    self.coords.append(j.plate.start)
-                
-                if len(self.coords)!= 0 and j.plate.end not in self.coords:
-                    if j.tag == 4: #Bilge
-                        X,Y = j.plate.render_data()[:2]
-                        [self.coords.append((X[i],Y[i])) for i in range(1,len(X)-1)]
-                    else:
-                        self.coords.append(j.plate.end)
+        Dx = 0.1
+        Mx,My = (0,0)
+        A = 0 
+        start = []
+        c = 0
+        while c < len(self.list_plates_id):
+            for j in stiff_plates:
+                if j.id == self.list_plates_id[c]:
+                    if len(self.coords)!= 0:
+                        c += 1
+                        N = j.plate.length%Dx # Weight the points relative to plate length
+                        if j.plate.start not in self.coords:
+                            self.coords.append(j.plate.start)
+                            Mx += N*j.plate.start[0]-start[0]
+                            My += N*j.plate.start[1]-start[1]
+                            A  += N*1
+                        if j.plate.end not in self.coords:
+                            if j.tag == 4: #Bilge
+                                X,Y = j.plate.render_data()[:2]
+                                s = len(X)-2
+                                for i in range(1,len(X)-1):
+                                    self.coords.append((X[i],Y[i]))
+                                    Mx += N*X[i]/s-start[0]
+                                    My += N*Y[i]/s-start[1]
+                                    A  += N*1/s
+                            else:
+                                self.coords.append(j.plate.end)
+                                Mx += N*j.plate.end[0]-start[0]
+                                My += N*j.plate.end[1]-start[1]
+                                A  += N*1
+                    elif len(self.coords) == 0:
+                        # c is not incremented to re-parse the first plate and register its end point
+                        self.coords.append(j.plate.start)
+                        start = j.plate.start
+                        A    += j.plate.length%Dx
+                    
+                    break
+
+        self.CG = [Mx/A,My/A]
         self.calculate_pressure_grid(10)
+        # self.calculate_CG()
 
     def calculate_pressure_grid(self,resolution:int):
         '''
@@ -440,16 +475,15 @@ class block():
             phi = math.atan2(dy,dx)
             [self.pressure_coords.append((self.coords[i][0]+span/resolution*j*math.cos(phi),self.coords[i][1]+span/resolution*j*math.sin(phi))) for j in temp]
             self.pressure_coords.append(self.coords[i+1])
-        
-    
+
+
     def render_data(self):
         X = [i[0] for i in self.coords]
         Y = [i[1] for i in self.coords]
         # P = self.Pressure
         X.append(X[0])
         Y.append(Y[0])
-        center = (max(X)/2,max(Y)/2)
-        return X, Y , self.space_type , center
+        return X, Y , self.space_type , self.CG
     
     def pressure_data(self,pressure_index):
         '''
@@ -476,7 +510,7 @@ class Sea_Sur(block):
         end = self.coords[-1]
         self.coords.append((end[0]+2,end[1]))
         self.coords.append((end[0]+2,self.coords[0][1]-2))
-        self.coords.append((self.coords[0][0]-2,self.coords[0][1]-2))
+        self.coords.append((self.coords[0][0],self.coords[0][1]-2))
 class Atm_Sur(block):
     def __init__(self,list_plates_id: list[int]):
         super().__init__("ATM",'VOID',list_plates_id)
@@ -520,9 +554,11 @@ class ship():
         self.stiff_plates = stiff_plates
         self.blocks = self.validate_blocks(blocks)
         self.evaluate_sea_n_air()
-        [i.get_coords(self.stiff_plates) for i in self.blocks]
+        [(i.get_coords(self.stiff_plates),i.CG.insert(0,self.Lsc/2)) for i in self.blocks]# bit of a cringe solution that saves time
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
         self.Ixx, self.Iyy = self.Calculate_I()
+
+        self.a0 = (1.58-0.47*self.Cb)*(2.4*math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
 
     def validate_blocks(self,blocks :list[block]):
         # The blocks are already constructed but we need to validate their responding plates' existence
@@ -530,8 +566,9 @@ class ship():
         for i in blocks:
             for j in i.list_plates_id:
                 if j not in ids:
-                    c_error(f"ship.validate_blocks: The block: {i} has as boundaries non-existent plates.Program Terminates")
+                    c_error(f"ship.validate_blocks: The block: {repr(i)} has as boundaries non-existent plates.Program Terminates")
                     quit()
+            self.block_properties(i)
         return blocks
     
     def evaluate_sea_n_air(self):
@@ -545,6 +582,23 @@ class ship():
         
         self.blocks.append(Sea_Sur(shell_))
         self.blocks.append(Atm_Sur(deck_))
+
+    def block_properties(self,block:block):
+        '''
+        Function built to give each block its contents properties\n
+        For the time being the contents are static and case specific!\n
+        In the Future maybe a more dynamic approach will be implemented.
+        '''
+        # print(block.CG) # bit of a cringe solution that saves time
+        # block.CG.insert()
+        # print(block.CG) 
+        
+        if block.space_type in LOADS:
+            block.payload = LOADS[block.space_type]
+        elif block.space_type in ["SEA","ATM"]:
+            pass
+        else:
+            c_warn('(classes.py) ship/block_properties: The Current block space type does not correspond to a specified load.\n Check your input. Defaulting to type of VOID cargo for block :'+str(block))
 
     def Cw_calc(self):
         #CSR PART 1 CHAPTER 4.2
@@ -573,7 +627,6 @@ class ship():
 
     def Moments_still(self):
         # CSR PART 1 CHAPTER 4.2
-        # Legacy calc
         # self.Msw_h_mid = (171*((self.Cb+0.7)-190*self.Cb))*self.Cw*self.LBP**2*self.B*1e-3
         # self.Msw_s_mid =  -51.85*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
         # CSR page 187
@@ -614,5 +667,9 @@ class ship():
             i.render(r_m=r_m)
         # plt.axis([-1,self.B/2+1,-1,self.D+3])
         plt.show()
+
+        
+
+
 
 #end of file
