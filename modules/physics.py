@@ -3,7 +3,6 @@ This module provides the functions that calculate the pressures applied on the p
 This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
-from types import DynamicClassAttribute
 from modules.utilities import c_error, c_success,c_warn,lin_int_dict
 import modules.classes as cls
 from modules.constants import RHO_F,RHO_S,G
