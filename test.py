@@ -3,7 +3,6 @@ import modules.render as rnr
 import matplotlib.pyplot as plt
 import modules.physics as phzx
 import modules.IO as IO
-import threading
 
 
 if __name__ == "__main__":
@@ -55,14 +54,17 @@ if __name__ == "__main__":
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
         # papor.render(r_m = 'wC')
-        # rnr.contour_plot(papor,show_w=True,key = 'tag')
-        # rnr.block_plot(papor,fill=False)
+        # rnr.contour_plot(papor,show_w=True,key = 'id')
+        rnr.block_plot(papor,fill=False)
         # phzx.BSP_total_eval(papor,15.3)
         # phzx.HSM_total_eval(papor,15.3)
-        phzx.Dynamic_total_eval(papor,15.3,'HSM')
-        rnr.pressure_plot(papor,'HSM-1')
-        rnr.pressure_plot(papor,'HSM-2')
-        # rnr.pressure_plot(papor,'BSP-1P')
-        # rnr.pressure_plot(papor,'BSP-2P')
+        phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
+        for i in papor.blocks:
+            if i.space_type == 'DC':
+                print(i.coords)
+        rnr.pressure_plot(papor,'HSM-1','DC')
+        rnr.pressure_plot(papor,'HSM-2','DC')
+        # rnr.pressure_plot(papor,'BSP-1P','DC')
+        # rnr.pressure_plot(papor,'BSP-2P','DC')
         IO.ship_save(papor,"blyat1.json")
 # 

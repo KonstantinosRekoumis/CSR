@@ -1,3 +1,4 @@
+import math
 import colorama as clrm
 
 '''
@@ -12,6 +13,8 @@ _RESET_ = clrm.Style.RESET_ALL
 
 _TITLE_ = clrm.Fore.RED
 
+def d2r(x):
+    return x/180*math.pi
 def c_warn(*text,default = True):
     print(_WARNING_,"-- !! WARNING !! --\n",*text,_RESET_) if default else print(_WARNING_,*text,_RESET_)
 

@@ -1,3 +1,4 @@
+from cgitb import enable
 import math
 import ezdxf
 import matplotlib.pyplot as plt
@@ -85,24 +86,20 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
         # if TAG in ('SEA','ATM'): continue
         # pos = (X[(len(X)//2)],Y[(len(Y)//2)])
         ax.fill(X,Y,color = colors[i.space_type]) if fill else ax.plot(X,Y,color = colors[i.space_type],marker = marker)
-        plt.annotate(TAG,pos,color=colors[i.space_type])
+        ax.annotate(TAG,pos,color=colors[i.space_type])
+
     ax.set_ylim([-3,ship.D+3])
     ax.set_xlim([-3,ship.B/2+3])
     # ax.set_aspect()
     plt.show()
 
-def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
+def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'thickness'):
     """
     Rendering Function using the Matplotlib library.
     Input args:
     A ship class item,
     show_w : Boolean, If True -> the plates seams are shown
     """
-    index = {
-        'thickness':2,
-        'material':3
-    }
-
     if show_w :
         marker = "."
     else:marker = ""
@@ -112,6 +109,7 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
     T = []
     M = []
     Tag = []
+    Id = []
     fig,ax = plt.subplots(1,1)
     for i in ship.stiff_plates:
         x,y,t,m,tag = i.plate.render_data()
@@ -120,65 +118,28 @@ def contour_plot(ship:cls.ship,show_w=False,color = 'black',key = 'thickness'):
         T.append(t*1e3)
         M.append(m)
         Tag.append(tag)
+        Id.append(i.id)
 
         for j in i.stiffeners:
-            plt.plot(*j.render_data()[:2],color = color)
+            ax.plot(*j.render_data()[:2],color = color)
+    data = {
+        'thickness':[T,'number'],
+        'material':[M,'string'],
+        'tag':[Tag,'string'],
+        'id':[Id,'number']
+    }
 
     ax.set_ylim([-1,ship.D+3])
     ax.set_xlim([-1,ship.B/2+1])
+    try:
+        fig,ax = c_contour(X,Y,data[key][0],key,fig,ax,cmap,key = data[key][1])
+        plt.show()
+    except KeyError:
+        c_warn(f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\'. Thus no plot is produced.')
+        pass
 
-    _map_ = ScalarMappable(cmap="Set1")
-    if key == "thickness":
-        vals = []
-        for i in T:
-            if i not in vals:
-                vals.append(i)        
-        vals.sort()
-        _map_.set_array(vals)
-        fig.colorbar(_map_,)
 
-    elif key == "material" or key == "tag":
-        vals = []
-        mats = []
-        d_map = {}
-        c = 1
-        if key == "material":
-            Data = M
-        elif key == "tag":
-            Data = Tag
-
-        for i in Data:
-            if i not in d_map:
-                d_map[i] = c
-                d_map[c] = i
-                vals.append(c)
-                mats.append(i)
-                c += 1
-        
-        vals.sort()
-        _map_.set_array(vals)
-        cb = fig.colorbar(_map_,ticks=vals)
-        cb.ax.get_yaxis().set_ticks([])
-
-        for j, lab in enumerate(mats):
-            cb.ax.text(2,  j+1 , lab, ha='center', va='center')
-
-    for i in range(len(X)):
-        if key == "material":
-            val = d_map[M[i]]
-        elif key == "tag":
-            val = d_map[Tag[i]]
-            if Tag[i] == "Bilge": 
-                marker =""
-            else:
-                marker = '.'
-        elif key == "thickness":
-            val = T[i]
-        plt.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
-
-    plt.show()
-
-def pressure_plot(ship:cls.ship, pressure_index :str, *args):
+def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, *args):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
@@ -196,10 +157,17 @@ def pressure_plot(ship:cls.ship, pressure_index :str, *args):
     for i in ship.blocks:
         _Px_ = []
         _Py_ = []
+        if block_types == 'all': enabled = True
+        elif i.space_type in block_types: enabled = True
+        else: enabled = False
+        
+        if not enabled: continue
+        
         try:
             if i.space_type not in ('SEA','ATM'): index = pressure_index+'_DLP'
             else : index = pressure_index
             X,Y,P = i.pressure_data(index)
+            # print(f'Block: {i.name} P : ',P)
             Data = [*Data,math.nan,math.nan,*P,math.nan,math.nan]
             P = normalize(P)
         except KeyError:
@@ -258,7 +226,7 @@ def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = Tru
         
         vals.sort()
         _map_.set_array(vals)
-        cb = plt.colorbar(_map_,fig,ticks=vals)
+        cb = fig.colorbar(_map_,ticks=vals)
         cb.ax.set_title(data_label)
         cb.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(text):
@@ -270,14 +238,17 @@ def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = Tru
             val = d_map[data[i-breaks]]
         elif key == "number":
             val = data[i-breaks]
-
-        if (X[i]!= math.nan) and (Y[i] != math.nan):
-            ax.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
-            if lines and (i>0): # situational based on the data type
-                ax.plot((X[i],X[i-1]),(Y[i],Y[i-1]),color = _map_.to_rgba(val))
+        
+        if type(X[i]) in (list,tuple,np.ndarray):
+            ax.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker) # passing line coordinates as arguments. NaN is handled internally by plot
         else:
-            ax.plot(X[i],Y[i])
-            breaks+=1
+            if (X[i]!= math.nan) and (Y[i] != math.nan):
+                ax.plot(X[i],Y[i],color = _map_.to_rgba(val),marker = marker)
+                if lines and (i>0): # situational based on the data type
+                    ax.plot((X[i],X[i-1]),(Y[i],Y[i-1]),color = _map_.to_rgba(val))
+            else:
+                ax.plot(X[i],Y[i])
+                breaks+=1
     
     return fig,ax
 

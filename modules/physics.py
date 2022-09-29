@@ -3,7 +3,7 @@ This module provides the functions that calculate the pressures applied on the p
 This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
-from modules.utilities import c_error, c_success,c_warn,lin_int_dict
+from modules.utilities import c_error, c_success,c_warn,lin_int_dict,d2r
 import modules.classes as cls
 from modules.constants import RHO_F,RHO_S,G
 
@@ -69,10 +69,10 @@ class PhysicsData:
 
         #roll angle
         self.T_theta = (2.3*math.pi*kr_p*self.B)/math.sqrt(G*GM_p*self.B)
-        self.theta   = (9000*(1.25-0.025*self.T_theta)*self.fps*fbk)/((self.B + 75)*math.pi) 
+        self.theta   = (9000*(1.25-0.025*self.T_theta)*self.fps*fbk)/((self.B + 75)*math.pi) # deg 
         #pitch angle
         self.T_phi = math.sqrt((math.pi*1.2*(1+self.ft)*self.Lsc)/G)
-        self.phi   = 1350*self.fps*self.Lsc**(-0.94)*(1.0+(2.57/math.sqrt(G*self.Lsc))**1.2)  
+        self.phi   = 1350*self.fps*self.Lsc**(-0.94)*(1.0+(2.57/math.sqrt(G*self.Lsc))**1.2) # deg  
         # Acceleration at the center of Gravity [m/s^2]
         self.a_surge = 0.2*self.fps*self.a0*G
         self.a_sway  = 0.3*self.fps*self.a0*G
@@ -89,10 +89,30 @@ class PhysicsData:
         self.flp_osa = self.flp_osa_d['[0.4,0.6]'] 
         self.flp_ost = self.flp_ost_d['[0.4,0.65]']
 
-        self.wave_pressure = print('Placeholder')
+        self.wave_pressure = 0
         self.wave_pressure_functions()
 
         self.Cwv,self.Cqw,self.Cwh,self.Cwt,self.Cxs,self.Cxp,self.Cxg,self.Cys,self.Cyr,self.Cyg,self.Czh,self.Czr,self.Czg = self.Combination_Factors()
+    def debug(self,what2print:str):
+        print('condition :',self.cond)
+        if 'angles' in what2print:
+            print(f'theta:{self.theta}')
+            print(f'phi:{self.phi}')
+        if 'accels' in what2print:
+            print('a0:',self.a0)
+            print('a_surge : ',self.a_surge)
+            print('a_sway  : ',self.a_sway )
+            print('a_heave : ',self.a_heave)
+            print('a_pitch : ',self.a_pitch)
+            print('a_roll  : ',self.a_roll )
+        if 'particulars' in  what2print:
+            print('Tlc : ',self.Tlc)
+            print('rho : ',self.rho)
+            print('LBP : ',self.LBP)
+            print('B : ',self.B)
+            print('Cw : ',self.Cw)
+            print('Lsc : ',self.Lsc)
+            print('D : ',self.D)
 
     def external_loadsC(self):
         '''
@@ -145,11 +165,14 @@ class PhysicsData:
             c_error('The Program Terminates...',default=False)
             quit()
 
-    def accel_eval(self,point):
+    def accel_eval(self,point,debug=False):
         R =  min((self.D/4+self.Tlc/2,self.D/2))
         x,y,z = point
-        ax = -self.Cxg*G*math.sin(self.phi)+self.Cxs*self.a_surge+self.Cxp*self.a_pitch*(z-R)
-        ay = self.Cyg*G*math.sin(self.theta)+self.Cys*self.a_sway-self.Cyr*self.a_roll*(z-R)
+        if debug:
+            print('Point [x,y,z] : ',point)
+            print('Cxs',self.Cxs,' Cxp',self.Cxp,' Cxg',self.Cxg,' Cys',self.Cys,' Cyr',self.Cyr,' Cyg',self.Cyg,' Czh',self.Czh,' Czr',self.Czr,' Czg',self.Czg)
+        ax = -self.Cxg*G*math.sin(d2r(self.phi))+self.Cxs*self.a_surge+self.Cxp*self.a_pitch*(z-R)
+        ay = self.Cyg*G*math.sin(d2r(self.theta))+self.Cys*self.a_sway-self.Cyr*self.a_roll*(z-R)
         az = self.Czh*self.a_heave+self.Czr*self.a_roll*y-self.Czg*self.a_pitch*(x-0.45*self.Lsc)
 
         return ax,ay,az
@@ -244,11 +267,11 @@ def HSM_wave_pressure(cons_:list[float],_1_:bool,block:cls.block):
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
                     Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho) #PW = PW,WL - ρg(z - TLC)
                     Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho) #PW = PW,WL - ρg(z - TLC)
-                    print('------ Tlc < x < Tlc+hw----')
-                    print("Wave height : ",hw)
-                    print("Pw,wl : ",hw*rho*G)
-                    print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
-                    print('---------------------------')
+                    # print('------ Tlc < x < Tlc+hw----')
+                    # print("Wave height : ",hw)
+                    # print("Pw,wl : ",hw*rho*G)
+                    # print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
+                    # print('---------------------------')
                 else:
                     Pw[i] =0
         else:
@@ -261,11 +284,11 @@ def HSM_wave_pressure(cons_:list[float],_1_:bool,block:cls.block):
                 elif point[1] >= Tlc and point[1] < Tlc+hw:
                     Pw[i] = Phs(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
                     Pw[i] = hw*rho*G + hydrostatic_pressure(point[1],Tlc,rho)
-                    print('------ Tlc < x < Tlc+hw----')
-                    print("Wave height : ",hw)
-                    print("Pw,wl : ",hw*rho*G)
-                    print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
-                    print('---------------------------')
+                    # print('------ Tlc < x < Tlc+hw----')
+                    # print("Wave height : ",hw)
+                    # print("Pw,wl : ",hw*rho*G)
+                    # print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
+                    # print('---------------------------')
                 else:
                     Pw[i]=0
 
@@ -411,28 +434,35 @@ def HSM_total_eval(ship:cls.ship,Tlc:float):
                 c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
                 [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
 
-    return Pd
+def Dynamic_total_eval(ship:cls.ship,Tlc:float,case:str,LOG = True):
+    if case in ('BSR','BSP','OSA','OST'):
+        _1,_2 = '-1P','-2P'
+    elif case in ('HSM','HSA','FSM'):
+        _1,_2 = '-1','-2'
+    else:
+        c_error(f'(physics.py) Dynamic_total_eval: {case} is not a valid Dynamic condition. The available conditions are ; HSM, HSA, FSM, BSR, BSP,OST,OSA.')
+        quit()
 
-def Dynamic_total_eval(ship:cls.ship,Tlc:float,case:str):
-    case_1 = PhysicsData(Tlc,ship,case+'-1')
-    case_2 = PhysicsData(Tlc,ship,case+'-2')
+    case_1 = PhysicsData(Tlc,ship,case+_1)
+    case_2 = PhysicsData(Tlc,ship,case+_2)
     for c in (case_1,case_2):
         for i in ship.blocks:
             if i.space_type == 'SEA' or i.space_type == 'ATM': 
                 F = c.wave_pressure
                 def args(x): return (x.external_loadsC(),'1' in  x.cond,i)
+            elif i.space_type == 'DC':
+                F = DynamicDryCargo_Pressure
             else: 
                 F = DynamicLiquid_Pressure
-                def args(x): return (i,x)
+                def args(x): return (i,x,False)
         
             Pd = F(*args(c))
-            if None not in Pd:
+            if (None not in Pd) and LOG:
                 
                 c_success(f'{c.cond} CASE STUDY:\nCalculated block: ',i)
                 c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
                 [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
 
-    return Pd
 
 def BSP_total_eval(ship:cls.ship,Tlc:float):
     bsp_1 = PhysicsData(Tlc,ship,'BSP-1P')
@@ -483,7 +513,7 @@ def StaticLiquid_Pressure(block:cls.block):
     block.Pressure['S-NOS'] = P_nos
     block.Pressure['S-HSWO'] = P_hswo
 
-def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData):
+def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
     '''
     Dynamic Liquid Pressure: Evaluates the pressure distribution due to the dynamic motion of a fluid inside\n
     a tank.
@@ -501,9 +531,13 @@ def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData):
             if temp > Max: pos = point
         
         return (block.CG[0],*pos)
+    
 
     ax,ay,az = case.accel_eval(block.CG)#221
     x0,y0,z0 = ref_eval(block,(ax,ay,az))
+    if debug:
+        print('ax : ',ax,' ay : ',ay,' az : ',az)
+        print('x0 : ',x0,' y0 : ',y0,' z0 : ',z0)
     
     #strength assessment only
     if block.space_type == "LC": 
@@ -520,6 +554,53 @@ def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData):
         P[i] = Pld(*(case.Lsc*case.fxL,*point))
 
     block.Pressure[case.int_cond] = P
+    return P
+
+def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
+    '''
+    Dynamic Dry Cargo Pressure: Evaluates the pressure distribution due to the dynamic movements of the ship.
+    \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
+
+    '''
+    zc = block.pressure_coords[0][1] # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
+    
+    rho  = block.payload['rho'] if (block.payload['rho']>=1.0) else 1.0
+    def Pbd(x,y,z,ax,ay,az,Kc):
+        if z <= zc:
+            return case.fb*rho*(Kc*az*(block.CG[2]-z)+0.25*ax*(block.CG[0]-x)+0.25*ay*(block.CG[1]-y))
+        else:
+            return 0
+
+    ax,ay,az = case.accel_eval(block.CG)#221
+    P = [None]*len(block.pressure_coords)
+
+    for i,point in enumerate(block.pressure_coords):
+        P[i] = Pbd(block.CG[0],*point,ax,ay,az,block.Kc[i])
+    
+    block.Pressure[case.int_cond] = P
+    return P
+
+def StaticDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
+    '''
+    Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
+    \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
+    '''
+    
+    zc = block.pressure_coords[0][1] # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
+    
+    rho  = block.payload['rho'] if (block.payload['rho']>=1.0) else 1.0
+    def static(z,Kc):
+        if z <= zc:
+            return G*rho*Kc*(block.CG[2]-z)
+        else:
+            return 0
+
+    P = [None]*len(block.pressure_coords)
+
+    for i,point in enumerate(block.pressure_coords):
+        P[i] = static(point[1],block.Kc[i])
+    
+    block.Pressure['STATIC'] = P
     return P
 
 

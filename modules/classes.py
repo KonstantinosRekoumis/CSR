@@ -5,7 +5,7 @@
 '''
 # #############################
 from modules.constants import LOADS
-from modules.utilities import c_error,c_warn,linespace
+from modules.utilities import c_error,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -404,12 +404,30 @@ class block():
         self.pressure_coords = []
         self.CG = []
         self.Pressure = {} #Pass each Load Case index as key and values as a list
+        if self.space_type == 'DC':
+            self.Kc = []
+        else: self.Kc = None
 
     
     def __repr__(self):
         return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
     def __str__(self):
         return f"BLOCK : {self.name} of type {self.space_type}"
+    def Kc_eval(self,start,end,stiff_plate_type):
+        if self.Kc != None:
+            try:
+                kc = lambda a : math.cos(a)**2+(1-math.sin(d2r(self.payload['psi'])))*math.sin(a)**2
+            except KeyError:
+                c_error(f'(classes.py) Class block/Kc_eval : The required \'psi\' value is missing in the payload declaration.')
+                quit()
+            if stiff_plate_type not in (3,5,4):
+                dx = end[0]-start[0]
+                dy = end[1]-start[1]
+                alpha = math.atan2(dy,dx)
+                self.Kc.append(kc(alpha))
+            else: self.Kc.append(0)
+        else:pass
+
 
     def get_coords(self,stiff_plates:list[stiff_plate]):
         '''
@@ -430,6 +448,7 @@ class block():
                         N = j.plate.length%Dx # Weight the points relative to plate length
                         if j.plate.start not in self.coords:
                             self.coords.append(j.plate.start)
+                            self.Kc_eval(j.plate.start,j.plate.end,j.tag)
                             Mx += N*j.plate.start[0]-start[0]
                             My += N*j.plate.start[1]-start[1]
                             A  += N*1
@@ -439,17 +458,20 @@ class block():
                                 s = len(X)-2
                                 for i in range(1,len(X)-1):
                                     self.coords.append((X[i],Y[i]))
+                                    self.Kc_eval(j.plate.start,j.plate.end,j.tag)
                                     Mx += N*X[i]/s-start[0]
                                     My += N*Y[i]/s-start[1]
                                     A  += N*1/s
                             else:
                                 self.coords.append(j.plate.end)
+                                self.Kc_eval(j.plate.start,j.plate.end,j.tag)
                                 Mx += N*j.plate.end[0]-start[0]
                                 My += N*j.plate.end[1]-start[1]
                                 A  += N*1
                     elif len(self.coords) == 0:
                         # c is not incremented to re-parse the first plate and register its end point
                         self.coords.append(j.plate.start)
+                        self.Kc_eval(j.plate.start,j.plate.end,j.tag)
                         start = j.plate.start
                         A    += j.plate.length%Dx
                     
@@ -462,19 +484,25 @@ class block():
     def calculate_pressure_grid(self,resolution:int):
         '''
         Create a 1D computational mesh to calculate the loads pressure distributions.
-        Simply calculating with the geometric coordinates doesnot hold enough precision.
+        Simply calculating with the geometric coordinates does not hold enough precision.
         The pressure coordinates are calculated on a standard Ds between two points using linear interpolation.
         '''
+        K = []
         for i in range(len(self.coords)-1):
             if (self.coords[i] not in self.pressure_coords): #eliminate duplicate entries -> no problems with normal vectors
                 self.pressure_coords.append(self.coords[i])
+                if self.Kc != None: K.append(self.Kc[i]) 
             temp = linespace(1,resolution,1)
             dy = self.coords[i+1][1]-self.coords[i][1]
             dx = self.coords[i+1][0]-self.coords[i][0]
             span = math.sqrt(dy**2+dx**2)
             phi = math.atan2(dy,dx)
-            [self.pressure_coords.append((self.coords[i][0]+span/resolution*j*math.cos(phi),self.coords[i][1]+span/resolution*j*math.sin(phi))) for j in temp]
+            for j in temp:
+                self.pressure_coords.append((self.coords[i][0]+span/resolution*j*math.cos(phi),self.coords[i][1]+span/resolution*j*math.sin(phi)))
+                if self.Kc != None: K.append(self.Kc[i])
             self.pressure_coords.append(self.coords[i+1])
+            if self.Kc != None: K.append(self.Kc[i+1])
+        if self.Kc != None: self.Kc = K
 
 
     def render_data(self):
@@ -483,7 +511,7 @@ class block():
         # P = self.Pressure
         X.append(X[0])
         Y.append(Y[0])
-        return X, Y , self.space_type , self.CG
+        return X, Y , self.space_type , self.CG[1:]
     
     def pressure_data(self,pressure_index):
         '''
@@ -558,7 +586,7 @@ class ship():
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
         self.Ixx, self.Iyy = self.Calculate_I()
 
-        self.a0 = (1.58-0.47*self.Cb)*(2.4*math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
+        self.a0 = (1.58-0.47*self.Cb)*(2.4/math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
 
     def validate_blocks(self,blocks :list[block]):
         # The blocks are already constructed but we need to validate their responding plates' existence

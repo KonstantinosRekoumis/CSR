@@ -18,8 +18,14 @@ HEAVY_HOMO = 0.8
 LOADS = {
     #Block TAG : {Content Properties}
     'WB' : {'rho':RHO_S,'hair':0.0},
-    'DC' : {'rho':HEAVY_HOMO,'fdc':1.0},
+    'DC' : {'rho':HEAVY_HOMO,'fdc':1.0,'psi':30},
     'LC' : {'rho':0.8,'Pvp': 25,'fcd':1.0},
     'OIL': {'rho':0.8,'hair':0.0},
     'FW' : {'rho':RHO_F,'hair':0.0},
     'VOID':{'rho':0.0,'hair':0.0}}
+
+STATIC = {
+    'Liquids':['S-NOS','S-HSWO'],
+    'Dry':'STATIC',
+    'Sea':'STATIC'
+}
