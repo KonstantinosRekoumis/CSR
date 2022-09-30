@@ -438,41 +438,47 @@ class block():
         Dx = 0.1
         Mx,My = (0,0)
         A = 0 
-        start = []
+        start_p = []
         c = 0
         while c < len(self.list_plates_id):
             for j in stiff_plates:
-                if j.id == self.list_plates_id[c]:
+                if j.id == abs(self.list_plates_id[c]):
+                    if self.list_plates_id[c] >= 0:
+                        start = j.plate.start
+                        end   = j.plate.end
+                    elif self.list_plates_id[c] <0:
+                        start = j.plate.end
+                        end   = j.plate.start
                     if len(self.coords)!= 0:
                         c += 1
                         N = j.plate.length%Dx # Weight the points relative to plate length
-                        if j.plate.start not in self.coords:
-                            self.coords.append(j.plate.start)
-                            self.Kc_eval(j.plate.start,j.plate.end,j.tag)
-                            Mx += N*j.plate.start[0]-start[0]
-                            My += N*j.plate.start[1]-start[1]
+                        if start not in self.coords:
+                            self.coords.append(start)
+                            self.Kc_eval(start,end,j.tag)
+                            Mx += N*start[0]-start_p[0]
+                            My += N*start[1]-start_p[1]
                             A  += N*1
-                        if j.plate.end not in self.coords:
+                        if end not in self.coords:
                             if j.tag == 4: #Bilge
                                 X,Y = j.plate.render_data()[:2]
                                 s = len(X)-2
                                 for i in range(1,len(X)-1):
                                     self.coords.append((X[i],Y[i]))
-                                    self.Kc_eval(j.plate.start,j.plate.end,j.tag)
-                                    Mx += N*X[i]/s-start[0]
-                                    My += N*Y[i]/s-start[1]
+                                    self.Kc_eval(start,end,j.tag)
+                                    Mx += N*X[i]/s-start_p[0]
+                                    My += N*Y[i]/s-start_p[1]
                                     A  += N*1/s
                             else:
-                                self.coords.append(j.plate.end)
-                                self.Kc_eval(j.plate.start,j.plate.end,j.tag)
-                                Mx += N*j.plate.end[0]-start[0]
-                                My += N*j.plate.end[1]-start[1]
+                                self.coords.append(end)
+                                self.Kc_eval(start,end,j.tag)
+                                Mx += N*end[0]-start_p[0]
+                                My += N*end[1]-start_p[1]
                                 A  += N*1
                     elif len(self.coords) == 0:
                         # c is not incremented to re-parse the first plate and register its end point
-                        self.coords.append(j.plate.start)
-                        self.Kc_eval(j.plate.start,j.plate.end,j.tag)
-                        start = j.plate.start
+                        self.coords.append(start)
+                        self.Kc_eval(start,end,j.tag)
+                        start_p = start
                         A    += j.plate.length%Dx
                     
                     break
@@ -593,7 +599,7 @@ class ship():
         ids = [i.id for i in self.stiff_plates]
         for i in blocks:
             for j in i.list_plates_id:
-                if j not in ids:
+                if (abs(j) not in ids):
                     c_error(f"ship.validate_blocks: The block: {repr(i)} has as boundaries non-existent plates.Program Terminates")
                     quit()
             self.block_properties(i)

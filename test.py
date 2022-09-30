@@ -59,10 +59,10 @@ if __name__ == "__main__":
         # phzx.BSP_total_eval(papor,15.3)
         # phzx.HSM_total_eval(papor,15.3)
         phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
-        for i in papor.blocks:
-            if i.space_type == 'DC':
-                print(i.coords)
-        rnr.pressure_plot(papor,'HSM-1','DC')
+        # for i in papor.blocks:
+        #     if i.space_type == 'DC':
+        #         print(i.coords)
+        rnr.pressure_plot(papor,'HSM-1','all')
         rnr.pressure_plot(papor,'HSM-2','DC')
         # rnr.pressure_plot(papor,'BSP-1P','DC')
         # rnr.pressure_plot(papor,'BSP-2P','DC')

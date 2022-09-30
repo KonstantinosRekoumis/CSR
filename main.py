@@ -15,6 +15,8 @@ import numpy as np
 
 #_____ CALLS _______
 import modules.classes as cl
+from modules.constants import RHO_S
+import modules.physics as phzx
 import modules.rules as csr
 import modules.render as rd
 import modules.IO as IO
@@ -30,19 +32,11 @@ def main():
     #import geometry data
     file_path = "test.json"
     ship  = IO.load_ship(file_path)
-
+    #calculate pressure distribution
+    phzx.Static_total_eval(ship,16,RHO_S)
+    phzx.Dynamic_total_eval(ship,16,'HSM')
+    phzx.Dynamic_total_eval(ship,16,'BSP')
     #calculation Recipes
 
-    FLD_SEA_HOG = {
-        "Primary": ship.Msw_h_mid,
-        "External": True,
-        # "Internal": 
-    }
-
-    FLD_HBR_HOG = {
-        "Primary": ship.Mwh,
-        "External": True,
-        # "Internal":
-    }
 
 main()
