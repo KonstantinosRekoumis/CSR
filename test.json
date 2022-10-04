@@ -10,6 +10,7 @@
     "Cp":0.846,
     "Cm":0.996,
     "DWT":123045,
+    "PSM_spacing":2.0,
     "geometry":[
         {
             "id":0,
@@ -210,11 +211,13 @@
     "blocks":[
         {
             "type":"WB",
+            "symmetrical": false,
             "ids":[0,1,3,4,5,6,11,2],
             "name":"WB Tank Bottom"
         },
         {
             "type":"DC",
+            "symmetrical": true,
             "ids":[14,13,12,-7,11,2],
             "name":"Cargo Hold"
         }

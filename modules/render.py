@@ -164,7 +164,7 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, *args):
         if not enabled: continue
         
         try:
-            if i.space_type not in ('SEA','ATM'): index = pressure_index+'_DLP'
+            if i.space_type not in ('SEA','ATM'): index = pressure_index+'_IN'
             else : index = pressure_index
             X,Y,P = i.pressure_data(index)
             # print(f'Block: {i.name} P : ',P)

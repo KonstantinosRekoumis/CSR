@@ -7,13 +7,6 @@ from modules.utilities import c_error, c_success,c_warn,lin_int_dict,d2r
 import modules.classes as cls
 from modules.constants import RHO_F,RHO_S,G
 
-# def fetch_max(coords):
-#     '''
-#     Helper function that fetches the max Z value out of a list of tuples containing coordinates
-#     '''
-#     maxZ = -1 #It is impossible to have naturally a negative Z value
-#     for i, point in enumerate(coords):
-
 class PhysicsData:
     '''
     -------------------------------------------------------------------------------------------------------------------
@@ -34,9 +27,13 @@ class PhysicsData:
         self.B  = ship.B 
         self.Cw = ship.Cw
         self.Lsc =  ship.Lsc
+        self.Cb = ship.Cb
         self.D = ship.D
         self.a0 = ship.a0
-
+        self.Iyy = ship.Iyy        
+        self.Ixx = ship.Ixx
+        self.yn = ship.yo
+        self.xn = ship.xo
         # Universal Coefficients
         self.fxL = 0.5 # As the middle section is the object of study
         self.fps = 1.0 # Extreme Loads Scenario pp. 180 (to fill the other cases)
@@ -93,6 +90,10 @@ class PhysicsData:
         self.wave_pressure_functions()
 
         self.Cwv,self.Cqw,self.Cwh,self.Cwt,self.Cxs,self.Cxp,self.Cxg,self.Cys,self.Cyr,self.Cyg,self.Czh,self.Czr,self.Czg = self.Combination_Factors()
+        # Bending Moments and Shear Forces calculation
+        self.Mwv_lc,self.Qwv_lc,self.Mwh_lc,self.Mws = self.moments_eval() #maybe later add torsional calculations
+        self.sigma = lambda y,z: 1e-3*((self.Mwv_lc+self.Mws)/self.Ixx*(z-self.yn)-self.Mwh_lc/self.Iyy*y)
+
     def debug(self,what2print:str):
         print('condition :',self.cond)
         if 'angles' in what2print:
@@ -190,7 +191,76 @@ class PhysicsData:
             c_error(f'(physics.py) PhysicsData/wave_pressure_functions: \'{self.cond[:-2]}\' is not yet supported. Program terminates to avoid unpredictable behavior...')
             quit()
     
+    def moments_eval(self):
+        fnl_h = 1.0 # strength assessment Hogging
+        fnl_s = 0.58*(self.Cb+0.7)/self.Cb # strength assessment Sagging
+        fm_  = {
+            0.0 : 0.0,
+            0.4 : 1.0,
+            0.6 : 1.0,
+            1.0 : 0.0
+        }
+        fqpos_ = {
+            0.0 : 0.0,
+            0.2 : 0.92*fnl_h,
+            0.3 : 0.92*fnl_h,
+            0.4 : 0.7,
+            0.6 : 0.7,
+            0.7 : 1.0*fnl_s,
+            0.85: 1.0*fnl_s,
+            1.0 : 0.0 
+        }
+        fqneg_ = {
+            0.0 : 0.0,
+            0.2 : 0.92*fnl_s,
+            0.3 : 0.92*fnl_s,
+            0.4 : 0.7,
+            0.6 : 0.7,
+            0.7 : 1.0*fnl_h,
+            0.85: 1.0*fnl_h,
+            1.0 : 0.0 
+        }
+        fsw_ ={
+            0.0 : 0.0,
+            0.1 : 0.15,
+            0.3 : 1.0,
+            0.7 : 1.0,
+            0.9 : 0.15,
+            1.0 : 0.0             
+        }
+
+
+        # Vertical Moment Calculation
+        Mw_h = lambda x :  0.19*fnl_h*x*self.fps*self.Cw*self.Lsc**2*self.B*self.Cb
+        Mw_s = lambda x : -0.19*fnl_s*x*self.fps*self.Cw*self.Lsc**2*self.B*self.Cb
+        # Shear Forces Calculation
+        Qpos = lambda x :  0.52*x*self.fps*self.Cw*self.Lsc*self.B*self.Cb
+        Qneg = lambda x : -0.52*x*self.fps*self.Cw*self.Lsc*self.B*self.Cb
         
+        fm = lin_int_dict(fm_,self.fxL)
+        fm_mid = lin_int_dict(fm_,0.5)
+        fqpos = lin_int_dict(fqpos_,self.fxL)
+        fqneg = lin_int_dict(fqneg_,self.fxL)
+        fsw = lin_int_dict(fsw_,self.fxL)
+
+        if self.Cwv >= 0:
+            Mwv_lc = self.fb*self.Cwv*Mw_h(fm)
+            Mws = fsw*((0.171*self.Cw*self.Lsc**2*self.B*(self.Cb+0.7))-Mw_h(fm_mid))
+        else:
+            Mwv_lc = self.fb*self.Cwv*abs(Mw_s(fm))
+            Mws = -0.85*fsw*((0.171*self.Cw*self.Lsc**2*self.B*(self.Cb+0.7))+Mw_s(fm_mid))
+
+        if self.Cqw >= 0:
+            Qwv_lc = self.fb*self.Cqw*Qpos(fqpos)
+        else:
+            Qwv_lc = self.fb*self.Cqw*abs(Qneg(fqneg))
+        # Horizontal Moment Calculation
+        Mwh = 0.9*self.fps*fm*(0.31+self.Lsc/2800)*self.Cw*self.Lsc**2*self.Tlc*self.Cb
+
+        
+
+        return Mwv_lc,Qwv_lc,self.Cwh*Mwh, Mws
+
 
 #---- Pressure Calculating Functions -----
 
@@ -208,6 +278,7 @@ def hydrostatic_pressure(z:float,Zmax:float,rho:float):
             your input was ({z},{Zmax},{rho}) ")
         return 0
 
+# ------------- Environmental Forces Calculation -----------------------------
 def block_HydroStatic_pressure(block:cls.block,Tlc:float,rho:float):
     '''
     Evaluation of hydrostatic pressure for SEA block
@@ -415,93 +486,8 @@ def BSP_wave_pressure(cons_:list[float],_1_:bool,block:cls.block,Port=True):
 
     block.Pressure[key] = Pw
     return Pw
-
-def HSM_total_eval(ship:cls.ship,Tlc:float):
-    hsm_1 = PhysicsData(Tlc,ship,'HSM-1')
-    hsm_2 = PhysicsData(Tlc,ship,'HSM-2')
-
-    for i in ship.blocks:
-        if i.space_type == 'SEA' or i.space_type == 'ATM': 
-            F = HSM_wave_pressure
-            def args(x): return (x.external_loadsC(),'1' in  x.cond,i)
-        else: 
-            F = DynamicLiquid_Pressure
-            def args(x): return (i,x)
-        for j in (hsm_1,hsm_2):
-            Pd = F(*args(j))
-            if None not in Pd:
-                HSM = 'HSM-1' if j else 'HSM-2'
-                c_success(f'{HSM} CASE STUDY:\nCalculated block: ',i)
-                c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-                [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
-
-def Dynamic_total_eval(ship:cls.ship,Tlc:float,case:str,LOG = True):
-    if case in ('BSR','BSP','OSA','OST'):
-        _1,_2 = '-1P','-2P'
-    elif case in ('HSM','HSA','FSM'):
-        _1,_2 = '-1','-2'
-    else:
-        c_error(f'(physics.py) Dynamic_total_eval: {case} is not a valid Dynamic condition. The available conditions are ; HSM, HSA, FSM, BSR, BSP,OST,OSA.')
-        quit()
-
-    case_1 = PhysicsData(Tlc,ship,case+_1)
-    case_2 = PhysicsData(Tlc,ship,case+_2)
-    for c in (case_1,case_2):
-        for i in ship.blocks:
-            if i.space_type == 'SEA' or i.space_type == 'ATM': 
-                F = c.wave_pressure
-                def args(x): return (x.external_loadsC(),'1' in  x.cond,i)
-            elif i.space_type == 'DC':
-                F = DynamicDryCargo_Pressure
-                def args(x): return (i,x,False)
-            else: 
-                F = DynamicLiquid_Pressure
-                def args(x): return (i,x,False)
-        
-            Pd = F(*args(c))
-            if (None not in Pd) and LOG:
-                
-                c_success(f'{c.cond} CASE STUDY:\nCalculated block: ',i)
-                c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-                [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
-
-def Static_total_eval(ship:cls.ship,Tlc:float,rho:float,LOG = True):
-    for i in ship.blocks:
-        if i.space_type == 'SEA': 
-            F = block_HydroStatic_pressure
-            args =(i,Tlc,rho)
-        elif i.space_type == 'DC':
-            F = StaticDryCargo_Pressure
-            args = (i,False)
-        elif i.space_type =='ATM':continue
-        else: 
-            F = StaticLiquid_Pressure
-            args = (i,False)
-    
-        Pd = F(*args)
-        if (None not in Pd) and LOG:
-            
-            c_success(f'STATIC CASE STUDY:\nCalculated block: ',i)
-            c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-            [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
-
-def BSP_total_eval(ship:cls.ship,Tlc:float):
-    bsp_1 = PhysicsData(Tlc,ship,'BSP-1P')
-    bsp_2 = PhysicsData(Tlc,ship,'BSP-2P')
-
-    for i in ship.blocks:
-        if i.space_type == 'SEA' or i.space_type == 'ATM':
-            for j in (bsp_1,bsp_2):
-                Pd = BSP_wave_pressure(j.external_loadsC(),'1' in j.cond,i)
-                if None not in Pd:
-                    BSP = 'BSP-1' if j else 'BSP-2'
-                    c_success(f'{BSP} CASE STUDY:\nCalculated block: ',i)
-                    c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
-                    [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
-
-
-
-
+#------------------------------------------------------------------------------
+#--------------- Internal Forces Calculation ----------------------------------
 def StaticLiquid_Pressure(block:cls.block,debug=False):
     '''
     Static Liquid Pressure : Normal Operations at sea and Harbour/Sheltered water operations\n
@@ -523,18 +509,19 @@ def StaticLiquid_Pressure(block:cls.block,debug=False):
     
     if liquid_cargo: 
         F_nos = lambda z  :hydrostatic_pressure(z,Ztop,block.payload['rho'])+block.payload['Ppv']
-        F_hswo = lambda z :hydrostatic_pressure(z,Ztop,block.payload['rho'])+block.payload['Ppv']
+        # F_hswo = lambda z :hydrostatic_pressure(z,Ztop,block.payload['rho'])+block.payload['Ppv']
     else:
         F_nos = lambda z  :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),block.payload['rho'])
-        F_hswo = lambda z :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),block.payload['rho'])# extra case for ballast tank seems redundant for the time being
+        # F_hswo = lambda z :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),block.payload['rho'])# extra case for ballast tank seems redundant for the time being
 
         
     for i,point  in enumerate(block.pressure_coords):
-        P_nos.append(F_nos(point[1]))
-        P_hswo.append(F_hswo(point[1]))
+        P_nos[i]= F_nos(point[1])
+        # P_hswo.append(F_hswo(point[1]))
 
-    block.Pressure['S-NOS'] = P_nos
-    block.Pressure['S-HSWO'] = P_hswo
+    # block.Pressure['S-NOS'] = P_nos
+    # block.Pressure['S-HSWO'] = P_hswo
+    block.Pressure['STATIC_IN'] = P_nos
     return P_nos
 
 def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
@@ -624,9 +611,59 @@ def StaticDryCargo_Pressure(block:cls.block,debug=False):
     for i,point in enumerate(block.pressure_coords):
         P[i] = static(point[1],block.Kc[i])
     
-    block.Pressure['STATIC'] = P
+    block.Pressure['STATIC_IN'] = P
     return P
+#------------------------------------------------------------------------------
+#------- Total Evaluation of Pressure Distribution ----------------------------
 
+def Dynamic_total_eval(ship:cls.ship,Tlc:float,case:str,LOG = True):
+    if case in ('BSR','BSP','OSA','OST'):
+        _1,_2 = '-1P','-2P'
+    elif case in ('HSM','HSA','FSM'):
+        _1,_2 = '-1','-2'
+    else:
+        c_error(f'(physics.py) Dynamic_total_eval: {case} is not a valid Dynamic condition. The available conditions are ; HSM, HSA, FSM, BSR, BSP,OST,OSA.')
+        quit()
 
+    case_1 = PhysicsData(Tlc,ship,case+_1)
+    case_2 = PhysicsData(Tlc,ship,case+_2)
+    for c in (case_1,case_2):
+        for i in ship.blocks:
+            if i.space_type == 'SEA' or i.space_type == 'ATM': 
+                F = c.wave_pressure
+                def args(x): return (x.external_loadsC(),'1' in  x.cond,i)
+            elif i.space_type == 'DC':
+                F = DynamicDryCargo_Pressure
+                def args(x): return (i,x,False)
+            else: 
+                F = DynamicLiquid_Pressure
+                def args(x): return (i,x,False)
+        
+            Pd = F(*args(c))
+            if (None not in Pd) and LOG:
+                
+                c_success(f'{c.cond} CASE STUDY:\nCalculated block: ',i)
+                c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
+                [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
+    return case_1,case_2
 
+def Static_total_eval(ship:cls.ship,Tlc:float,rho:float,LOG = True):
+    for i in ship.blocks:
+        if i.space_type == 'SEA': 
+            F = block_HydroStatic_pressure
+            args =(i,Tlc,rho)
+        elif i.space_type == 'DC':
+            F = StaticDryCargo_Pressure
+            args = (i,False)
+        elif i.space_type =='ATM':continue
+        else: 
+            F = StaticLiquid_Pressure
+            args = (i,False)
+    
+        Pd = F(*args)
+        if (None not in Pd) and LOG:
+            
+            c_success(f'STATIC CASE STUDY:\nCalculated block: ',i)
+            c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
+            [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
 

@@ -4,6 +4,7 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
+from xmlrpc.client import Boolean
 from modules.constants import LOADS
 from modules.utilities import c_error,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
@@ -326,6 +327,7 @@ class stiff_plate():
                 self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root,plate.tag)) 
         self.CoA , self.area = self.CenterOfArea()
         self.Ixx, self.Iyy = self.calc_I()
+        self.Pressure = {}
     def __repr__(self) -> str:
         tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
         return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
@@ -356,6 +358,24 @@ class stiff_plate():
         plt.axis('square')
         self.plate.render(r_m=r_m)
         [i.render() for i in self.stiffeners]
+    def local_P(self,key,point):
+        ''' point can be whatever. As i have no brain capacity to code a check, PLZ use only the roots of the stiffeners '''
+        try:
+            min_r = 1e5
+            index = 0
+            for i,data in enumerate(self.Pressure[key]):
+                radius = math.sqrt((data[0]-point[0])**2+(data[1]-point[1])**2)
+                if min_r > radius:
+                    index = i
+                    min_r = radius
+            return self.Pressure[key][index]
+                
+        except KeyError:
+            c_error(f'(classes.py) stiff_plate/local_P: The {key} condition has not been calculated for this plate.')
+            quit()
+        
+
+
 
 class long_stiff_plate(): # redundant probably
     def __init__(self,stiff_plates: list[stiff_plate],girders:list[plate]):
@@ -384,12 +404,13 @@ class block():
     6) Dry/Void Space -> type: VOID
     """
 
-    def __init__(self,name:str,space_type:str, list_plates_id : list[int],*args):
+    def __init__(self,name:str,symmetrical:Boolean,space_type:str, list_plates_id : list[int],*args):
         TAGS = ['WB','DC','LC','OIL','FW','VOID']
         """
         We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
         """
         self.name = name
+        self.symmetrical = symmetrical # Symmetry around the Z-axis
         if space_type in TAGS:
             self.space_type = space_type
         else:
@@ -402,6 +423,7 @@ class block():
 
         self.coords = []
         self.pressure_coords = []
+        self.plates_indices = [] # Holds data for the plate's id at a certain grid point
         self.CG = []
         self.Pressure = {} #Pass each Load Case index as key and values as a list
         if self.space_type == 'DC':
@@ -451,10 +473,11 @@ class block():
                         end   = j.plate.start
                     if len(self.coords)!= 0:
                         c += 1
-                        N = j.plate.length%Dx # Weight the points relative to plate length
+                        N = j.plate.length//Dx # Weight the points relative to plate length
                         if start not in self.coords:
                             self.coords.append(start)
                             self.Kc_eval(start,end,j.tag)
+                            self.plates_indices.append(j.id)
                             Mx += N*start[0]-start_p[0]
                             My += N*start[1]-start_p[1]
                             A  += N*1
@@ -465,12 +488,14 @@ class block():
                                 for i in range(1,len(X)-1):
                                     self.coords.append((X[i],Y[i]))
                                     self.Kc_eval(start,end,j.tag)
+                                    self.plates_indices.append(j.id)
                                     Mx += N*X[i]/s-start_p[0]
                                     My += N*Y[i]/s-start_p[1]
                                     A  += N*1/s
                             else:
                                 self.coords.append(end)
                                 self.Kc_eval(start,end,j.tag)
+                                self.plates_indices.append(j.id)
                                 Mx += N*end[0]-start_p[0]
                                 My += N*end[1]-start_p[1]
                                 A  += N*1
@@ -478,12 +503,13 @@ class block():
                         # c is not incremented to re-parse the first plate and register its end point
                         self.coords.append(start)
                         self.Kc_eval(start,end,j.tag)
+                        self.plates_indices.append(j.id)
                         start_p = start
-                        A    += j.plate.length%Dx
+                        A    += j.plate.length//Dx
                     
                     break
 
-        self.CG = [Mx/A,My/A]
+        self.CG = [Mx/A,My/A] if not self.symmetrical else [0,My/A]
         self.calculate_pressure_grid(10)
         # self.calculate_CG()
 
@@ -494,9 +520,11 @@ class block():
         The pressure coordinates are calculated on a standard Ds between two points using linear interpolation.
         '''
         K = []
+        P = []
         for i in range(len(self.coords)-1):
             if (self.coords[i] not in self.pressure_coords): #eliminate duplicate entries -> no problems with normal vectors
                 self.pressure_coords.append(self.coords[i])
+                P.append(self.plates_indices[i])
                 if self.Kc != None: K.append(self.Kc[i]) 
             temp = linespace(1,resolution,1)
             dy = self.coords[i+1][1]-self.coords[i][1]
@@ -505,9 +533,13 @@ class block():
             phi = math.atan2(dy,dx)
             for j in temp:
                 self.pressure_coords.append((self.coords[i][0]+span/resolution*j*math.cos(phi),self.coords[i][1]+span/resolution*j*math.sin(phi)))
+                P.append(self.plates_indices[i])
                 if self.Kc != None: K.append(self.Kc[i])
             self.pressure_coords.append(self.coords[i+1])
+            P.append(self.plates_indices[i])
             if self.Kc != None: K.append(self.Kc[i+1])
+
+        self.plates_indices = P
         if self.Kc != None: self.Kc = K
 
 
@@ -529,10 +561,30 @@ class block():
         P = self.Pressure[pressure_index]
 
         return X,Y,P
+    def pressure_over_plate(self,stiff_plate:stiff_plate,pressure_index):
+        start = True
+        x0,x1 = 0,0
+        if stiff_plate.id in self.list_plates_id:
+            for i,val in enumerate(self.plates_indices):
+                if val == stiff_plate.id and start:
+                    x0 = i
+                elif val != stiff_plate.id and not start:
+                    x1 = i
+                    break
+            try:
+                return [(*self.pressure_coords[i],self.Pressure[pressure_index][i]) for i in range(x0,x1+1,1)]
+            except KeyError:
+                c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
+                return [(*self.pressure_coords[i],0) for i in range(x0,x1+1,1)]
+        else:
+            return None
+
+
+
 
 class Sea_Sur(block):
     def __init__(self,list_plates_id: list[int]):
-        super().__init__("SEA",'VOID',list_plates_id)
+        super().__init__("SEA",True,'VOID',list_plates_id)
         self.space_type = "SEA"
 
     def get_coords(self, stiff_plates:list[stiff_plate]):
@@ -547,7 +599,7 @@ class Sea_Sur(block):
         self.coords.append((self.coords[0][0],self.coords[0][1]-2))
 class Atm_Sur(block):
     def __init__(self,list_plates_id: list[int]):
-        super().__init__("ATM",'VOID',list_plates_id)
+        super().__init__("ATM",True,'VOID',list_plates_id)
         self.space_type = "ATM"
 
     def get_coords(self, stiff_plates:list[stiff_plate]):
@@ -564,7 +616,7 @@ class Atm_Sur(block):
 
 class ship():
 
-    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT, stiff_plates:list[stiff_plate],blocks:list[block]):
+    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,PSM_spacing, stiff_plates:list[stiff_plate],blocks:list[block]):
         self.LBP = LBP
         self.Lsc = Lsc   # Rule Length
         self.B  = B
@@ -576,6 +628,7 @@ class ship():
         self.Cp = Cp
         self.Cm = Cm
         self.DWT = DWT
+        self.PSM_spacing = PSM_spacing
         self.Mwh = 0
         self.Mws = 0
         self.Msw_h_mid = 0
@@ -643,7 +696,7 @@ class ship():
         elif self.Lsc <= 500 and self.Lsc >= 350: 
             self.Cw = 10.75-((self.Lsc-350)/150)**1.5
         else:
-            c_warn("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            c_error("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
 
     def Moments_wave(self):

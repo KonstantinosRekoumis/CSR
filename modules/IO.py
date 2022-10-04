@@ -30,7 +30,7 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
 
 def blocks_save(block:cls.block):
     save =""
-    save += "{\"name\":\""+block.name+"\",\"type\":\""+block.space_type+"\",\"ids\":"+json.dumps(block.list_plates_id)+"}"
+    save += "{\"name\":\""+block.name+"\",\"symmetrical\":"+json.dumps(block.symmetrical)+",\"type\":\""+block.space_type+"\",\"ids\":"+json.dumps(block.list_plates_id)+"}"
     return save
 
 def section_save(ship:cls.ship):
@@ -59,6 +59,7 @@ def ship_save(ship:cls.ship,filename:str):
     save += "\"Cp\":"+str(ship.Cp)+',\n'
     save += "\"Cm\":"+str(ship.Cm)+',\n'
     save += "\"DWT\":"+str(ship.DWT)+',\n'
+    save += "\"PSM_spacing\":"+str(ship.PSM_spacing)+',\n'
 
     save += section_save(ship) +"\n}"
 
@@ -69,21 +70,21 @@ def ship_save(ship:cls.ship,filename:str):
 def load_ship(filename):
     with open(filename,'r') as file:
         data = json.loads(file.read())
-    tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT']
+    tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT','PSM_spacing']
     particulars = []
     for i in tags:
         try:
             particulars.append(data[i])
         except KeyError:
-            print(_ERROR_,f"The input file is not appropriately formatted, and it is missing crucial data.\n Value: \'{i}\' is missing.",_RESET_)
+            c_error(f"The input file is not appropriately formatted, and it is missing crucial data.\n Value: \'{i}\' is missing.")
             quit()
     try:
         stiff_plates = geometry_parser(data['geometry'])
         if len(stiff_plates) == 0:
-            print(_ERROR_,"Check your input file",_RESET_)
+            c_error("Check your input file")
             quit()
     except KeyError:
-        print(_ERROR_,"The input file is not appropriately formatted, and it is missing crucial data.\n Value: 'geometry' is missing.",_RESET_)
+        c_error("The input file is not appropriately formatted, and it is missing crucial data.\n Value: 'geometry' is missing.")
         quit()
     try:
         blocks = blocks_parser(data['blocks'])
@@ -140,7 +141,7 @@ def blocks_parser(blocks_t:list):
     out = []
     for i in blocks_t:
         try:
-            tmp = cls.block(i['name'],i['type'],i['ids'])
+            tmp = cls.block(i['name'],i['symmetrical'],i['type'],i['ids'])
             out.append(tmp)
         except KeyError:
             c_error(f"IO.blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")

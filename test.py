@@ -62,8 +62,8 @@ if __name__ == "__main__":
         # for i in papor.blocks:
         #     if i.space_type == 'DC':
         #         print(i.coords)
-        rnr.pressure_plot(papor,'HSM-1','all')
-        rnr.pressure_plot(papor,'HSM-2','DC')
+        # rnr.pressure_plot(papor,'HSM-1','all')
+        # rnr.pressure_plot(papor,'HSM-2','DC')
         # rnr.pressure_plot(papor,'BSP-1P','DC')
         # rnr.pressure_plot(papor,'BSP-2P','DC')
         IO.ship_save(papor,"blyat1.json")
