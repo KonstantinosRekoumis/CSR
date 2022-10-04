@@ -118,7 +118,7 @@ def minimum_stiff_net_thickness(plate:cls.stiff_plate,L2:float,Debug = False):
         c_error('You are not supposed to enter here.')
 
     
-def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicalData,sloshing = False):
+def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicsData,sloshing = False):
     '''
     IACS Part 1 Chapter 6 Section 4\n
 
