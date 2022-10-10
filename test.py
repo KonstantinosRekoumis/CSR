@@ -54,11 +54,11 @@ if __name__ == "__main__":
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
         # papor.render(r_m = 'wC')
-        # rnr.contour_plot(papor,show_w=True,key = 'id')
+        rnr.contour_plot(papor,show_w=True,key = 'id')
         rnr.block_plot(papor,fill=False)
         # phzx.BSP_total_eval(papor,15.3)
         # phzx.HSM_total_eval(papor,15.3)
-        phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
+        # phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
         # for i in papor.blocks:
         #     if i.space_type == 'DC':
         #         print(i.coords)

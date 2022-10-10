@@ -3,6 +3,9 @@ This module provides the functions that calculate the pressures applied on the p
 This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
+import numpy as np
+from multiprocessing.sharedctypes import Value
+from operator import le
 from modules.utilities import c_error, c_success,c_warn,lin_int_dict,d2r
 import modules.classes as cls
 from modules.constants import RHO_F,RHO_S,G
@@ -20,7 +23,7 @@ class PhysicsData:
     def __init__(self,Tlc:float,ship:cls.ship,cond:str,rho = RHO_S, kr_p = .35,GM_p=0.12, fbk = 1.2):
         # Ship Data and General Data
         self.cond = cond #The dynamic condition we are interested in
-        self.int_cond = self.cond+'_DLP'
+
         self.Tlc = Tlc
         self.rho = rho
         self.LBP =  ship.LBP
@@ -161,7 +164,7 @@ class PhysicsData:
         except KeyError:
             c_error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
             c_error("Invalid condition to study. Enter an appropriate Condition out of :",default=False)
-            [c_error(f"{i}",default=False) for i in fbeta]
+            [c_error(f"{i}",default=False) for i in self.fbeta]
             c_error('Currently supported conditions are : HSM and BSP.\n The other conditions will result in invalid results',default=False)
             c_error('The Program Terminates...',default=False)
             quit()
@@ -521,7 +524,7 @@ def StaticLiquid_Pressure(block:cls.block,debug=False):
 
     # block.Pressure['S-NOS'] = P_nos
     # block.Pressure['S-HSWO'] = P_hswo
-    block.Pressure['STATIC_IN'] = P_nos
+    block.Pressure['STATIC'] = P_nos
     return P_nos
 
 def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
@@ -564,7 +567,7 @@ def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
     for i,point in enumerate(block.pressure_coords):
         P[i] = Pld(*(case.Lsc*case.fxL,*point))
 
-    block.Pressure[case.int_cond] = P
+    block.Pressure[case.cond] = P
     return P
 
 def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
@@ -588,7 +591,7 @@ def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
     for i,point in enumerate(block.pressure_coords):
         P[i] = Pbd(block.CG[0],*point,ax,ay,az,block.Kc[i])
     
-    block.Pressure[case.int_cond] = P
+    block.Pressure[case.cond] = P
     return P
 
 def StaticDryCargo_Pressure(block:cls.block,debug=False):
@@ -611,7 +614,7 @@ def StaticDryCargo_Pressure(block:cls.block,debug=False):
     for i,point in enumerate(block.pressure_coords):
         P[i] = static(point[1],block.Kc[i])
     
-    block.Pressure['STATIC_IN'] = P
+    block.Pressure['STATIC'] = P
     return P
 #------------------------------------------------------------------------------
 #------- Total Evaluation of Pressure Distribution ----------------------------
@@ -667,3 +670,81 @@ def Static_total_eval(ship:cls.ship,Tlc:float,rho:float,LOG = True):
             c_success(' ---- X ----  ---- Y ----  ---- P ----',default=False)
             [c_success(f'{round(i.pressure_coords[j][0],4): =11f}  {round(i.pressure_coords[j][1],4): =11f} {round(Pd[j],4): =11f}',default=False) for j in range(len(Pd))]
 
+#-------- Passing Pressure to Plates -------------------------------------------
+
+def block_to_plate_perCase(plate:cls.stiff_plate,blocks:list[cls.block],case:PhysicsData,Load:str,return_ = False):
+    '''
+    ---------------------------------------------------------------------------
+    Populate the pressure data of each plate\n
+    Based on which plate is on top of whom (z = 0 @ keel, positives extend to the Main Deck )\n
+    Transverse plates are not implemented yet.
+    return_ parameter switches the data flow from immediate population of the Pressure Dictionary
+     to return the Pressure Data in a variable
+    ---------------------------------------------------------------------------
+    '''
+    def mul(a,b):
+        '''
+        Consider 2 vectors 2-D vectors
+        '''
+        try:
+            for i in (a,b):
+                if len(i) == 2:
+                    return a[0]*b[0]+a[1]*b[1]
+                else: raise ValueError()
+        except ValueError:
+            c_error(f'(physics.py) block_to_plate_perCase/mul: Vector {i} is not of proper type.')
+            quit()
+
+    def add_proj(a,b,proj_v,intermediate=False):
+        '''
+        Input arguments are two Pressure data lists obtained from a block and a projection vector (the normals of a plate or a block)
+        '''
+        P = []
+        if (len(a) != len(b)):
+            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Vector a has length {len(a)} while Vector b has length {len(b)} !')
+            quit()
+        elif (len(a) != len(proj_v)):
+            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Vector a has length {len(a)} while Projection Vector  has length {len(proj_v)} !')
+            # quit()
+        for i in range(len(a)):
+            P0 = (a[i][2]*a[i][4],a[i][3]*a[i][4]) # (etax*P,etay*P)
+            P1 = (b[i][2]*b[i][4],b[i][3]*b[i][4]) # (etax*P,etay*P)
+            #Pressures are applied plate side!
+            if not intermediate:
+                P.append((a[i][0],a[i][1],mul(proj_v[i],(P0[0]+P1[0],P0[1]+P1[1]))))# Vector Addition for the pressures and then projection on the plate
+            else:
+                P.append((a[i][0],a[i][1],proj_v[i][0],proj_v[i][1],mul(proj_v[i],(P0[0]+P1[0],P0[1]+P1[1]))))# Vector Addition for the pressures and then projection on the plate
+        return P
+
+    
+    P = []
+    out_P = []
+    if 'S' not in Load or 'D' not in Load:
+        c_error(f'(physics.py) block_to_plate_perCase: Load parameter is not of correct type. Expected \'S\' or \'D\' or \'S+D\' etc. got {Load}.')
+        quit()
+    for i,block in enumerate(blocks):
+        tmp = []
+        if "D" in Load: 
+            tmp.append(block.pressure_over_plate(plate,case.cond))
+        if 'S' in Load:
+            tmp.append(block.pressure_over_plate(plate,'STATIC'))
+        if len(tmp)==2:
+            normals = [(i[2],i[3]) for i in tmp[0]]
+            P.append(add_proj(tmp[0],tmp[1],normals,intermediate=True))
+        elif len(tmp)==1:
+            P.append(tmp[0])
+    
+    if len(P)==2:
+        out_P = add_proj(tmp[0],tmp[1],[plate.plate.eta[0] for i in tmp[0]])
+    elif len(P)==1:
+        out_P = P[0]
+
+    if return_ : return out_P
+    else:plate.Pressure[case.cond] = out_P
+
+
+        
+        
+    
+    
+    

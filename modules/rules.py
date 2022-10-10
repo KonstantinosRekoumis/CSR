@@ -4,6 +4,7 @@
 
 #Materials Constant Array see. CSR ... to be filled
 import math
+from threading import local
 import modules.classes as cls
 import modules.physics as phzx
 from modules.utilities import c_error, c_info, c_warn
@@ -34,33 +35,33 @@ def minimum_plate_net_thickness(plate:cls.stiff_plate,L2:float,Debug = False):
 
     if plate.tag in ('Shell','Bilge'):
         if plate.plate.start[0] == 0: # keel plate
-            if plate.plate.thickness < _CHECK_['Shell']['Keel']:
+            if plate.plate.net_thickness < _CHECK_['Shell']['Keel']:
                 if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was lower than', _CHECK_['Shell']['Keel'],'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  _CHECK_['Shell']['Keel']
+                plate.plate.net_thickness =  _CHECK_['Shell']['Keel']
             else: 
                 if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was greater than',_CHECK_['Shell']['Keel']))
         else:
-            if plate.plate.thickness < _CHECK_['Shell']['Else']:
+            if plate.plate.net_thickness < _CHECK_['Shell']['Else']:
                 if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was lower than', _CHECK_['Shell']['Else'],'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  _CHECK_['Shell']['Else']
+                plate.plate.net_thickness =  _CHECK_['Shell']['Else']
             else: 
                 if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was greater than',_CHECK_['Shell']['Else']))
     elif plate.tag in ('Hopper','InnerBottom'):
-        if plate.plate.thickness < _CHECK_['InnerBottom']:
+        if plate.plate.net_thickness < _CHECK_['InnerBottom']:
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was lower than', _CHECK_['InnerBottom'],'. Thus it was changed to the appropriate value'))
-            plate.plate.thickness =  _CHECK_['InnerBottom']
+            plate.plate.net_thickness =  _CHECK_['InnerBottom']
         else: 
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was greater than',_CHECK_['InnerBottom']))
     elif plate.tag == 'Wing':
-        if plate.plate.thickness < _CHECK_['OtherPlates']:
+        if plate.plate.net_thickness < _CHECK_['OtherPlates']:
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was lower than', _CHECK_['OtherPlates'],'. Thus it was changed to the appropriate value'))
-            plate.plate.thickness =  _CHECK_['OtherPlates']
+            plate.plate.net_thickness =  _CHECK_['OtherPlates']
         else: 
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was greater than',_CHECK_['OtherPlates']))
     elif plate.tag == 'WeatherDeck':
-        if plate.plate.thickness < _CHECK_['Deck']:
+        if plate.plate.net_thickness < _CHECK_['Deck']:
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was lower than', _CHECK_['Deck'],'. Thus it was changed to the appropriate value'))
-            plate.plate.thickness =  _CHECK_['Deck']
+            plate.plate.net_thickness =  _CHECK_['Deck']
         else: 
             if Debug: c_info((f'Stiffened plate\'s : {plate} plate thickness was greater than',_CHECK_['Deck']))
     else:
@@ -83,34 +84,34 @@ def minimum_stiff_net_thickness(plate:cls.stiff_plate,L2:float,Debug = False):
     }
 
     # must calculate first its pressure thickness
-    sup = 2.0*plate.plate.thickness
-    base = max(_CHECK_['Longs']['Watertight'],0.4*plate.plate.thickness)
+    sup = 2.0*plate.plate.net_thickness
+    base = max(_CHECK_['Longs']['Watertight'],0.4*plate.plate.net_thickness)
 
     if plate.stiffeners[0].type == 'fb': 
         for i,stiff in enumerate(plate.stiffeners):
-            if (stiff.plates[0].thickness < base) and (stiff.plates[0].thickness < sup): # For the time being every Longitudinal is on a watertight plate
+            if (stiff.plates[0].net_thickness < base) and (stiff.plates[0].net_thickness < sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener Web plate thickness was lower than', base,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  base
-            elif (stiff.plates[0].thickness > base) and (stiff.plates[0].thickness > sup): # For the time being every Longitudinal is on a watertight plate
+                plate.plate.net_thickness =  base
+            elif (stiff.plates[0].net_thickness > base) and (stiff.plates[0].net_thickness > sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener Web plate thickness was greater than', sup,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  sup
+                plate.plate.net_thickness =  sup
             else: 
                 if Debug: c_info((f'Stiffened plate\'s : {plate}  Stiffener Web plate thickness was within limits'))
     elif plate.stiffeners[0].type == 'g':
-            if (stiff.plates[0].thickness < base) and (stiff.plates[0].thickness < sup): # For the time being every Longitudinal is on a watertight plate
+            if (stiff.plates[0].net_thickness < base) and (stiff.plates[0].net_thickness < sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener Web plate thickness was lower than', base,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  base
-            elif (stiff.plates[0].thickness > base) and (stiff.plates[0].thickness > sup): # For the time being every Longitudinal is on a watertight plate
+                plate.plate.net_thickness =  base
+            elif (stiff.plates[0].net_thickness > base) and (stiff.plates[0].net_thickness > sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener Web plate thickness was greater than', sup,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  sup
+                plate.plate.net_thickness =  sup
             else: 
                 if Debug: c_info((f'Stiffened plate\'s : {plate}  Stiffener Web plate thickness was within limits'))
-            if (stiff.plates[1].thickness < base) and (stiff.plates[1].thickness < sup): # For the time being every Longitudinal is on a watertight plate
+            if (stiff.plates[1].net_thickness < base) and (stiff.plates[1].net_thickness < sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener  Flange plate thickness was lower than', base,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  base
-            elif (stiff.plates[1].thickness > base) and (stiff.plates[1].thickness > sup): # For the time being every Longitudinal is on a watertight plate
+                plate.plate.net_thickness =  base
+            elif (stiff.plates[1].net_thickness > base) and (stiff.plates[1].net_thickness > sup): # For the time being every Longitudinal is on a watertight plate
                 if Debug: c_info((f'Stiffened plate\'s : {plate} Stiffener  Flange plate thickness was greater than', sup,'. Thus it was changed to the appropriate value'))
-                plate.plate.thickness =  sup
+                plate.plate.net_thickness =  sup
             else: 
                 if Debug: c_info((f'Stiffened plate\'s : {plate}  Stiffener Flange plate thickness was within limits'))
 
@@ -152,13 +153,123 @@ def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:p
     t = lambda point, P : 0.0158*ap*plate.plate.length*math.sqrt(abs(P)/x[plate.tag]/Ca(point)/Reh)
     max_t = 0
     for i,stif in enumerate(plate.stiffeners):
+        P = plate.local_P(case.cond,stif.plates[0].start)
         t_temp = t(stif.plates[0].start,P)
         max_t = t_temp if max_t < t_temp else max_t
     
-    if plate.plate.thickness < max_t:
-        plate.plate.thickness = max_t
+    if plate.plate.net_thickness < max_t:
+        plate.plate.net_thickness = max_t
+        minimum_plate_net_thickness(plate,case.Lsc) #need to check what L2 is
+        #program some checks according to Chapter 6 Section 4.2 page 383
+
+def stiffener_plating_net_thickness_calculation(plate:cls.stiff_plate,case:phzx.PhysicsData,psm_span,sloshing=False):
+    '''
+    IACS Part 1 Chapter 6 Section 4\n
+
+    '''
+    # def plate_side(f,Cmax):
+    #     '''
+    #     The pressure's are calculated considering that the positive z-axis is (0(keel),D(main Deck))\n
+    #     Based on the plate's main plate angle we can defer whether we applying pressure to the stiffeners'\n
+    #     or the main plate's side.\n
+    #     The stiffeners are always located at +90 angle degree relative to the plate's global angle. So they 
+    #     '''
+
+    #     if plate.plate.angle >= 0 :
 
 
+    try:
+        Reh, Rem = MATERIALS[plate.plate.material]
+    except KeyError:
+        c_warn(f'(rules.py) plating_thickness_calculation: Stiffened plate\'s plate {plate} has material {plate.plate.material} that is not documented in this program. Either consider changing it or modify constants.py MATERIALS dict. Defaulting to A grade steel (Rm = 255)...')
+    x = {
+        0: 1.0 , #"Shell"
+        1: 0.9 , #'InnerBottom'
+        2: 0.9 , #'Hopper'
+        3: 1.0 , #'Wing'
+        4: 1.0 , #'Bilge'
+        5: 1.0   #'WeatherDeck'
+    }
+    Ct_ = {
+        'AC-S' : 0.75,
+        'AC-SD': 0.90
+    }
+    Ct = Ct_['AC-S'] if sloshing else Ct_['AC-SD']
+    Cs_f = {
+        'AC-S':  (lambda x : 0.85 - x/Reh,0.75),
+        'AC-SD': (lambda x : 1.0 - x/Reh,0.9)
+    }
+
+    dshr = (plate.plate.length + plate.stiffeners[0].plates[0].net_thickness + 0.5*plate.plate.cor_thickness - 0.5*plate.stiffeners[0].plates[0].net_thickness)*1.0 #hardcoded that phiw = 90 deg This is a critical assumption
+
+    fshr = 0.7 #lower end of vertical stiffeners is the minimum worst condition
+    fbdg = 10  #lower end of vertical stiffeners is the minimum worst condition
+
+    lbdg = psm_span #worst case scenario dont know the stiffener span
+    lshr = psm_span #worst case scenario dont know the stiffener span
+    tw = lambda P : (fshr*abs(P)*plate.spacing*lshr)/(dshr*x*Ct*teh)
+    Z  = lambda P : (abs(P)*plate.spacing*lbdg**2)/(fbdg*x*Cs*Reh)
+
+    max_t = 0
+    max_Z = 0
+    index_t = 0
+    index_Z = 0
+    for i, stiff in enumerate(plate.stiffeners):
+        t_tmp = tw(plate.local_P(case.cond,stiff.plate[0].start))
+        if max_t < t_tmp:
+            max_t = t_tmp
+            index_t = i
+        if max_Z < Z_tmp:
+            max_Z = Z_tmp
+            index_Z = i
+
+
+def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
+    '''
+    condition = {
+        'Dynamics':'SD',
+        'max value': 'DC,WB',
+        'skip value':'LC'
+    }
+    '''
+    def maximum_P(P):
+        def key(list):
+            return abs(list[2])
+
+        max_p = 0
+        index = 0
+        for i,P_ in enumerate(P):
+            local_max = max(P_,key=key)
+            if max_p < local_max[-1]: #Pressure position 
+                max_p = local_max
+                index = i
+        return index
+
+    for plate in ship.stiff_plates:
+        blocks = []
+        max_eval = False
+        for block in ship.blocks:
+            if plate.id in block.list_plates_id and block.space_type not in condition['skip value']:
+                blocks.append(block)
+        if len(blocks)> 2: 
+            c_error(f'(rules.py) Loading_cases: Detected a plate: {plate} which is contained in multiple blocks. A stiffened plate can be boundary of only 2 Blocks at most at a time!')
+            c_error(f'Involved Blocks:\n {blocks}')
+            quit()
+        elif len(blocks)==0:
+            c_error(f'(rules.py) Loading_cases: Detected a plate: {plate} which is contained in no blocks. A stiffened plate shall be boundary to at least one Block !')
+            quit()
+
+        for block in blocks:
+            if block.space_type in condition['max value'] and not max_eval:
+                max_eval=True
+        if max_eval:
+            P = []
+            for block in blocks:
+                P.append(phzx.block_to_plate_perCase(plate,[block],case,condition['Dynamics'],return_=True))# force the singular evaluation of each pressure distribution
+            index = maximum_P(P)
+            plate.Pressure[case.cond] = P[index]
+        else:
+            phzx.block_to_plate_perCase(plate,blocks,case,condition['Dynamics']) # let the function handle the proper aggregation
 
     
 

@@ -32,12 +32,16 @@ def normals2D(geom,flip_n = False,show_norms = False):
         else:
             eta[i,0] = yba/nrm2
             eta[i,1] = -xba/nrm2
+    # last point
+    # eta[-1,:] = eta[-2,:]
 
 
-    if show_norms:# Debug only
+    if show_norms:# Debug only for standalone call
         fig, ax = plt.subplots()
         ax.plot(geom[0:-2,0],geom[0:-2,1])
         ax.quiver(geom[0:-2,0],geom[0:-2,1],eta[:,0],eta[:,1])
+        plt.show()
+    
     return eta
 
 def lines_plot(ship:cls.ship,show_w=False,color = "black",
@@ -139,7 +143,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'th
         pass
 
 
-def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, *args):
+def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_mode = False,quiver=False):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
@@ -163,24 +167,23 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, *args):
         
         if not enabled: continue
         
-        try:
-            if i.space_type not in ('SEA','ATM'): index = pressure_index+'_IN'
-            else : index = pressure_index
-            X,Y,P = i.pressure_data(index)
+        X,Y,P = i.pressure_data(pressure_index,graphical=normals_mode)
+
+        if P != None:
             # print(f'Block: {i.name} P : ',P)
             Data = [*Data,math.nan,math.nan,*P,math.nan,math.nan]
             P = normalize(P)
-        except KeyError:
-            c_info(f"Pressure at block {i} is not calculated for condition {pressure_index}.")
+        else:
             continue
         
         for j,x in enumerate(X):
             if j == 0:
-                eta = normals2D(np.array([[X[0],Y[0]],[X[1],Y[1]]]),flip_n=True)
+                eta = normals2D(np.array([[X[0],Y[0]],[X[1],Y[1]]]),flip_n=True,show_norms=False) 
+
                 _Px_.append(eta[0,0]*P[j])
                 _Py_.append(eta[0,1]*P[j])
             else:
-                eta = normals2D(np.array([[X[j],Y[j]],[X[j-1],Y[j-1]]]))
+                eta = normals2D(np.array([[X[j],Y[j]],[X[j-1],Y[j-1]]]),flip_n=False,show_norms=False) 
                 _Px_.append(eta[0,0]*P[j])
                 _Py_.append(eta[0,1]*P[j])
 
@@ -203,7 +206,7 @@ def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = Tru
         vals = []
         for i in data:
             if type(i)==str: 
-                c_error("render/c_contour: Detected item of type <str>. Considering changing the key value to string.")
+                c_error("(render.py) c_contour: Detected item of type <str>. Considering changing the key value to string.")
                 quit()
             if (i not in vals) and (i != math.nan):
                 vals.append(i) 

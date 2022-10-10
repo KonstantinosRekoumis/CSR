@@ -26,6 +26,25 @@ _PLACE_ = {
     4:'Bilge',
     5:'WeatherDeck'
 }
+def normals2D(geom,flip_n = False):
+    eta = [[None,None]]*len(geom)
+    for i in range(len(geom)-1):
+        xba = geom[i+1][0]-geom[i][0]
+        yba = geom[i+1][1]-geom[i][1]
+        if flip_n:
+            yba = - yba
+            xba = - xba
+        nrm2 = np.sqrt(yba**2+xba**2)
+        if nrm2 == 0:
+            eta[i][0] = yba/nrm2
+            eta[i][1] = -xba/nrm2
+            c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
+        else:
+            eta[i][0] = yba/nrm2
+            eta[i][1] = -xba/nrm2
+    # last point (a somewhat simplistic approach)
+    eta[-1] = eta[-2]    
+    return eta
 
 class plate():
 
@@ -38,6 +57,8 @@ class plate():
         self.start = start
         self.end = end
         self.thickness = thickness*1e-3 #convert mm to m
+        self.net_thickness = self.thickness
+        self.cor_thickness = 0
         self.material = material
         try:
             self.tag = _PLACE_[tag]
@@ -51,6 +72,7 @@ class plate():
         self.area = self.length*self.thickness
         self.Ixx_c, self.Iyy_c = self.calc_I_center()
         self.CoA = self.calc_CoA()
+        self.eta = self.eta_eval()
     
     def __str__(self):
         if self.tag != 4:
@@ -173,7 +195,7 @@ class plate():
         return out
 
     def save_data(self):
-        return [self.start,self.end,self.thickness,self.material,_PLACE_[self.tag]]
+        return [self.start,self.end,self.thickness*1e3,self.material,_PLACE_[self.tag]]
 
     def calc_I_global(self,axis = 'x'):
         ''' Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'(to indicate the Global Axis)
@@ -200,7 +222,12 @@ class plate():
             except TypeError:
                 print("The axis dictionary has no proper values.\n","axis :",axis['axis'],type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
                 return None
-            
+    
+    def eta_eval(self):
+        X,Y = self.render_data()[:2]
+        geom = [[X[i],Y[i]] for i in range(len(X))]
+        return normals2D(geom)
+
 
 class stiffener(): 
     ''' The stiffener class is a class derived from the plate class. Stiffener is consisted of or more plates.
@@ -393,15 +420,27 @@ class long_stiff_plate(): # redundant probably
 
 class block():
     """
-    Block class can be usefull to evaluate the plates that consist a part of the Midship Section, ie. a Water Ballast tank, or Cargo Space.
-    This is done to further enhance the clarity of what substances are in contact with certain plates.
-    Currently are supported 5 Volume Categories :
-    1) Water Ballast -> type : WB
-    2) Dry Cargo -> type: DC
-    3) Liquid Cargo -> type: LC    
-    4) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL
-    5) Fresh Water -> type: FW
-    6) Dry/Void Space -> type: VOID
+    ------------------------------------------\n
+    Block class can be useful to evaluate the plates that consist a part of the Midship Section, ie. a Water Ballast tank, or Cargo Space.\n
+    This is done to further enhance the clarity of what substances are in contact with certain plates.\n
+    Currently are supported 5 Volume Categories :\n
+    1) Water Ballast -> type : WB\n
+    2) Dry Cargo -> type: DC\n
+    3) Liquid Cargo -> type: LC    \n
+    4) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL\n
+    5) Fresh Water -> type: FW\n
+    6) Dry/Void Space -> type: VOID\n
+    ------------------------------------------\n
+    In order to properly calculate the Pressure Distributions the normal Vectors need to be properly evaluated. Is considered that the Global Positive
+    Direction is upwards of Keel (z = 0) towards the Main Deck. However, the local positive axis are outwards for the internal Tanks and inwards for
+    the SEA and ATMosphere Blocks. So, pay attention to the way the plates are inserted and blocks are evaluated.
+    \nIt would be preferable to have a counterclockwise plate definition order for shell plates and a clockwise order for internal plates. Also, use
+    the minus before each plate id at the input file to address the block's boundary direction on the specified plate.\n
+    For example,
+    a shell plate at Draught has a certain orientation that is uniform with the SEA block (the stiffeners (and normals) are facing inwards) while the WB
+    block requires a different direction (normals facing outwards). For this purpose, the id in the WB block would be -id.
+    \n!!! BE CAREFUL THAT A CLOSED SMOOTH GEOMETRY IS CREATED !!!\n Verify the block appropriate set up using the *block_plot(ship)* and
+    *pressure_plot(ship,'Null','<block tag>')* rendering methods.
     """
 
     def __init__(self,name:str,symmetrical:Boolean,space_type:str, list_plates_id : list[int],*args):
@@ -425,6 +464,8 @@ class block():
         self.pressure_coords = []
         self.plates_indices = [] # Holds data for the plate's id at a certain grid point
         self.CG = []
+
+        self.eta = [] # Evaluates the normal vectors of each block
         self.Pressure = {} #Pass each Load Case index as key and values as a list
         if self.space_type == 'DC':
             self.Kc = []
@@ -521,6 +562,7 @@ class block():
         '''
         K = []
         P = []
+        eta = []
         for i in range(len(self.coords)-1):
             if (self.coords[i] not in self.pressure_coords): #eliminate duplicate entries -> no problems with normal vectors
                 self.pressure_coords.append(self.coords[i])
@@ -541,6 +583,8 @@ class block():
 
         self.plates_indices = P
         if self.Kc != None: self.Kc = K
+        
+        self.eta=normals2D(self.pressure_coords)
 
 
     def render_data(self):
@@ -551,32 +595,37 @@ class block():
         Y.append(Y[0])
         return X, Y , self.space_type , self.CG[1:]
     
-    def pressure_data(self,pressure_index):
+    def pressure_data(self,pressure_index,graphical = False):
         '''
-        Returns the Pressure Data for plotting or file output
-        TO BE USED  WITH A TRY-EXCEPT STATEMENT
+        Returns the Pressure Data for plotting or file output. Note that graphical will force ONES over the actual Data.
         '''
+        # TO BE USED  WITH A TRY-EXCEPT STATEMENT ( fixed )
         X = [i[0] for i in self.pressure_coords]
         Y = [i[1] for i in self.pressure_coords]
-        P = self.Pressure[pressure_index]
-
+        try:
+            P = self.Pressure[pressure_index] if not graphical else [1 for i in self.plates_indices]
+        except KeyError:
+            c_warn(f'(classes.py) block/pressure_data: A pressure distribution for block :{self} is not calculated for Dynamic Condition {pressure_index} !!! Treat this appropriately !')
+            P = None
         return X,Y,P
     def pressure_over_plate(self,stiff_plate:stiff_plate,pressure_index):
         start = True
         x0,x1 = 0,0
-        if stiff_plate.id in self.list_plates_id:
+        if (stiff_plate.id in self.list_plates_id) or (-stiff_plate.id in self.list_plates_id):
             for i,val in enumerate(self.plates_indices):
                 if val == stiff_plate.id and start:
                     x0 = i
-                elif val != stiff_plate.id and not start:
+                    start = False
+                elif (val != stiff_plate.id or i==len(self.plates_indices)-1) and not start:
                     x1 = i
                     break
             try:
-                return [(*self.pressure_coords[i],self.Pressure[pressure_index][i]) for i in range(x0,x1+1,1)]
+                return [(*self.pressure_coords[i],*self.eta[i],self.Pressure[pressure_index][i]) for i in range(x0,x1+1,1)]
             except KeyError:
                 c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
-                return [(*self.pressure_coords[i],0) for i in range(x0,x1+1,1)]
+                return [(*self.pressure_coords[i],*self.eta[i],0) for i in range(x0,x1+1,1)]
         else:
+            print('blyat',stiff_plate,'cyka',self)
             return None
 
 

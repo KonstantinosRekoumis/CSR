@@ -220,6 +220,12 @@
             "symmetrical": true,
             "ids":[14,13,12,-7,11,2],
             "name":"Cargo Hold"
+        },
+        {
+            "type":"WB",
+            "symmetrical": false,
+            "ids":[13,12,8,9,10],
+            "name":"WB Wing Tank"
         }
 
     ]
