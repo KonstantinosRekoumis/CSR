@@ -58,7 +58,7 @@ class plate():
         self.end = end
         self.thickness = thickness*1e-3 #convert mm to m
         self.net_thickness = self.thickness
-        self.cor_thickness = 0
+        self.cor_thickness = -1
         self.material = material
         try:
             self.tag = _PLACE_[tag]
@@ -76,9 +76,9 @@ class plate():
     
     def __str__(self):
         if self.tag != 4:
-            return f"PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {_PLACE_[self.tag]} "
+            return f"PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
         else: 
-            return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {_PLACE_[self.tag]} "
+            return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
 
     def calc_lna(self):
         #calculate the plate's angle and length 
@@ -306,6 +306,21 @@ class stiffener():
                 print("The axis dictionary has no proper values.\n","axis :",axis['axis'],type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
                 return None
 
+    def calc_Z(self):
+        max_r = 0
+        max_point = []
+        for plate in self.plates:
+            rs = math.sqrt((plate.start[0]-self.CoA[0])**2+(plate.start[1]-self.CoA[1])**2)
+            re = math.sqrt((plate.end[0]-self.CoA[0])**2+(plate.end[1]-self.CoA[1])**2)
+            if max_r<rs: 
+                max_r = rs 
+                max_point = plate.start
+            elif max_r<re:
+                max_r = re
+                max_point = plate.end
+        return self.Ixx_c/abs(max_point[1]-self.CoA[1]),self.Iyy_c/abs(max_point[0]-self.CoA[0]) 
+
+
     def render(self,r_m = 'w'):
 
         for i in self.plates:
@@ -339,7 +354,7 @@ class stiff_plate():
         """
         self.id = id
         self.plate = plate
-        self.tag = plate.tag #it doesn't make sense not too grab it here
+        self.tag = plate.tag #it doesn't make sense not to grab it here
         self.stiffeners = []
         self.spacing = spacing*1e-3 
         self.l_pad = l_pad*1e-3
@@ -395,7 +410,7 @@ class stiff_plate():
                 if min_r > radius:
                     index = i
                     min_r = radius
-            return self.Pressure[key][index]
+            return self.Pressure[key][index][2]
                 
         except KeyError:
             c_error(f'(classes.py) stiff_plate/local_P: The {key} condition has not been calculated for this plate.')

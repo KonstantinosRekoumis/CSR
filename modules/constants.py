@@ -9,6 +9,9 @@ include in each source code file.\n
 ----------------------------------------------------
 '''
 #____ CONSTANTS ________
+from math import sqrt
+
+
 RHO_S = 1.025 # tn/m^3 sea water @ 17 Celsius
 RHO_F = 0.997 # tn/m^3 fresh water @ 17 Celsius
 G = 9.8063 # gravitational acceleration
@@ -31,9 +34,10 @@ STATIC = {
 }
 
 MATERIALS = {
-    "A" : {'Reh':235,'Rm':(400,520)},
-    "AH32" : {'Reh':315,'Rm':(440,570)},
-    'AH36' : {'Reh':355,'Rm':(490,630)},
-    'AH40' : {'Reh':390,'Rm':(510,660)}
+    # 'type' :('Reh','Rm range'   ,'Teh')
+    "A" : (235,(400,520)   ,235/sqrt(3)),
+    "AH32" : (315,(440,570),315/sqrt(3)),
+    'AH36' : (355,(490,630),355/sqrt(3)),
+    'AH40' : (390,(510,660),390/sqrt(3))
 
 }

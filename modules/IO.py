@@ -1,3 +1,4 @@
+from modules.constants import MATERIALS
 from modules.utilities import _ERROR_,_RESET_,_WARNING_,c_error,c_warn
 import modules.classes as cls
 import json
@@ -105,8 +106,17 @@ def geometry_parser(geo_t:list):
         # i['plate'] = [start,end,thickness,material,tag]
         # stiffener_dict = {type : str, dims : [float],mat:str}
         try:
-            if len(i['plate'] )== 5:
-                tmp_p = cls.plate(i['plate'][0],i['plate'][1],i['plate'][2],i['plate'][3],i['plate'][4])
+            if len(i['plate'] ) == 5:
+                if (i['plate'][0] == i['plate'][1]): 
+                    plate = i['plate']
+                    c_error(f'(IO.py) geometry_parser: Plate :{plate} You cannot enter a plate with no length!')
+                    quit()
+                elif i['plate'][3] not in MATERIALS:
+                    plate = i['plate']
+                    c_error(f'(IO.py) geometry_parser: Plate :{plate} Your plate has a no documented material !')
+                    quit()
+                t = i['plate'][2] if i['plate'][2] != 0 else 0.1
+                tmp_p = cls.plate(i['plate'][0],i['plate'][1],t,i['plate'][3],i['plate'][4])
                 if i['plate'][4] != 'Bilge' and 'stiffeners' in i:
                     tmp_d = i['stiffeners']["dimensions"]
                     if len(tmp_d)==2 and i['stiffeners']["type"] == 'fb':
@@ -123,7 +133,7 @@ def geometry_parser(geo_t:list):
                     print(_ERROR_)
                 if type(i['id'] ) != int: raise KeyError() # Duplicate check
                 if i['id'] in temp_id: 
-                    c_error(f'IO.geometry_parser: There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
+                    c_error(f'(IO.py) geometry_parser: There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
                     raise KeyError()
                 tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s,i['skip'])
                 out.append(tmp)
@@ -132,7 +142,7 @@ def geometry_parser(geo_t:list):
                 raise KeyError()
                 # c_error(f"IO.geometry_parser: Loading stiffened plate {i} has resulted in an error. Thus the code will ignore its existence.")
         except KeyError:
-            c_error(f"IO.geometry_parser: KeyError: Loading stiffened plate {i} has resulted in an error. The program terminates.")
+            c_error(f"(IO.py) geometry_parser: KeyError: Loading stiffened plate {i} has resulted in an error. The program terminates.")
             quit()
 
     return out
@@ -144,5 +154,5 @@ def blocks_parser(blocks_t:list):
             tmp = cls.block(i['name'],i['symmetrical'],i['type'],i['ids'])
             out.append(tmp)
         except KeyError:
-            c_error(f"IO.blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
+            c_error(f"(IO.py) blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
     return out
