@@ -6,7 +6,7 @@
 # #############################
 from xmlrpc.client import Boolean
 from modules.constants import LOADS
-from modules.utilities import c_error,c_warn, d2r,linespace
+from modules.utilities import c_error, c_info,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
 import math
 import numpy as np
@@ -227,6 +227,13 @@ class plate():
         X,Y = self.render_data()[:2]
         geom = [[X[i],Y[i]] for i in range(len(X))]
         return normals2D(geom)
+    def update(self):
+        self.thickness = self.net_thickness+self.cor_thickness
+        self.angle, self.length = self.calc_lna()
+        self.area = self.length*self.thickness
+        self.Ixx_c, self.Iyy_c = self.calc_I_center()
+        self.CoA = self.calc_CoA()
+        self.eta = self.eta_eval()
 
 
 class stiffener(): 
@@ -256,7 +263,14 @@ class stiffener():
         self.CoA,self.area = self.calc_CoA()
         self.calc_I()
     def __repr__(self) -> str:
-        return f'stiffener(type: {self.type},dimensions : {self.dimensions}'
+        dim = '{'
+        for i,plate in enumerate(self.plates):
+            if i == 0:
+                dim += f"\'lw\':{plate.length*1e3},\'bw\':{plate.thickness*1e3}"
+            else:
+                dim += f",\'l{i}\':{plate.length*1e3},\'b{i}\':{plate.thickness*1e3}"
+
+        return f'stiffener(type: {self.type},dimensions : {dim}'+'}'
 
     def calc_CoA(self):
         area = 0
@@ -318,7 +332,9 @@ class stiffener():
             elif max_r<re:
                 max_r = re
                 max_point = plate.end
-        return self.Ixx_c/abs(max_point[1]-self.CoA[1]),self.Iyy_c/abs(max_point[0]-self.CoA[0]) 
+            Zxx = self.Ixx_c/abs(max_point[1]-self.CoA[1]) if abs(max_point[1]-self.CoA[1])!=0 else self.Ixx_c/abs(self.plates[0].thickness)
+            Zyy = self.Iyy_c/abs(max_point[0]-self.CoA[0]) if abs(max_point[0]-self.CoA[0])!=0 else self.Ixx_c/abs(self.plates[0].thickness)
+        return Zxx,Zyy 
 
 
     def render(self,r_m = 'w'):
@@ -339,6 +355,11 @@ class stiffener():
             M.append(tmp[3])
         
         return X,Y,T,M
+    def update(self):
+        for plate in self.plates:
+            plate.update()
+        self.CoA,self.area = self.calc_CoA()
+        self.calc_I()
 
 class stiff_plate():
     def __init__(self,id:int,plate:plate, spacing:float,l_pad:float,r_pad:float, stiffener_:dict, skip :int ):
@@ -410,11 +431,18 @@ class stiff_plate():
                 if min_r > radius:
                     index = i
                     min_r = radius
-            return self.Pressure[key][index][2]
+            # c_info(f'self.Pressure : {self.Pressure[key][index]}')
+            return self.Pressure[key][index][-1]
                 
         except KeyError:
             c_error(f'(classes.py) stiff_plate/local_P: The {key} condition has not been calculated for this plate.')
             quit()
+    def update(self):
+        self.plate.update()
+        for stiff in self.stiffeners:
+            stiff.update()
+        self.CoA , self.area = self.CenterOfArea()
+        self.Ixx, self.Iyy = self.calc_I()
         
 
 
@@ -637,7 +665,8 @@ class block():
             try:
                 return [(*self.pressure_coords[i],*self.eta[i],self.Pressure[pressure_index][i]) for i in range(x0,x1+1,1)]
             except KeyError:
-                c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
+                if self.space_type != 'ATM' and pressure_index != 'STATIC': #known and expected scenario, thus no need for warning spam
+                    c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i],*self.eta[i],0) for i in range(x0,x1+1,1)]
         else:
             print('blyat',stiff_plate,'cyka',self)
@@ -818,7 +847,9 @@ class ship():
             i.render(r_m=r_m)
         # plt.axis([-1,self.B/2+1,-1,self.D+3])
         plt.show()
-
+    def update(self):
+        self.yo, self.xo, self.cross_section_area = self.calc_CoA()
+        self.Ixx, self.Iyy = self.Calculate_I()
         
 
 

@@ -30,7 +30,7 @@
             "plate":[[15.53,0],[20,0],19.5,"A","Shell"],
             "stiffeners":{
                 "type":"g",
-                "dimensions":[300,15,300,15],
+                "dimensions":[350,15,300,15],
                 "material":"A"
             },
             "spacing": 500,
@@ -202,7 +202,7 @@
                 "dimensions":[0.1,0.1,0.1,0.1],
                 "material":"A"
             },
-            "spacing": 500,
+            "spacing": 50000,
             "skip" : 0,
             "l_pad":100,
             "r_pad":100
