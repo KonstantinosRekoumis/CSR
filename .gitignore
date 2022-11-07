@@ -1,8 +1,12 @@
 /modules/__pycache__/
+/essay/
+DOM*
 out.json
 in.json
 blyat.json
 blyat1.json
 /csr_mods/
 *.pdf
+*.aux
+settings.json
 # /modules/test.py

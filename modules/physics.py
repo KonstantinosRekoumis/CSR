@@ -92,7 +92,7 @@ class PhysicsData:
         self.wave_pressure = 0
         self.wave_pressure_functions()
 
-        self.Cwv,self.Cqw,self.Cwh,self.Cwt,self.Cxs,self.Cxp,self.Cxg,self.Cys,self.Cyr,self.Cyg,self.Czh,self.Czr,self.Czg = self.Combination_Factors()
+        self.Cwv,self.Cqw,self.Cwh,self.Cwt,self.Cxs,self.Cxp,self.Cxg,self.Cys,self.Cyr,self.Cyg,self.Czh,self.Czr,self.Czp = self.Combination_Factors()
         # Bending Moments and Shear Forces calculation
         self.Mwv_lc,self.Qwv_lc,self.Mwh_lc,self.Mws = self.moments_eval() #maybe later add torsional calculations
         self.sigma = lambda y,z: 1e-3*((self.Mwv_lc+self.Mws)/self.Ixx*(z-self.yn)-self.Mwh_lc/self.Iyy*y)
@@ -157,10 +157,10 @@ class PhysicsData:
         Cyg = {'HSM-1': HSM_1[ 9] ,'HSM-2': -1*HSM_1[ 9],'HSA-1': HSA_1[ 9] ,'HSA-2': -1*HSA_1[ 9] ,'FSM-1': FSM_1[ 9] ,'FSM-2': -1*FSM_1[ 9] ,'BSR-1P': BSR_1P[ 9] ,'BSR-2P': -1*BSR_1P[ 9] ,'BSP-1P': BSP_1P[ 9],'BSP-2P': -1*BSP_1P[ 9],'OST-1P': OST_1P[ 9],'OST-2P': -1*OST_1P[ 9],'OSA-1P': OSA_1P[ 9] ,'OSA-2P': -1*OSA_1P[ 9] }
         Czh = {'HSM-1': HSM_1[10] ,'HSM-2': -1*HSM_1[10],'HSA-1': HSA_1[10] ,'HSA-2': -1*HSA_1[10] ,'FSM-1': FSM_1[10] ,'FSM-2': -1*FSM_1[10] ,'BSR-1P': BSR_1P[10] ,'BSR-2P': -1*BSR_1P[10] ,'BSP-1P': BSP_1P[10],'BSP-2P': -1*BSP_1P[10],'OST-1P': OST_1P[10],'OST-2P': -1*OST_1P[10],'OSA-1P': OSA_1P[10] ,'OSA-2P': -1*OSA_1P[10] }
         Czr = {'HSM-1': HSM_1[11] ,'HSM-2': -1*HSM_1[11],'HSA-1': HSA_1[11] ,'HSA-2': -1*HSA_1[11] ,'FSM-1': FSM_1[11] ,'FSM-2': -1*FSM_1[11] ,'BSR-1P': BSR_1P[11] ,'BSR-2P': -1*BSR_1P[11] ,'BSP-1P': BSP_1P[11],'BSP-2P': -1*BSP_1P[11],'OST-1P': OST_1P[11],'OST-2P': -1*OST_1P[11],'OSA-1P': OSA_1P[11] ,'OSA-2P': -1*OSA_1P[11] }
-        Czg = {'HSM-1': HSM_1[12] ,'HSM-2': -1*HSM_1[12],'HSA-1': HSA_1[12] ,'HSA-2': -1*HSA_1[12] ,'FSM-1': FSM_1[12] ,'FSM-2': -1*FSM_1[12] ,'BSR-1P': BSR_1P[12] ,'BSR-2P': -1*BSR_1P[12] ,'BSP-1P': BSP_1P[12],'BSP-2P': -1*BSP_1P[12],'OST-1P': OST_1P[12],'OST-2P': -1*OST_1P[12],'OSA-1P': OSA_1P[12] ,'OSA-2P': -1*OSA_1P[12] }
+        Czp = {'HSM-1': HSM_1[12] ,'HSM-2': -1*HSM_1[12],'HSA-1': HSA_1[12] ,'HSA-2': -1*HSA_1[12] ,'FSM-1': FSM_1[12] ,'FSM-2': -1*FSM_1[12] ,'BSR-1P': BSR_1P[12] ,'BSR-2P': -1*BSR_1P[12] ,'BSP-1P': BSP_1P[12],'BSP-2P': -1*BSP_1P[12],'OST-1P': OST_1P[12],'OST-2P': -1*OST_1P[12],'OSA-1P': OSA_1P[12] ,'OSA-2P': -1*OSA_1P[12] }
 
         try:
-            return Cwv[self.cond],Cqw[self.cond],Cwh[self.cond],Cwt[self.cond],Cxs[self.cond],Cxp[self.cond],Cxg[self.cond],Cys[self.cond],Cyr[self.cond],Cyg[self.cond],Czh[self.cond],Czr[self.cond],Czg[self.cond]
+            return Cwv[self.cond],Cqw[self.cond],Cwh[self.cond],Cwt[self.cond],Cxs[self.cond],Cxp[self.cond],Cxg[self.cond],Cys[self.cond],Cyr[self.cond],Cyg[self.cond],Czh[self.cond],Czr[self.cond],Czp[self.cond]
         except KeyError:
             c_error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
             c_error("Invalid condition to study. Enter an appropriate Condition out of :",default=False)
@@ -174,10 +174,10 @@ class PhysicsData:
         x,y,z = point
         if debug:
             print('Point [x,y,z] : ',point)
-            print('Cxs',self.Cxs,' Cxp',self.Cxp,' Cxg',self.Cxg,' Cys',self.Cys,' Cyr',self.Cyr,' Cyg',self.Cyg,' Czh',self.Czh,' Czr',self.Czr,' Czg',self.Czg)
+            print('Cxs',self.Cxs,' Cxp',self.Cxp,' Cxg',self.Cxg,' Cys',self.Cys,' Cyr',self.Cyr,' Cyg',self.Cyg,' Czh',self.Czh,' Czr',self.Czr,' Czp',self.Czp)
         ax = -self.Cxg*G*math.sin(d2r(self.phi))+self.Cxs*self.a_surge+self.Cxp*self.a_pitch*(z-R)
         ay = self.Cyg*G*math.sin(d2r(self.theta))+self.Cys*self.a_sway-self.Cyr*self.a_roll*(z-R)
-        az = self.Czh*self.a_heave+self.Czr*self.a_roll*y-self.Czg*self.a_pitch*(x-0.45*self.Lsc)
+        az = self.Czh*self.a_heave+self.Czr*self.a_roll*y-self.Czp*self.a_pitch*(x-0.45*self.Lsc)
 
         return ax,ay,az
     
@@ -195,6 +195,9 @@ class PhysicsData:
             quit()
     
     def moments_eval(self):
+        '''
+        IACS, CSR Part 1 Chapter 4 Section 4
+        '''
         fnl_h = 1.0 # strength assessment Hogging
         fnl_s = 0.58*(self.Cb+0.7)/self.Cb # strength assessment Sagging
         fm_  = {
@@ -325,7 +328,8 @@ def HSM_wave_pressure(cons_:list[float],_1_:bool,block:cls.block):
     
     fyB = lambda x : 2*x/B
     fyz = lambda y,z : z/Tlc+fyB(y)+1
-    Phs = lambda y,z : fbeta*fps*fnl*fh*fyz(y,z)*ka*kp_c*Cw*math.sqrt((l+Lsc-125)/LBP)
+
+    Phs = lambda y,z : fbeta*fps*fnl*fh*fyz(y,z)*ka*kp_c*Cw*math.sqrt((l+max(Lsc,110)-125)/Lsc)
 
     Pw = [None]*len(block.pressure_coords)
     # args = ((stiff_plate.plate.start[1],stiff_plate.plate.start[0]),
@@ -511,10 +515,10 @@ def StaticLiquid_Pressure(block:cls.block,debug=False):
 
     
     if liquid_cargo: 
-        F_nos = lambda z  :hydrostatic_pressure(z,Ztop,block.payload['rho'])+block.payload['Ppv']
+        F_nos = lambda z  :hydrostatic_pressure(z,Ztop,max(block.payload['rho'],1.025))+block.payload['Ppv']
         # F_hswo = lambda z :hydrostatic_pressure(z,Ztop,block.payload['rho'])+block.payload['Ppv']
     else:
-        F_nos = lambda z  :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),block.payload['rho'])
+        F_nos = lambda z  :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),max(block.payload['rho'],1.025))
         # F_hswo = lambda z :hydrostatic_pressure(z,(Ztop+block.payload['hair']/2),block.payload['rho'])# extra case for ballast tank seems redundant for the time being
 
         
@@ -527,6 +531,29 @@ def StaticLiquid_Pressure(block:cls.block,debug=False):
     block.Pressure['STATIC'] = P_nos
     return P_nos
 
+def StaticDryCargo_Pressure(block:cls.block,debug=False):
+    '''
+    Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
+    \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
+    '''
+    
+    zc = block.pressure_coords[0][1] # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
+    
+    rho  = block.payload['rho'] if (block.payload['rho']>=1.0) else 1.0
+    def static(z,Kc):
+        if z <= zc:
+            return G*rho*Kc*(block.CG[2]-z)
+        else:
+            return 0
+
+    P = [None]*len(block.pressure_coords)
+
+    for i,point in enumerate(block.pressure_coords):
+        P[i] = static(point[1],block.Kc[i])
+    
+    block.Pressure['STATIC'] = P
+    return P
+    
 def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
     '''
     Dynamic Liquid Pressure: Evaluates the pressure distribution due to the dynamic motion of a fluid inside\n
@@ -556,13 +583,13 @@ def DynamicLiquid_Pressure(block:cls.block,case:PhysicsData,debug=False):
     #strength assessment only
     if block.space_type == "LC": 
         full_l = 0.62
-        full_t = 0.62
+        full_t = 0.67
     else: 
         full_l = 1.0
         full_t = 1.0
 
     P = [None]*len(block.pressure_coords)
-    Pld = lambda x,y,z: case.fb*block.payload['rho']*(az*(z0-z)+full_l*ax*(x0-x)+full_t*ay*(y0-y))
+    Pld = lambda x,y,z: case.fb*max(block.payload['rho'],1.025)*(az*(z0-z)+full_l*ax*(x0-x)+full_t*ay*(y0-y))
     
     for i,point in enumerate(block.pressure_coords):
         P[i] = Pld(*(case.Lsc*case.fxL,*point))
@@ -581,7 +608,7 @@ def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
     rho  = block.payload['rho'] if (block.payload['rho']>=1.0) else 1.0
     def Pbd(x,y,z,ax,ay,az,Kc):
         if z <= zc:
-            return case.fb*rho*(Kc*az*(block.CG[2]-z)+0.25*ax*(block.CG[0]-x)+0.25*ay*(block.CG[1]-y))
+            return case.fb*rho*(Kc*az*(zc-z)+0.25*ax*(block.CG[0]-x)+0.25*ay*(block.CG[1]-y))
         else:
             return 0
 
@@ -594,28 +621,7 @@ def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
     block.Pressure[case.cond] = P
     return P
 
-def StaticDryCargo_Pressure(block:cls.block,debug=False):
-    '''
-    Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
-    \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
-    '''
-    
-    zc = block.pressure_coords[0][1] # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
-    
-    rho  = block.payload['rho'] if (block.payload['rho']>=1.0) else 1.0
-    def static(z,Kc):
-        if z <= zc:
-            return G*rho*Kc*(block.CG[2]-z)
-        else:
-            return 0
 
-    P = [None]*len(block.pressure_coords)
-
-    for i,point in enumerate(block.pressure_coords):
-        P[i] = static(point[1],block.Kc[i])
-    
-    block.Pressure['STATIC'] = P
-    return P
 #------------------------------------------------------------------------------
 #------- Total Evaluation of Pressure Distribution ----------------------------
 

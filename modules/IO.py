@@ -121,11 +121,11 @@ def geometry_parser(geo_t:list):
                     tmp_d = i['stiffeners']["dimensions"]
                     if len(tmp_d)==2 and i['stiffeners']["type"] == 'fb':
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1]}
-                    elif len(tmp_d)==4 and i['stiffeners']["type"] == 'g':
+                    elif len(tmp_d)==4 and i['stiffeners']["type"] in ('g','tb'):
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1],'lf':tmp_d[2],'bf':tmp_d[3]}
                     else: 
-                        print("You input a stiffener type that has less dims than needed")
-                        continue
+                        c_error("(IO.py) You input a stiffener type that has less dims than needed",i['stiffeners'])
+                        quit()
                     tmp_s = {'type':i['stiffeners']['type'],'material':i['stiffeners']['material'],'dimensions': dims}
                 elif i['plate'][4] == 'Bilge':
                     tmp_s = {}

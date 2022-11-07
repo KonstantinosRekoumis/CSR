@@ -30,7 +30,7 @@
             "plate":[[15.53,0],[20,0],19.5,"A","Shell"],
             "stiffeners":{
                 "type":"g",
-                "dimensions":[350,15,300,15],
+                "dimensions":[300,15,300,15],
                 "material":"A"
             },
             "spacing": 500,
@@ -173,7 +173,7 @@
             "plate":[[22.5,15.22],[9.71,22.17],24.5,"A","Wing"],
             "stiffeners":{
                 "type":"g",
-                "dimensions":[300,15,300,15],
+                "dimensions":[300,1.5,300,15],
                 "material":"A"
             },
             "spacing": 500,
@@ -196,7 +196,7 @@
         },
         {
             "id":14,
-            "plate":[[0,23.22],[9.71,23.22],24.5,"A","WeatherDeck"],
+            "plate":[[9.71,23.22],[0,23.22],24.5,"A","WeatherDeck"],
             "stiffeners":{
                 "type":"g",
                 "dimensions":[0.1,0.1,0.1,0.1],
@@ -218,7 +218,7 @@
         {
             "type":"DC",
             "symmetrical": true,
-            "ids":[14,13,12,-7,11,2],
+            "ids":[-14,13,12,-7,11,2],
             "name":"Cargo Hold"
         },
         {

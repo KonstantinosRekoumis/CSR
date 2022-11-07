@@ -48,7 +48,10 @@ def normals2D(geom,flip_n = False):
 
 class plate():
 
-    def __init__(self,start:tuple,end:tuple,thickness:float,material:str,tag:str):
+    def __init__(
+                self,start:tuple,end:tuple,
+                thickness:float,material:str,
+                tag:str):
         """
         The plate class is the bottom plate (no pun intended) class that is responsible for all geometry elements.
         Initializing a plate item requires the start and end point coordinates in meters, the plate's thickness in mm,
@@ -58,7 +61,7 @@ class plate():
         self.end = end
         self.thickness = thickness*1e-3 #convert mm to m
         self.net_thickness = self.thickness
-        self.cor_thickness = -1
+        self.cor_thickness = -1e-3
         self.material = material
         try:
             self.tag = _PLACE_[tag]
@@ -70,9 +73,13 @@ class plate():
             c_warn("The program defaults to Inner Bottom Plate")
         self.angle, self.length = self.calc_lna()
         self.area = self.length*self.thickness
-        self.Ixx_c, self.Iyy_c = self.calc_I_center()
+        self.Ixx_c, self.Iyy_c = self.calc_I_center(b = self.net_thickness)
         self.CoA = self.calc_CoA()
         self.eta = self.eta_eval()
+        #t = net + 50% corrosion Related Calculations and Quantities
+        self.n50_thickness = self.net_thickness + 0.5*self.cor_thickness
+        self.n50_area = self.length*self.n50_thickness
+        self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
     
     def __str__(self):
         if self.tag != 4:
@@ -102,9 +109,8 @@ class plate():
                 
         return a,l
 
-    def calc_I_center(self):
+    def calc_I_center(self, b):
         ''' Calculate the plate's Moments of Inertia at the center of the plate'''
-        b = self.thickness
         l = self.length
         a = self.angle
         if self.tag != 4:
@@ -116,18 +122,18 @@ class plate():
             Iyy = 1/16*math.pi*(r**4-(r-self.thickness)**4)
             pass
         return Ixx, Iyy
-    
+
     def calc_CoA(self):
         #calculates Center of Area relative to the Global (0,0)
         if self.tag != 4:
             return (self.start[0]+self.length/2*math.cos(self.angle)),(self.start[1]+self.length/2*math.sin(self.angle))
         else :
             r = self.length/math.pi*2
-            if self.angle > 0 and self.angle < math.pi/2:
+            if self.angle > 0 and self.angle < math.pi/2: # 1st quarter
                 startx = self.start[0]
                 starty = self.end[1]
-                return startx+(2*r/math.pi),starty-(2*r/math.pi)
-            elif self.angle > 0 and self.angle < math.pi:
+                return startx+(2*r/math.pi),starty-(2*r/math.pi) 
+            elif self.angle > 0 and self.angle < math.pi: #2nd quarter
                 startx = self.end[0]
                 starty = self.start[1]
                 return startx+(2*r/math.pi),starty+(2*r/math.pi)
@@ -197,43 +203,66 @@ class plate():
     def save_data(self):
         return [self.start,self.end,self.thickness*1e3,self.material,_PLACE_[self.tag]]
 
-    def calc_I_global(self,axis = 'x'):
+    def calc_I_global(self, Ixx_c, Iyy_c, axis = 'x'):
         ''' Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'(to indicate the Global Axis)
             or an custom Vertical or Horizontal Axis as a dictionary
             ie. axis = { 'axis' : 'x', 'offset' : 1.0} (This indicates an horizontal axis offset to the global axis positive 1 unit.)         '''
         if axis == 'x':
             #Default Global axis for the prime forces
-            Ixx = self.Ixx_c + self.CoA[1]**2*self.area
+            Ixx = Ixx_c + self.CoA[1]**2*self.area
             return Ixx
         elif axis == 'y':
-            Iyy = self.Iyy_c + self.CoA[0]**2*self.area
+            Iyy = Iyy_c + self.CoA[0]**2*self.area
             return Iyy
         elif type(axis) == dict:
             try:
                 if axis['axis'] == 'x':
-                    Ixx = self.Ixx_c + (self.CoA[1]-axis["offset"])**2*self.area
+                    Ixx = Ixx_c + (self.CoA[1]-axis["offset"])**2*self.area
                     return Ixx
                 elif axis['axis'] == 'y':
-                    Iyy = self.Iyy_c + (self.CoA[0]-axis["offset"])**2*self.area
+                    Iyy = Iyy_c + (self.CoA[0]-axis["offset"])**2*self.area
                     return Iyy
             except KeyError:
                 print("The axis dictionary is not properly structured")
                 return None
             except TypeError:
-                print("The axis dictionary has no proper values.\n","axis :",axis['axis'],type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
+                print("The axis dictionary has no proper values.\n","axis :",axis['axis'],
+                        type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
                 return None
     
     def eta_eval(self):
+        ''' Evaluates the normal vectors of the plate face. Useful in Pressure offloading'''
         X,Y = self.render_data()[:2]
         geom = [[X[i],Y[i]] for i in range(len(X))]
         return normals2D(geom)
     def update(self):
         self.thickness = self.net_thickness+self.cor_thickness
-        self.angle, self.length = self.calc_lna()
+        # self.angle, self.length = self.calc_lna() # They are not supposed to change for the time being
         self.area = self.length*self.thickness
-        self.Ixx_c, self.Iyy_c = self.calc_I_center()
+        self.Ixx_c, self.Iyy_c = self.calc_I_center(b=self.net_thickness)
         self.CoA = self.calc_CoA()
         self.eta = self.eta_eval()
+        self.n50_thickness = self.net_thickness + 0.5*self.cor_thickness
+        self.n50_area = self.length*self.n50_thickness
+        self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
+    def Debug(self):
+        print ('start : ',self.start)
+        print ('end : ',self.end)
+        print ('thickness : ',self.thickness)
+        print ('net_thickness : ',self.net_thickness)
+        print ('cor_thickness : ',self.cor_thickness)
+        print ('material : ',self.material)
+
+        print('self.angle : ',self.angle)        
+        print('self.length : ',self.length)
+        print('self.area : ',self.area)
+        print('self.Ixx_c : ',self.Ixx_c)        
+        print('self.Iyy_c : ',self.Iyy_c)
+        print('self.CoA : ',self.CoA)
+        print('self.eta : ',self.eta)
+        print('self.n50_thickness : ',self.n50_thickness)
+        print('self.n50_area : ',self.n50_area)
+        print('self.n50_Ixx_c : ',self.n50_Ixx_c)
 
 
 class stiffener(): 
@@ -242,25 +271,48 @@ class stiffener():
     Dimensions are entered as a dictionary of keys \'lx\', \'bx\' x referring to web and\or flange length and thickness respectively.
     Material is to be inserted like in the plate class, while only the root coordinates are required.
     Angle is used to make the stiffener perpendicular relative to the supported plate's angle.'''
-    def __init__(self,form:str,dimensions:dict,angle:float ,material:str, root:tuple[float], tag:str):
+    def __init__(
+                self,form:str,dimensions:dict, angle:float, root:tuple[float],
+                material:str, tag:str):
         # Support for only flat bars, T bars and angled bars
         # dimensions lw -> length, bw -> thickness
         self.type = form
+        self.material = material
         self.Ixx_c = 0
         self.Iyy_c = 0
         self.area = 0
+        # n50
+        self.n50_area = 0
+        self.n50_Ixx_c = 0
+        self.n50_Iyy_c = 0
         self.dimensions = dimensions
         if self.type=="fb":#flat bar
-            pw = plate(root,(root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3), dimensions["bw"], material,tag)
+            pw = plate(root,
+                        (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,
+                        root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3),
+                        dimensions["bw"], material,tag)
             self.plates = [pw]
         elif self.type=="g":#angled bar
-            end_web = (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3)
+            end_web = (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,
+                        root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3)
             pw = plate(root,end_web, dimensions["bw"], material,tag)
-            end_flange = (end_web[0]+math.cos(angle)*dimensions["lf"]*1e-3,end_web[1]+math.sin(angle)*dimensions["lf"]*1e-3)
+            end_flange = (end_web[0]+math.cos(angle)*dimensions["lf"]*1e-3,
+                            end_web[1]+math.sin(angle)*dimensions["lf"]*1e-3)
             pf = plate(end_web,end_flange,dimensions["bf"],material,tag)
             self.plates = [pw,pf]
+        elif self.type=="tb":# T bar
+            end_web = (root[0]+math.cos(angle+math.pi/2)*dimensions["lw"]*1e-3,
+                        root[1]+math.sin(angle+math.pi/2)*dimensions["lw"]*1e-3)
+            pw = plate(root,end_web, dimensions["bw"], material,tag)
+            start_flange = (end_web[0]-math.cos(angle)*dimensions["lf"]/2*1e-3,
+                            end_web[1]-math.sin(angle)*dimensions["lf"]/2*1e-3)
+            end_flange = (end_web[0]+math.cos(angle)*dimensions["lf"]/2*1e-3,
+                            end_web[1]+math.sin(angle)*dimensions["lf"]/2*1e-3)
+            pf = plate(start_flange,end_flange,dimensions["bf"],material,tag)
+            self.plates = [pw,pf]
+        
 
-        self.CoA,self.area = self.calc_CoA()
+        self.calc_CoA()
         self.calc_I()
     def __repr__(self) -> str:
         dim = '{'
@@ -274,44 +326,54 @@ class stiffener():
 
     def calc_CoA(self):
         area = 0
+        n50_area = 0
         MoM_x = 0
         MoM_y = 0
         for i in self.plates:
             area += i.area
+            n50_area += i.n50_area
             MoM_x += i.area*i.CoA[0]
             MoM_y += i.area*i.CoA[1]
         
-        return (MoM_x/area,MoM_y/area) , area
+        self.CoA=(MoM_x/area,MoM_y/area)
+        self.area=area
+        self.n50_area=n50_area 
     
     def calc_I(self):
         Ixx = 0
         Iyy = 0
+        n50_Ixx = 0
+        n50_Iyy = 0
 
         for i in self.plates:
-            Ixx += i.calc_I_global({'axis': 'x','offset': self.CoA[1]})
-            Iyy += i.calc_I_global({'axis': 'y','offset': self.CoA[0]})
+            Ixx += i.calc_I_global(i.Ixx_c,i.Iyy_c,{'axis': 'x','offset': self.CoA[1]})
+            n50_Ixx += i.calc_I_global(i.n50_Ixx_c,i.n50_Iyy_c,{'axis': 'x','offset': self.CoA[1]})
+            Iyy += i.calc_I_global(i.Ixx_c,i.Iyy_c,{'axis': 'y','offset': self.CoA[0]})
+            n50_Iyy += i.calc_I_global(i.n50_Ixx_c,i.n50_Iyy_c,{'axis': 'y','offset': self.CoA[0]})
 
         self.Ixx_c = Ixx
         self.Iyy_c = Iyy
+        self.n50_Ixx_c = n50_Ixx
+        self.n50_Iyy_c = n50_Iyy
 
-    def calc_I_global(self,axis = 'x'):
+    def calc_I_global(self,Ixx_c,Iyy_c,axis = 'x'):
         ''' Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'(to indicate the Global Axis)
             or an custom Vertical or Horizontal Axis as a dictionary
             ie. axis = { 'axis' : 'x', 'offset' : 1.0} (This indicates an horizontal axis offset to the global axis positive 1 unit.)         '''
         if axis == 'x':
             #Default Global axis for the prime forces
-            Ixx = self.Ixx_c + self.CoA[1]**2*self.area
+            Ixx = Ixx_c + self.CoA[1]**2*self.area
             return Ixx
         elif axis == 'y':
-            Iyy = self.Iyy_c + self.CoA[0]**2*self.area
+            Iyy = Iyy_c + self.CoA[0]**2*self.area
             return Iyy
         elif type(axis) == dict:
             try:
                 if axis['axis'] == 'x':
-                    Ixx = self.Ixx_c + (self.CoA[1]-axis["offset"])**2*self.area
+                    Ixx = Ixx_c + (self.CoA[1]-axis["offset"])**2*self.area
                     return Ixx
                 elif axis['axis'] == 'y':
-                    Iyy = self.Iyy_c + (self.CoA[0]-axis["offset"])**2*self.area
+                    Iyy = Iyy_c + (self.CoA[0]-axis["offset"])**2*self.area
                     return Iyy
             except KeyError:
                 print("The axis dictionary is not properly structured")
@@ -320,7 +382,7 @@ class stiffener():
                 print("The axis dictionary has no proper values.\n","axis :",axis['axis'],type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
                 return None
 
-    def calc_Z(self):
+    def calc_Z(self,Ixx,Iyy):
         max_r = 0
         max_point = []
         for plate in self.plates:
@@ -332,16 +394,14 @@ class stiffener():
             elif max_r<re:
                 max_r = re
                 max_point = plate.end
-            Zxx = self.Ixx_c/abs(max_point[1]-self.CoA[1]) if abs(max_point[1]-self.CoA[1])!=0 else self.Ixx_c/abs(self.plates[0].thickness)
-            Zyy = self.Iyy_c/abs(max_point[0]-self.CoA[0]) if abs(max_point[0]-self.CoA[0])!=0 else self.Ixx_c/abs(self.plates[0].thickness)
+            Zxx = Ixx/abs(max_point[1]-self.CoA[1]) if abs(max_point[1]-self.CoA[1])!=0 else Ixx/abs(self.plates[0].thickness)
+            Zyy = Iyy/abs(max_point[0]-self.CoA[0]) if abs(max_point[0]-self.CoA[0])!=0 else Ixx/abs(self.plates[0].thickness)
         return Zxx,Zyy 
 
 
     def render(self,r_m = 'w'):
-
         for i in self.plates:
             i.render()
-    
     def render_data(self):
         X = []
         Y = []
@@ -358,11 +418,13 @@ class stiffener():
     def update(self):
         for plate in self.plates:
             plate.update()
-        self.CoA,self.area = self.calc_CoA()
+        self.calc_CoA()
         self.calc_I()
 
 class stiff_plate():
-    def __init__(self,id:int,plate:plate, spacing:float,l_pad:float,r_pad:float, stiffener_:dict, skip :int ):
+    def __init__(
+                self,id:int,plate:plate, spacing:float, l_pad:float, r_pad:float,
+                stiffener_:dict, skip :int ):
         """
         The stiff_plate class is the Union of the plate and the stiffener(s).
         Its args are :
@@ -386,36 +448,63 @@ class stiff_plate():
             N = math.floor(net_l/self.spacing)
             _range = linespace(1,N,1,skip=skip)
             for i in _range:
-                root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
-                self.stiffeners.append(stiffener(stiffener_['type'],stiffener_['dimensions'],self.plate.angle,stiffener_['material'],root,plate.tag)) 
-        self.CoA , self.area = self.CenterOfArea()
-        self.Ixx, self.Iyy = self.calc_I()
+                root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),
+                        self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
+                self.stiffeners.append(stiffener(
+                                                stiffener_['type'],stiffener_['dimensions'],
+                                                self.plate.angle,root,stiffener_['material'],
+                                                plate.tag)) 
+        self.CoA = []
+        self.area = 0
+        self.n50_area = 0
+        self.CenterOfArea()
+        self.Ixx_c, self.Iyy_c = self.calc_I(n50=False)
+        self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
+        #renew stiffener
     def __repr__(self) -> str:
         tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
         return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
 
     def CenterOfArea(self):
         total_A = self.plate.area 
+        total_A_n50 = self.plate.n50_area 
         total_Mx = self.plate.area*self.plate.CoA[1]
         total_My = self.plate.area*self.plate.CoA[0]
         if len(self.stiffeners) != 0:
             for i in self.stiffeners:
                 total_A += i.area
+                total_A_n50 += i.n50_area
                 total_Mx += i.area*i.CoA[1]
                 total_My += i.area*i.CoA[0]
         
-        return (total_Mx/total_A,total_My/total_A) , total_A
+        self.CoA  = (total_Mx/total_A,total_My/total_A) 
+        self.area = total_A
+        self.n50_area = total_A_n50
     
-    def calc_I (self):
-        Ixx = self.plate.calc_I_global({'axis': 'x','offset': self.CoA[1]})
-        Iyy = self.plate.calc_I_global({'axis': 'y','offset': self.CoA[0]})
-
-        if len(self.stiffeners) != 0:
-            for i in self.stiffeners:
-                Ixx += i.calc_I_global({'axis': 'x','offset': self.CoA[1]})
-                Iyy += i.calc_I_global({'axis': 'y','offset': self.CoA[0]})
-
+    def calc_I (self,n50):
+        if n50:
+            Ixx = self.plate.calc_I_global(self.plate.n50_Ixx_c,self.plate.n50_Iyy_c,
+                                            {'axis': 'x','offset': self.CoA[1]})
+            Iyy = self.plate.calc_I_global(self.plate.n50_Ixx_c,self.plate.n50_Iyy_c,
+                                            {'axis': 'y','offset': self.CoA[0]})
+            if len(self.stiffeners) != 0:
+                for i in self.stiffeners:
+                    Ixx += i.calc_I_global(i.n50_Ixx_c,i.n50_Iyy_c,
+                                            {'axis': 'x','offset': self.CoA[1]})
+                    Iyy += i.calc_I_global(i.n50_Ixx_c,i.n50_Iyy_c,
+                                            {'axis': 'y','offset': self.CoA[0]})
+        else:
+            Ixx = self.plate.calc_I_global(self.plate.Ixx_c,self.plate.Iyy_c,
+                                            {'axis': 'x','offset': self.CoA[1]})
+            Iyy = self.plate.calc_I_global(self.plate.Ixx_c,self.plate.Iyy_c,
+                                            {'axis': 'y','offset': self.CoA[0]})
+            if len(self.stiffeners) != 0:
+                for i in self.stiffeners:
+                    Ixx += i.calc_I_global(i.Ixx_c,i.Iyy_c,
+                                            {'axis': 'x','offset': self.CoA[1]})
+                    Iyy += i.calc_I_global(i.Ixx_c,i.Iyy_c,
+                                            {'axis': 'y','offset': self.CoA[0]})
         return Ixx, Iyy
     def render(self,r_m='w_b'):
         plt.axis('square')
@@ -441,30 +530,15 @@ class stiff_plate():
         self.plate.update()
         for stiff in self.stiffeners:
             stiff.update()
-        self.CoA , self.area = self.CenterOfArea()
-        self.Ixx, self.Iyy = self.calc_I()
-        
-
-
-
-class long_stiff_plate(): # redundant probably
-    def __init__(self,stiff_plates: list[stiff_plate],girders:list[plate]):
-        '''
-        The long_stiff_plate class exists to enwrap the cases where we want to create a longer 
-        stiffened plate with girders.
-        As arguments it requires :
-        stiff_plates -> A list containing the stiffened plates that consist the long plate
-        girders -> A list containing the long plate's girders,even if girders is empty the
-                   constructor introduces
-
-        '''
-        pass
-    # TO COMPLETE
+        self.CenterOfArea()
+        self.Ixx, self.Iyy = self.calc_I(n50=False)
+        self.n50_Ixx, self.n50_Iyy = self.calc_I(n50=True)
 
 class block():
     """
     ------------------------------------------\n
-    Block class can be useful to evaluate the plates that consist a part of the Midship Section, ie. a Water Ballast tank, or Cargo Space.\n
+    Block class can be useful to evaluate the plates that consist a part of the Midship 
+    Section, ie. a Water Ballast tank, or Cargo Space.\n
     This is done to further enhance the clarity of what substances are in contact with certain plates.\n
     Currently are supported 5 Volume Categories :\n
     1) Water Ballast -> type : WB\n
@@ -710,6 +784,7 @@ class Atm_Sur(block):
 class ship():
 
     def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,PSM_spacing, stiff_plates:list[stiff_plate],blocks:list[block]):
+        self.symmetrical = True # Checks that implies symmetry. For the time being is arbitary constant
         self.LBP = LBP
         self.Lsc = Lsc   # Rule Length
         self.B  = B
@@ -736,7 +811,8 @@ class ship():
         self.evaluate_sea_n_air()
         [(i.get_coords(self.stiff_plates),i.CG.insert(0,self.Lsc/2)) for i in self.blocks]# bit of a cringe solution that saves time
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
-        self.Ixx, self.Iyy = self.Calculate_I()
+        self.Ixx, self.Iyy = self.Calculate_I(n50=False)
+        self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
 
         self.a0 = (1.58-0.47*self.Cb)*(2.4/math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
 
@@ -752,6 +828,8 @@ class ship():
         return blocks
     
     def evaluate_sea_n_air(self):
+        def atm_key(item: stiff_plate):
+            return item.plate.start[0]
         shell_ = []
         deck_ = []
         for i in self.stiff_plates:
@@ -759,7 +837,6 @@ class ship():
                 shell_.append(i.id)
             elif i.tag == 5:
                 deck_.append(i.id)
-        
         self.blocks.append(Sea_Sur(shell_))
         self.blocks.append(Atm_Sur(deck_))
 
@@ -833,24 +910,58 @@ class ship():
 
         return MoM_x/area, MoM_y/area, area
 
-    def Calculate_I(self):
+    def Calculate_I(self,n50):
         Ixx = 0
         Iyy = 0
         for i in self.stiff_plates:
-            Ixx += i.Ixx + (i.CoA[1]-self.yo)**2*i.area
-            Iyy += i.Iyy + (i.CoA[0]-self.xo)**2*i.area
+            if n50:
+                Ixx += i.n50_Ixx_c + (i.CoA[1]-self.yo)**2*i.area
+                Iyy += i.n50_Iyy_c + (i.CoA[0]-self.xo)**2*i.area
+            else:
+                Ixx += i.Ixx_c + (i.CoA[1]-self.yo)**2*i.area
+                Iyy += i.Iyy_c + (i.CoA[0]-self.xo)**2*i.area
+        if self.symmetrical: return 2*Ixx, 2*Iyy
+        else: return Ixx, Iyy 
 
-        return Ixx, Iyy        
     def render(self,r_m='w'):
         fig = plt.figure()
         for i in self.stiff_plates:
             i.render(r_m=r_m)
         # plt.axis([-1,self.B/2+1,-1,self.D+3])
         plt.show()
-    def update(self):
+    def update(self,update_all=False):
+        if update_all:
+            [i.update() for i in self.stiff_plates]
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
-        self.Ixx, self.Iyy = self.Calculate_I()
-        
+        self.Ixx, self.Iyy = self.Calculate_I(n50=False)
+        self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
+    def Debug(self):
+        print('symmetrical : ',self.symmetrical)
+        print('LBP : ',self.LBP)
+        print('Lsc : ',self.Lsc)
+        print('B : ',self.B)
+        print('T : ',self.T)
+        print('Tmin : ',self.Tmin)
+        print('Tsc : ',self.Tsc)
+        print('D : ',self.D)
+        print('Cb : ',self.Cb)
+        print('Cp : ',self.Cp)
+        print('Cm : ',self.Cm)
+        print('DWT : ',self.DWT)
+        print('PSM_spacing : ',self.PSM_spacing)
+        print('Mwh : ',self.Mwh)
+        print('Mws : ',self.Mws)
+        print('Msw_h_mid : ',self.Msw_h_mid)
+        print('Msw_s_mid : ',self.Msw_s_mid)
+        print('Cw : ',self.Cw)
+        print('STIFF PLATES')
+        [print(i) for i in self.stiff_plates]
+        print('BLOCKS')
+        [print(i) for i in self.blocks]
+        print('yo : ', self.yo)
+        print('Ixx : ', self.Ixx)
+        print('n50_Ixx : ', self.n50_Ixx)
+        print('a0 : ', self.a0)
 
 
 
