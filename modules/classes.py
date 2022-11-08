@@ -4,7 +4,6 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from xmlrpc.client import Boolean
 from modules.constants import LOADS
 from modules.utilities import c_error, c_info,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
@@ -462,6 +461,55 @@ class stiff_plate():
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
         #renew stiffener
+    def LaTeX_output(self):
+        def _round(tp:tuple, dig:int):
+            out = []
+            for i in tp:
+                out.append(round(i,dig))
+            return tuple(out)
+        V = {
+            'fb':'Flat Bar',
+            'g' :'Angled Bar',
+            'tb':'T Bar'
+        }
+
+        out_plate = (
+            f'Plate {self.id} & '
+            f' {self.plate.material} & '
+            f' {round(self.plate.length,3)} & '
+            f' {round(self.spacing*1e3,2)} & '
+            f' {_round(self.CoA,3)} & '
+            f' {round(self.plate.thickness*1e3,2)} & '
+            f' {round(self.plate.net_thickness*1e3,2)} & '
+            f' {round(self.plate.cor_thickness*1e3,2)} '
+            '\\tabularnewline \\hline\n')
+        if len(self.stiffeners) != 0:
+            out_stif = (
+                ' Web &'
+                f' {self.stiffeners[0].plates[0].material} & '
+                f' {round(self.stiffeners[0].plates[0].length*1e3,2)} & '
+                f' {round(self.stiffeners[0].plates[0].thickness*1e3,2)} & '
+                f' {round(self.stiffeners[0].plates[0].net_thickness*1e3,2)} & '
+                f' {round(self.stiffeners[0].plates[0].cor_thickness*1e3,2)}  '
+            )
+            if len(self.stiffeners[0].plates) == 2:
+                out_stif += (
+                    '\\tabularnewline \\cline{3-8}\n & & Flange &'
+                    f' {self.stiffeners[0].plates[0].material} & '
+                    f' {round(self.stiffeners[0].plates[1].length*1e3,2)} & '
+                    f' {round(self.stiffeners[0].plates[1].thickness*1e3,2)} & '
+                    f' {round(self.stiffeners[0].plates[1].net_thickness*1e3,2)} & '
+                    f' {round(self.stiffeners[0].plates[1].cor_thickness*1e3,2)}  '
+                )
+                out_stif = ('\\multirow{2}{*}{'+f'Plate {self.id}'+'} & '
+                            '\\multirow{2}{*}{'+V[self.stiffeners[0].type]+'} & ' + out_stif)
+            else:
+                out_stif = f'Plate {self.id} & '+V[self.stiffeners[0].type]+' & '  + out_stif
+            out_stif += '\\tabularnewline \\hline\n'
+            return out_plate, out_stif 
+        else:
+            return out_plate, ''  
+
     def __repr__(self) -> str:
         tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
         return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
@@ -560,7 +608,7 @@ class block():
     *pressure_plot(ship,'Null','<block tag>')* rendering methods.
     """
 
-    def __init__(self,name:str,symmetrical:Boolean,space_type:str, list_plates_id : list[int],*args):
+    def __init__(self,name:str,symmetrical:bool,space_type:str, list_plates_id : list[int],*args):
         TAGS = ['WB','DC','LC','OIL','FW','VOID']
         """
         We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
@@ -957,12 +1005,105 @@ class ship():
         print('STIFF PLATES')
         [print(i) for i in self.stiff_plates]
         print('BLOCKS')
-        [print(i) for i in self.blocks]
+        [print(i,2) for i in self.blocks]
         print('yo : ', self.yo)
         print('Ixx : ', self.Ixx)
         print('n50_Ixx : ', self.n50_Ixx)
         print('a0 : ', self.a0)
 
+    def Data_Input(self, text):
+        # Do stuff with text
+        self.data += text
 
+    def LaTeX_output(self,Debug=False,standalone=False,figs = ()):
+        '''
+        Output Function that generates a .tex file for use in LaTeX
+        
+        '''
+        mid = ''
+        GeneralPart = (
+            '\\chapter{General Particulars}\n'
+            '\\begin{table}[h]\n'
+            '\\caption{Ship\'s General Particulars}\n'
+            '\\label{tab:Gen_Part}\n'
+            '\\begin{tabular}{{>{\centering}m{6cm}}*{2}{>{\centering}m{4cm}}}\n'
+            '\\hline\n'
+            '$L_{BP}$ '+f'&{self.LBP}&'+' [m]\\tabularnewline \\hline\n'
+            '$L_{sc} = L$ '+f'&{self.Lsc}&'+' [m]\\tabularnewline \\hline\n'
+            '$B$ '+f'&{self.B}&'+' [m]\\tabularnewline \\hline\n'
+            '$T$ '+f'&{self.T}&'+' [m]\\tabularnewline \\hline\n'
+            '$T_{min}$ '+f'&{self.Tmin}&'+' [m]\\tabularnewline \\hline\n'
+            '$T_{sc}$ '+f'&{self.Tsc}&'+' [m]\\tabularnewline \\hline\n'
+            '$D$ '+f'&{self.D}&'+' [m]\\tabularnewline \\hline\n'
+            '$C_b$ '+f'&{self.Cb}&'+' \\tabularnewline \\hline\n'
+            '$C_p$ '+f'&{self.Cp}&'+' \\tabularnewline \\hline\n'
+            '$C_m$ '+f'&{self.Cm}&'+' \\tabularnewline \\hline\n'
+            '$DWT$ '+f'&{self.DWT}&'+' \\tabularnewline \\hline\n'
+            'PSM spacing '+f'&{self.PSM_spacing}&'+' [m]\\tabularnewline \\hline\n'
+            '$M_{wh}$ '+f'&{round(self.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+            '$M_{ws}$ '+f'&{round(self.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+            '$M_{sw,h-mid}$ '+f'&{round(self.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+            '$M_{sw,s-mid}$ '+f'&{round(self.Msw_s_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+            '$C_w$ '+f'&{round(self.Cw,3)}&'+' \\tabularnewline \\hline\n'
+            '$y_{neutral}$ '+f'&{round(self.yo,3)}&'+' [m]\\tabularnewline \\hline\n'
+            '$I_{net,\, v}$ '+f'&{round(self.Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
+            '$I_{n-50,\, v}$ '+f'&{round(self.n50_Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
+            '$a_0$   '+f'&{round(self.a0,5)}&'+' \\tabularnewline \\hline\n'
+            '\\end{tabular}\n'
+            '\\end{table}\n\n')
+        figures = ''
+        if len(figs) != 0:
+            for i in figs:
+                figures+=(
+                    '\\begin{figure}[h]\n'
+                    '\\centering\n'
+                    '\\includegraphics[width=\linewidth]{'
+                    f'{i}'
+                    '}\n\\end{figure}\n')
 
+        plates = (
+            '\\chapter{Plating Data}\n'
+            '\\begin{table}[h]\n'
+            '\\caption{Ship\'s Plating Data}\n'
+            '\\label{tab:Plates_Data}\n'
+            '\\begin{adjustbox}{center}\n'
+            '\\begin{tabular}{*{8}{>{\centering}m{2cm}}}\n'
+            '\\hline\n'
+            'No & Material & Breadth & Spacing & Center of Area & Thickness & Net Thickness & Corrosion Thickness \\tabularnewline \\hline\n'
+            '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]   \\tabularnewline \\hline\n')
+        stiffeners = (
+            '\\chapter{Stiffeners Data}\n'
+            '\\begin{table}[h]\n'
+            '\\caption{Ship\'s Stiffeners Data}\n'
+            '\\label{tab:Stiff_Data}\n'
+            '\\begin{adjustbox}{center}\n'
+            '\\begin{tabular}{*{8}{>{\centering}m{2cm}}}\n'
+            '\\hline\n'
+            'No & Type & & Material & L   & Thickness & Net Thickness & Corrosion Thickness \\tabularnewline \\hline\n'
+            '   &      & &          & [mm] & [mm]      &    [mm]       &    [mm]            \\tabularnewline \\hline\n') 
+        for i in self.stiff_plates:
+            tmp = i.LaTeX_output()
+            plates += tmp[0]
+            stiffeners += tmp[1]
+        
+        plates += '\\end{tabular}\n\\end{adjustbox}\n\\end{table}\n\n'
+        stiffeners += '\\end{tabular}\n\\end{adjustbox}\n\\end{table}\n\n'
+        mid += GeneralPart+figures+plates+stiffeners 
+        
+        if standalone:
+                    out = ('\\documentclass[12pt,a4paper]{report}\n\\usepackage{array}\n'
+                '\\usepackage{multirow}\n'
+                '\\usepackage{adjustbox}\n'
+                '\\usepackage{spalign}\n'
+                '\\usepackage{amsmath}\n'
+                '\\usepackage{comment}\n'
+                '\\usepackage{caption}\n'
+                '\\begin{document}\n'+mid+''
+                '\\end{document}')
+        else:
+            out = mid
+
+        if Debug: print(out)
+        return out
+        
 #end of file

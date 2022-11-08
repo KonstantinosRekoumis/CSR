@@ -97,7 +97,7 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
     # ax.set_aspect()
     plt.show()
 
-def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'thickness'):
+def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'thickness',path=''):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -137,7 +137,11 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'th
     ax.set_xlim([-1,ship.B/2+1])
     try:
         fig,ax = c_contour(X,Y,data[key][0],key,fig,ax,cmap,key = data[key][1])
-        plt.show()
+        plt.title(f'Plating\'s {key} Plot')
+        if path !='':
+            plt.savefig(path)
+        else:
+            plt.show()
     except KeyError:
         c_warn(f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\'. Thus no plot is produced.')
         pass

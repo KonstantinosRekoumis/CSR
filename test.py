@@ -8,7 +8,7 @@ import modules.IO as IO
 
 if __name__ == "__main__":
     # fig = plt.figure()
-    test_class = True
+    test_class = False
     if test_class:
         # #testing plates seems ok 24/5/2022
         test1 = cls.plate((0,0),(10,0),15,"AH32",'Shell')
@@ -66,8 +66,8 @@ if __name__ == "__main__":
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
         # papor.render(r_m = 'wC')
-        rnr.contour_plot(papor,show_w=True,key = 'id')
-        rnr.block_plot(papor,fill=False)
+        # rnr.contour_plot(papor,show_w=True,key = 'id')
+        # rnr.block_plot(papor,fill=False)
         # phzx.BSP_total_eval(papor,15.3)
         # phzx.HSM_total_eval(papor,15.3)
         # phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
@@ -78,5 +78,6 @@ if __name__ == "__main__":
         # rnr.pressure_plot(papor,'HSM-2','DC')
         # rnr.pressure_plot(papor,'BSP-1P','DC')
         # rnr.pressure_plot(papor,'BSP-2P','DC')
+        papor.LaTeX_output()
         IO.ship_save(papor,"blyat1.json")
 # 

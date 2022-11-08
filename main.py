@@ -1,9 +1,8 @@
 # -_-
-# Mpas kai teleiwsei to mpourdelo 
 # #################################
 '''
 Structural Calculator for Bulk Carriers 
-Courtesy of iwannakillmeself and kys
+Courtesy of Navarx0s and his st0los
 
 STUDIES HSM and BSP conditions at midships
 '''
@@ -24,13 +23,27 @@ from modules.utilities import c_info,_TITLE_,_RESET_, c_success
 
 
 def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
-    print("-"*45)
-    print(_TITLE_+" ____  ____    _      __  __ ____  ____\n/ ___||  _ \  / \    |  \/  / ___||  _ \\\n\___ \| | | |/ _ \   | |\/| \___ \| | | |\n ___) | |_| / ___ \  | |  | |___) | |_| |\n|____/|____/_/   \_\ |_|  |_|____/|____/ "+_RESET_)
-    print("-"*45)
-    print('--- SHIP DESIGN ASSIGNMENT MIDSHIP DESIGN ---')
-    print('    ---- 2022, Rekoumis Konstantinos ----')
-    print("This code is developed to aid the design of the principal strength members of a ship's Midship. For the time being is developed for Bulk Carriers, under Common Structural Rules 2022 Version.")
-
+    line = "-"*45+'\n'
+    title = (
+        f'{line}'
+        f'{_TITLE_}'
+        "   ____  ____    _      __  __ ____  ____  \n"
+        '  / ___||  _ \  / \    |  \/  / ___||  _ \\  \n'
+        '  \___ \| | | |/ _ \   | |\/| \___ \| | | |  \n'
+        '   ___) | |_| / ___ \  | |  | |___) | |_| |  \n'
+        '  |____/|____/_/   \_\ |_|  |_|____/|____/   \n'
+        f'{_RESET_}'
+        f'{line}'
+        '--- SHIP DESIGN ASSIGNMENT MIDSHIP DESIGN ---\n'
+        '    ---- 2022, Rekoumis Konstantinos ----    \n\n'
+        '  ### All Rights Reserved - MIT Lisence ###  \n'
+        'This code is developed to aid the design of the \n'
+        'principal strength members of a ship\'s Midship. \n'
+        'For the time being is developed for Bulk Carriers,\n'
+        ' under Common Structural Rules 2022 Version.'
+        f'{line}'
+        )
+    print(title)
     #import geometry data
     ship  = IO.load_ship(filepath)
     c_info(f'# => The ship at location {filepath} has been successfully loaded.')
@@ -74,7 +87,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...',default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...',default= False)
     for case in (HSM1,HSM2,BSP1,BSP2):
-        csr.net_scantling(ship,case,Debug=False)
+        csr.net_scantling(ship,case,FLC['Dynamics'],Debug=False)
     # csr.net_scantling(ship,HSM1,Debug=False)
 
     c_info(f'#=> Evaluating Water Ballast Condition...')
@@ -83,7 +96,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...',default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...',default= False)
     for case in (HSM1,HSM2,BSP1,BSP2):
-        csr.net_scantling(ship,case,Debug=False)
+        csr.net_scantling(ship,case,WB['Dynamics'],Debug=False)
     c_info('# => Evaluating Sitffened Plates Slenderness Requirements...')
     csr.buckling_evaluator(ship,Debug=False)
     c_info('# => Evaluating the Sections Moments and Checking with the Rules...')
@@ -97,12 +110,19 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 
     c_info('# => Outputing Data to /out.json file...',default= False)
     IO.ship_save(ship,'out.json')
+    IO.LaTeX_output(ship,path = './essay/',_standalone=False)
     c_success('Program terminated succesfully!')
 
 
 if __name__ == "__main__":
     # main(True,True)
-    main('./in.json',False,False)
-    main('./out.json',False,False)
-    main('./out.json',False,False)
+    # Three step automated design method 
+    auto = False
+    if auto:
+        main('./in.json',False,False)
+        main('./out.json',False,False)
+        main('./out.json',False,False)
+    # Single Step Manual Design evaluation
+    else:
+        main('./test.json',False,False)
     

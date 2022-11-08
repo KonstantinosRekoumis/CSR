@@ -142,7 +142,8 @@ def minimum_stiff_net_thickness(plate:cls.stiff_plate,L2:float,Debug = False):
                 stiff.plates[0].net_thickness = plate.stiffeners[0].plates[0].net_thickness
                 stiff.plates[1].net_thickness = plate.stiffeners[0].plates[1].net_thickness
     
-def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicsData,sloshing = False,Debug=False):
+def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicsData, 
+                                    Dynamic = False,Debug=False):
     '''
     IACS Part 1 Chapter 6 Section 4\n
 
@@ -167,14 +168,14 @@ def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:p
     #     'AC-SD': (lambda x: 0.9 - 0.5*abs(x)/Reh,1.0)
     # }
     def Ca(point):
-        if sloshing:
+        if Dynamic:
             Ca = min(0.9 - 0.5*abs(case.sigma(*point))/Reh,0.8)
         else:
             Ca = min(1.05 - 0.5*abs(case.sigma(*point))/Reh,0.95)
         
         if Ca < 0:
             if Debug: c_warn(f'(rules.py) plating_thickness_calculation/Ca: Ca coefficient has been found negative! This is due to having an extremely low Area Moment of Inertia.\n I assume that this is the first design circle and therefore Ca_max will be used!')
-            if sloshing:
+            if Dynamic:
                 Ca = 0.8
             else:
                 Ca = 0.95
@@ -207,7 +208,7 @@ def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:p
 
     minimum_plate_net_thickness(plate,L2 = min(300,case.Lsc),Debug=Debug) #need to check what L2 is
 
-def stiffener_plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicsData,sloshing=False,Debug=False):
+def stiffener_plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:phzx.PhysicsData,Dynamic=False,Debug=False):
     '''
     IACS Part 1 Chapter 6 Section 4\n
 
@@ -228,10 +229,10 @@ def stiffener_plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_pl
         'AC-S' : 0.75,
         'AC-SD': 0.90
     }
-    Ct = Ct_['AC-S'] if sloshing else Ct_['AC-SD']
+    Ct = Ct_['AC-S'] if Dynamic else Ct_['AC-SD']
 
     def Cs(sigma):
-        if sloshing:#AC-S
+        if Dynamic:#AC-S
             if sigma >= 0:
                 return 0.75
             else:
@@ -400,16 +401,20 @@ def ship_scantlings(ship:cls.ship):
         c_success(f'(rules.py) ship_scantlings: The Section Modulus at Depth of the ship Zn50,Depth :{Zn50d_ship} is adequate compared to Zrn50: {Zrn50} calculated by the rules')
 
 
-def net_scantling(ship : cls.ship,case:phzx.PhysicsData,Debug = True):
+def net_scantling(ship : cls.ship,case:phzx.PhysicsData,Dynamics :str ,Debug = True):
+    if 'd' in Dynamics or 'D' in Dynamics:
+        _Dynamic = True
+    else:
+        _Dynamic= False
     for stiff_plate in ship.stiff_plates:
         if Debug: c_info(f'(rules.py) net_scantling: Evaluating plate\'s :{stiff_plate} PLATES NET SCANTLING')
-        plating_net_thickness_calculation(ship,stiff_plate,case,Debug=Debug)
+        plating_net_thickness_calculation(ship,stiff_plate,case,Dynamic=_Dynamic,Debug=Debug)
         if Debug: c_info(f'(rules.py) net_scantling: Evaluated plate\'s :{stiff_plate} PLATES NET SCANTLING')
     ship.update()
     for stiff_plate in ship.stiff_plates:
         if Debug: c_info(f'(rules.py) net_scantling: Evaluating plate\'s {stiff_plate} STIFFENERS NET SCANTLING')
         if len(stiff_plate.stiffeners) != 0: #Bilge plate and other loose plates
-            stiffener_plating_net_thickness_calculation(ship,stiff_plate,case,Debug=Debug)
+            stiffener_plating_net_thickness_calculation(ship,stiff_plate,case,Dynamic=_Dynamic,Debug=Debug)
     ship.update()
 
 def corrosion_addition(stiff_plate: cls.stiff_plate, blocks : list[cls.block], Tmin, Tmax  ):

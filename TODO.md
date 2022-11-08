@@ -8,17 +8,19 @@
 - [x] Add I calculation for symmetrical sections 
 - [ ] State the axis convention
 - [ ] Include the girders in the calculations
-- [ ] Include null plates to define volume without joining in the strength calculations
-- [ ] Create I and Z checks
+- [ ] **Include null plates to define volume without joining in the strength calculations**
+- [x] Create I and Z checks
 - [x] Calculate I_{y-n50} and I_{z-n50} (with corrosion addition) 
-- [ ] FIX FOR STATIC LOADS AT PLATING AND STIFFENER SCANTLING (not sloshing bs)
+- [x] FIX FOR STATIC LOADS AT PLATING AND STIFFENER SCANTLING (not sloshing bs)
 - [x] Check special plating cases -> side shell (ez) -> Bilge plates(medium) Bilge plate needs to have as paddings the neighboring plates' inverse paddings
 - [x] Program T beams for stiffeners 
-- [x] IMPLEMENT BUCKLING STRENGTH CHECK -> Implement shear beam reduction (check for total Moment of Inertia) Part 1 Chapter 8 Section 2 
-- [ ] Finalize the Section Modelling
-- [ ] Create exception for fender contact zone
-- [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition) 
-- [ ] ESSAY -> Change the table figures
+- [x] IMPLEMENT BUCKLING STRENGTH CHECK -> Implement shear beam reduction (check for total Moment of Inertia) Part 1 Chapter 8 Section 2  
+- [ ] **Finalize the Section Modelling**
+- [x] Create exception for fender contact zone
+- [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition)  
+- [ ] **ESSAY -> Change the table figures, iamges, check for mistakes**
+- [ ] Close the LaTeX export (check the savfig func)
+
 ## Medium Importance
 
 1) [ ] Not lose sanity  
