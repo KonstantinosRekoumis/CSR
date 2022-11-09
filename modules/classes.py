@@ -423,7 +423,7 @@ class stiffener():
 class stiff_plate():
     def __init__(
                 self,id:int,plate:plate, spacing:float, l_pad:float, r_pad:float,
-                stiffener_:dict, skip :int ):
+                stiffener_:dict, skip :int, null:bool= False ):
         """
         The stiff_plate class is the Union of the plate and the stiffener(s).
         Its args are :
@@ -442,7 +442,8 @@ class stiff_plate():
         self.l_pad = l_pad*1e-3
         self.r_pad = r_pad*1e-3
         self.skip = skip
-        if self.plate.tag != 4:
+        self.null = null
+        if self.plate.tag != 4 and not self.null:
             net_l = self.plate.length - self.l_pad - self.r_pad
             N = math.floor(net_l/self.spacing)
             _range = linespace(1,N,1,skip=skip)
@@ -462,6 +463,7 @@ class stiff_plate():
         self.Pressure = {}
         #renew stiffener
     def LaTeX_output(self):
+        if self.null:return ('','')
         def _round(tp:tuple, dig:int):
             out = []
             for i in tp:
@@ -831,7 +833,8 @@ class Atm_Sur(block):
 
 class ship():
 
-    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,PSM_spacing, stiff_plates:list[stiff_plate],blocks:list[block]):
+    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,PSM_spacing, 
+                    stiff_plates:list[stiff_plate],blocks:list[block]):
         self.symmetrical = True # Checks that implies symmetry. For the time being is arbitary constant
         self.LBP = LBP
         self.Lsc = Lsc   # Rule Length
@@ -1023,6 +1026,7 @@ class ship():
         mid = ''
         GeneralPart = (
             '\\chapter{General Particulars}\n'
+            '\\label{sec:General Particulars}\n'
             '\\begin{table}[h]\n'
             '\\caption{Ship\'s General Particulars}\n'
             '\\label{tab:Gen_Part}\n'
@@ -1063,6 +1067,7 @@ class ship():
 
         plates = (
             '\\chapter{Plating Data}\n'
+            '\\label{sec:Plating Data}\n'
             '\\begin{table}[h]\n'
             '\\caption{Ship\'s Plating Data}\n'
             '\\label{tab:Plates_Data}\n'
@@ -1073,6 +1078,7 @@ class ship():
             '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]   \\tabularnewline \\hline\n')
         stiffeners = (
             '\\chapter{Stiffeners Data}\n'
+            '\\label{sec:Stiffeners Data}\n'
             '\\begin{table}[h]\n'
             '\\caption{Ship\'s Stiffeners Data}\n'
             '\\label{tab:Stiff_Data}\n'
