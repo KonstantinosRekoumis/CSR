@@ -78,6 +78,6 @@ if __name__ == "__main__":
         # rnr.pressure_plot(papor,'HSM-2','DC')
         # rnr.pressure_plot(papor,'BSP-1P','DC')
         # rnr.pressure_plot(papor,'BSP-2P','DC')
-        papor.LaTeX_output()
+        papor.LaTeX_output(Debug=True)
         IO.ship_save(papor,"blyat1.json")
 # 

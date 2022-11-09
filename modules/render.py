@@ -97,7 +97,7 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
     # ax.set_aspect()
     plt.show()
 
-def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'thickness',path=''):
+def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 'thickness',path=''):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -116,6 +116,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'th
     Id = []
     fig,ax = plt.subplots(1,1)
     for i in ship.stiff_plates:
+        if i.null and key != 'tag': continue # skip rendering null plates except for locality
         x,y,t,m,tag = i.plate.render_data()
         X.append(x)
         Y.append(y)
@@ -138,8 +139,9 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='jet',color = 'black',key = 'th
     try:
         fig,ax = c_contour(X,Y,data[key][0],key,fig,ax,cmap,key = data[key][1])
         plt.title(f'Plating\'s {key} Plot')
+        ax.invert_xaxis()
         if path !='':
-            plt.savefig(path)
+            plt.savefig(path,bbox_inches='tight',orientation = "landscape")
         else:
             plt.show()
     except KeyError:
@@ -204,7 +206,7 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_
 
     return fig,ax
 
-def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = True):
+def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="+",lines = True):
     _map_ = ScalarMappable(cmap=cmap)
     if key == "number":
         vals = []
@@ -237,7 +239,7 @@ def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="",lines = Tru
         cb.ax.set_title(data_label)
         cb.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(text):
-            cb.ax.text(2,  j+1 , lab, ha='center', va='center')
+            cb.ax.text(4,  j+1 , lab, ha='center', va='center')
 
     for i in range(len(X)):
         breaks = 0 #Int to increment where a break by nan is encountered

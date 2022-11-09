@@ -27,8 +27,9 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
     save += '\"spacing\":'+json.dumps(stiff_plate.spacing*1e3)+","
     save += '\"skip\":'+json.dumps(stiff_plate.skip)+","
     save += '\"l_pad\":'+json.dumps(stiff_plate.l_pad*1e3)+","
-    save += '\"r_pad\":'+json.dumps(stiff_plate.r_pad*1e3)+"}"
-    return save
+    save += '\"r_pad\":'+json.dumps(stiff_plate.r_pad*1e3)
+    if stiff_plate.null: save += ","+'\"null\":'+json.dumps(stiff_plate.null)
+    return save+"}"
 
 def blocks_save(block:cls.block):
     save =""
@@ -107,7 +108,7 @@ def geometry_parser(geo_t:list):
         # i['plate'] = [start,end,thickness,material,tag]
         # stiffener_dict = {type : str, dims : [float],mat:str}
         try:
-            if len(i['plate'] ) == 5:
+            if len(i['plate'] ) >= 5:
                 if (i['plate'][0] == i['plate'][1]): 
                     plate = i['plate']
                     c_error(f'(IO.py) geometry_parser: Plate :{plate} You cannot enter a plate with no length!')
@@ -136,7 +137,11 @@ def geometry_parser(geo_t:list):
                 if i['id'] in temp_id: 
                     c_error(f'(IO.py) geometry_parser: There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
                     raise KeyError()
-                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s,i['skip'])
+                if 'null' in i:
+                    null = i['null']
+                else:
+                    null = False
+                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s,i['skip'],null=null)
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:
