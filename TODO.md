@@ -6,7 +6,7 @@
 - [x] Fix the input file for the Tmin, Lsc and Tsc  
 - [x] Account for symmetry  
 - [x] Add I calculation for symmetrical sections 
-- [ ] State the axis convention
+- [x] State the axis convention(done the graphical important thing)
 - [ ] Include the girders in the calculations
 - [x] **Include null plates to define volume without joining in the strength calculations**
 - [x] Create I and Z checks
@@ -23,7 +23,8 @@
 
 ## Medium Importance
 
-1) [ ] Not lose sanity  
+1) [ ] Not lose sanity 
+1) [ ] Documentation of Code is bare minimum ; add stuff 
 1) [x] physics module HSM ans BSP need Lwl not LBP on weather deck calculations (actually they needed Lsc) 
 1) [x] Fix colorbar, added multiple subplots 
 1) [x] kr and GM calculation is different for WB, add to __init__() (actually use it)
