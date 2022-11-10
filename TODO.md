@@ -18,7 +18,7 @@
 - [ ] **Finalize the Section Modelling**
 - [x] Create exception for fender contact zone
 - [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition)  
-- [ ] **ESSAY -> Change the table figures, iamges, check for mistakes**
+- [ ] **ESSAY -> Change the table figures, iamges, check for mistakes, add beff in Inertia Calculations**
 - [x] Close the LaTeX export (check the savefig func)
 
 ## Medium Importance

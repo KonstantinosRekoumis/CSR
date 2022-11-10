@@ -462,6 +462,13 @@ class stiff_plate():
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
         #renew stiffener
+
+    def b_eff(self,PSM_spacing):
+        bef = min( self.spacing, PSM_spacing*200)
+        if self.plate.net_thickness < 8*1e-3 : bef = max(0.6,bef)
+        self.plate.length = len(self.stiffeners)*bef
+        self.update()
+
     def LaTeX_output(self):
         if self.null:return ('','')
         def _round(tp:tuple, dig:int):
@@ -858,6 +865,7 @@ class ship():
         self.Moments_still()
         #Array to hold all of the stiffened plates
         self.stiff_plates = stiff_plates
+        [plate.b_eff(self.PSM_spacing) for plate in self.stiff_plates] # b effective evaluation 
         self.blocks = self.validate_blocks(blocks)
         self.evaluate_sea_n_air()
         [(i.get_coords(self.stiff_plates),i.CG.insert(0,self.Lsc/2)) for i in self.blocks]# bit of a cringe solution that saves time
