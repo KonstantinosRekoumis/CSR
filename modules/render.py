@@ -1,6 +1,5 @@
-from cgitb import enable
 import math
-import ezdxf
+# import ezdxf # Future Extension
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
 import modules.classes as cls
@@ -149,7 +148,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         pass
 
 
-def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_mode = False,quiver=False):
+def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_mode = False,path=''):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
@@ -201,10 +200,14 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_
     ax.plot((-3,ship.B/2+3),(ship.T,ship.T))
     ax.set_ylim([-3,ship.D+3])
     ax.set_xlim([-3,ship.B/2+3])
+    ax.invert_xaxis()
     plt.title(f"Pressure Distribution for {pressure_index}")
-    plt.show()
+    if path != '':
+        plt.savefig(path,bbox_inches='tight',orientation = "landscape")
+    else:
+        plt.show()
+        return fig,ax
 
-    return fig,ax
 
 def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="+",lines = True):
     _map_ = ScalarMappable(cmap=cmap)

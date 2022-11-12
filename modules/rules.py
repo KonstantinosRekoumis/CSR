@@ -319,7 +319,9 @@ def buckling_evaluator(ship:cls.ship,Debug = False):
             c_warn(f'(rules.py) buckling_evaluator: Available tw: {st_plate.stiffeners[0].plates[0].net_thickness*1e3} mm is less than minimum tw: {tw*1e3} mm by the rules for plate {st_plate} ')
             st_plate.stiffeners[0].plates[0].net_thickness = tw
         if st_plate.stiffeners[0].type in ('tb','g'):
-            tf = st_plate.stiffeners[0].plates[1].length/CwCf[st_plate.stiffeners[0].type][1]*math.sqrt(Reh/235)
+            tf =  (math.sqrt((st_plate.stiffeners[0].plates[1].end[0]-st_plate.stiffeners[0].plates[0].end[0])**2
+                            +(st_plate.stiffeners[0].plates[1].end[1]-st_plate.stiffeners[0].plates[0].end[1])**2)
+                    /CwCf[st_plate.stiffeners[0].type][1]*math.sqrt(Reh/235))
             if Debug: print('tf: ',tf)
             if st_plate.stiffeners[0].plates[1].net_thickness < tf:
                 c_warn(f'(rules.py) buckling_evaluator: Available tf: {st_plate.stiffeners[0].plates[1].net_thickness*1e3} mm is less than minimum tf: {tf*1e3} mm by the rules for plate {st_plate} ')

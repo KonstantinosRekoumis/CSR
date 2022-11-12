@@ -7,7 +7,7 @@
 - [x] Account for symmetry  
 - [x] Add I calculation for symmetrical sections 
 - [x] State the axis convention(done the graphical important thing)
-- [ ] Include the girders in the calculations
+- [ ] Include the girders in the calculations (no use)
 - [x] **Include null plates to define volume without joining in the strength calculations**
 - [x] Create I and Z checks
 - [x] Calculate I_{y-n50} and I_{z-n50} (with corrosion addition) 
@@ -18,7 +18,7 @@
 - [ ] **Finalize the Section Modelling**
 - [x] Create exception for fender contact zone
 - [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition)  
-- [ ] **ESSAY -> Change the table figures, iamges, check for mistakes, add beff in Inertia Calculations**
+- [x] **ESSAY -> Change the table figures, iamges, check for mistakes, add beff in Inertia Calculations**
 - [x] Close the LaTeX export (check the savefig func)
 
 ## Medium Importance
@@ -27,7 +27,7 @@
 1) [ ] Documentation of Code is bare minimum ; add stuff 
 1) [x] physics module HSM ans BSP need Lwl not LBP on weather deck calculations (actually they needed Lsc) 
 1) [x] Fix colorbar, added multiple subplots 
-1) [x] kr and GM calculation is different for WB, add to __init__() (actually use it)
+1) [x] kr and GM calculation is different for WB, add to `__init__()` (actually use it)
 
 ## Minor Importance - Future Extending
 

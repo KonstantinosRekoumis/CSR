@@ -333,7 +333,6 @@ class stiffener():
             n50_area += i.n50_area
             MoM_x += i.area*i.CoA[0]
             MoM_y += i.area*i.CoA[1]
-        
         self.CoA=(MoM_x/area,MoM_y/area)
         self.area=area
         self.n50_area=n50_area 
@@ -464,10 +463,11 @@ class stiff_plate():
         #renew stiffener
 
     def b_eff(self,PSM_spacing):
-        bef = min( self.spacing, PSM_spacing*200)
-        if self.plate.net_thickness < 8*1e-3 : bef = max(0.6,bef)
-        self.plate.length = len(self.stiffeners)*bef
-        self.update()
+        if len(self.stiffeners)!=0:
+            bef = min( self.spacing, PSM_spacing*200)
+            if self.plate.net_thickness < 8*1e-3 : bef = max(0.6,bef)
+            self.plate.length = len(self.stiffeners)*bef
+            self.update()
 
     def LaTeX_output(self):
         if self.null:return ('','')
@@ -865,7 +865,6 @@ class ship():
         self.Moments_still()
         #Array to hold all of the stiffened plates
         self.stiff_plates = stiff_plates
-        [plate.b_eff(self.PSM_spacing) for plate in self.stiff_plates] # b effective evaluation 
         self.blocks = self.validate_blocks(blocks)
         self.evaluate_sea_n_air()
         [(i.get_coords(self.stiff_plates),i.CG.insert(0,self.Lsc/2)) for i in self.blocks]# bit of a cringe solution that saves time
@@ -874,7 +873,11 @@ class ship():
         self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
 
         self.a0 = (1.58-0.47*self.Cb)*(2.4/math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
-
+    def evaluate_beff(self):
+        '''
+        To be used after corrosion addition evaluation. Plates have -1 mm initial corrosion.
+        '''
+        [plate.b_eff(self.PSM_spacing) for plate in self.stiff_plates] # b effective evaluation 
     def validate_blocks(self,blocks :list[block]):
         # The blocks are already constructed but we need to validate their responding plates' existence
         ids = [i.id for i in self.stiff_plates]

@@ -60,12 +60,12 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     HSM1,HSM2 = phzx.Dynamic_total_eval(ship,16,'HSM',False)
     BSP1,BSP2 = phzx.Dynamic_total_eval(ship,16,'BSP',False)
     if PRESSURE_PLOTS:
-        rnr.pressure_plot(ship,'HSM-1','SEA,ATM')
-        rnr.pressure_plot(ship,'STATIC','SEA,ATM')
-        rnr.pressure_plot(ship,'Normals','WB',True)
-        rnr.pressure_plot(ship,'HSM-2','SEA,ATM')
-        rnr.pressure_plot(ship,'BSP-1P','SEA,ATM')
-        rnr.pressure_plot(ship,'BSP-2P','SEA,ATM')
+        rnr.pressure_plot(ship,'HSM-1','SEA,ATM',path ='./essay/HSM1_Shell.pdf')
+        rnr.pressure_plot(ship,'STATIC','SEA,ATM',path ='./essay/STATIC_Shell.pdf')
+        rnr.pressure_plot(ship,'Normals','WB',True,path='./essay/NORMALS.png')
+        rnr.pressure_plot(ship,'HSM-2','SEA,ATM',path ='./essay/HSM2_Shell.pdf')
+        rnr.pressure_plot(ship,'BSP-1P','SEA,ATM',path ='./essay/BSP1_Shell.pdf')
+        rnr.pressure_plot(ship,'BSP-2P','SEA,ATM',path ='./essay/BSP2_Shell.pdf')
 
     c_info('# => Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..',default=False)
     #calculation Recipes
@@ -98,6 +98,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     for case in (HSM1,HSM2,BSP1,BSP2):
         csr.net_scantling(ship,case,WB['Dynamics'],Debug=False)
     c_info('# => Evaluating Sitffened Plates Slenderness Requirements...')
+    ship.evaluate_beff()
     csr.buckling_evaluator(ship,Debug=False)
     c_info('# => Evaluating the Sections Moments and Checking with the Rules...')
     csr.ship_scantlings(ship)
@@ -110,6 +111,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 
     c_info('# => Outputing Data to /out.json file...',default= False)
     IO.ship_save(ship,'out.json')
+    c_info('# => Generating LaTeX Report Data to /out.json file...',default= False)
     IO.LaTeX_output(ship,path = './essay/',_standalone=False)
     c_success('Program terminated succesfully!')
 
@@ -117,9 +119,9 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 if __name__ == "__main__":
     # main(True,True)
     # Three step automated design method 
-    auto = False
+    auto = True
     if auto:
-        main('./in.json',False,False)
+        main('./in.json',False,True)
         main('./out.json',False,False)
         main('./out.json',False,False)
     # Single Step Manual Design evaluation
