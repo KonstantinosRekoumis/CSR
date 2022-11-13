@@ -297,7 +297,7 @@ def buckling_evaluator(ship:cls.ship,Debug = False):
     if Debug: print('Buckling check')
     for st_plate in ship.stiff_plates:
         if Debug: print(st_plate)
-        if len(st_plate.stiffeners) > 0:
+        if len(st_plate.stiffeners) > 0 and st_plate.tag not in (4,6):
             Reh = min(MATERIALS[st_plate.plate.material][0],MATERIALS[st_plate.stiffeners[0].material][0])
         else:
             continue
@@ -358,7 +358,7 @@ def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
         return index
 
     for plate in ship.stiff_plates:
-        if plate.null: continue #skip Calculation for null plates
+        if plate.null or plate.tag == 6: continue #skip calculation for null plates and girders
         blocks = []
         max_eval = False
         for block in ship.blocks:
@@ -410,13 +410,13 @@ def net_scantling(ship : cls.ship,case:phzx.PhysicsData,Dynamics :str ,Debug = T
     else:
         _Dynamic= False
     for stiff_plate in ship.stiff_plates:
-        if stiff_plate.null: continue # skip calculation for null plate
+        if stiff_plate.null or stiff_plate.tag == 6: continue # skip calculation for null plates and girders
         if Debug: c_info(f'(rules.py) net_scantling: Evaluating plate\'s :{stiff_plate} PLATES NET SCANTLING')
         plating_net_thickness_calculation(ship,stiff_plate,case,Dynamic=_Dynamic,Debug=Debug)
         if Debug: c_info(f'(rules.py) net_scantling: Evaluated plate\'s :{stiff_plate} PLATES NET SCANTLING')
     ship.update()
     for stiff_plate in ship.stiff_plates:
-        if stiff_plate.null: continue # skip calculation for null plate
+        if stiff_plate.null or stiff_plate.tag == 6: continue # skip calculation for null plates and girders
         if Debug: c_info(f'(rules.py) net_scantling: Evaluating plate\'s {stiff_plate} STIFFENERS NET SCANTLING')
         if len(stiff_plate.stiffeners) != 0: #Bilge plate and other loose plates
             stiffener_plating_net_thickness_calculation(ship,stiff_plate,case,Dynamic=_Dynamic,Debug=Debug)
@@ -538,7 +538,7 @@ def corrosion_assign(ship:cls.ship,input:bool):
         return math.ceil(num*2)/2
     if input:
         for stiff_plate in ship.stiff_plates:
-            if stiff_plate.null: continue # skip calculation for null plates
+            if stiff_plate.null or stiff_plate.tag == 6: continue # skip calculation for null plates and girderss and girders
             c_t = corrosion_addition(stiff_plate,ship.blocks,ship.Tmin,ship.Tsc)
             stiff_plate.plate.cor_thickness = (round_to_p5(c_t['in']+c_t['out'])+0.5)*1e-3
             stiff_plate.plate.net_thickness = stiff_plate.plate.thickness - stiff_plate.plate.cor_thickness
@@ -550,7 +550,7 @@ def corrosion_assign(ship:cls.ship,input:bool):
                     if plate.net_thickness < 0: plate.net_thickness = 1e-3
     else:
         for stiff_plate in ship.stiff_plates:
-            if stiff_plate.null: continue # skip calculation for null plates
+            if stiff_plate.null or stiff_plate.tag == 6: continue # skip calculation for null plates and girderss and girders
             if stiff_plate.plate.cor_thickness < 0:
                 c_error(f'(rules.py) corrosion_assign: Stiffened plate {stiff_plate} has not been evaluated for corrosion addition !!!')
                 quit()

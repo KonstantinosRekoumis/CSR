@@ -16,7 +16,7 @@
             "id":0,
             "plate":[[0,0],[15.53,0],18.5,"A","Shell"],
             "stiffeners":{
-                "type":"g",
+                "type":"tb",
                 "dimensions":[300,15,300,15],
                 "material":"A"
             },

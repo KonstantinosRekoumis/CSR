@@ -7,7 +7,7 @@
 - [x] Account for symmetry  
 - [x] Add I calculation for symmetrical sections 
 - [x] State the axis convention(done the graphical important thing)
-- [ ] Include the girders in the calculations (no use)
+- [x] Include the girders in the calculations 
 - [x] **Include null plates to define volume without joining in the strength calculations**
 - [x] Create I and Z checks
 - [x] Calculate I_{y-n50} and I_{z-n50} (with corrosion addition) 

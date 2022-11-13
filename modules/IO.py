@@ -119,7 +119,7 @@ def geometry_parser(geo_t:list):
                     quit()
                 t = i['plate'][2] if i['plate'][2] != 0 else 0.1
                 tmp_p = cls.plate(i['plate'][0],i['plate'][1],t,i['plate'][3],i['plate'][4])
-                if i['plate'][4] != 'Bilge' and 'stiffeners' in i:
+                if i['plate'][4] != 'Bilge' and 'stiffeners' in i and  len(i['stiffeners']) != 0:
                     tmp_d = i['stiffeners']["dimensions"]
                     if len(tmp_d)==2 and i['stiffeners']["type"] == 'fb':
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1]}
@@ -127,13 +127,16 @@ def geometry_parser(geo_t:list):
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1],'lf':tmp_d[2],'bf':tmp_d[3]}
                     else: 
                         c_error("(IO.py) You input a stiffener type that has less dims than needed",i['stiffeners'])
-                        quit()
+                        raise KeyError()
                     tmp_s = {'type':i['stiffeners']['type'],'material':i['stiffeners']['material'],'dimensions': dims}
-                elif i['plate'][4] == 'Bilge':
+                elif i['plate'][4] == 'Bilge' or len(i['stiffeners']) == 0:
                     tmp_s = {}
                 else:
-                    print(_ERROR_)
-                if type(i['id'] ) != int: raise KeyError() # Duplicate check
+                    c_error('(IO.py) geometry_parser: Error loading stiffeners.')
+                    raise KeyError()
+                if type(i['id'] ) != int: 
+                    c_error(f'(IO.py) geometry_parser: Id is not an integer')
+                    raise KeyError() # Duplicate check
                 if i['id'] in temp_id: 
                     c_error(f'(IO.py) geometry_parser: There was an overlap between the ids of two stiffened plates. \nCONFLICTING ID : '+str(i['id']))
                     raise KeyError()
@@ -145,6 +148,7 @@ def geometry_parser(geo_t:list):
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:
+                c_error(f'(IO.py) geometry_parser: Plate has no correct format.')
                 raise KeyError()
                 # c_error(f"IO.geometry_parser: Loading stiffened plate {i} has resulted in an error. Thus the code will ignore its existence.")
         except KeyError:

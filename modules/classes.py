@@ -18,12 +18,14 @@ _PLACE_ = {
     'Wing':3,
     'Bilge':4,
     'WeatherDeck':5,
+    'Girder':6,
     0:"Shell",
     1:'InnerBottom',
     2:'Hopper',
     3:'Wing',
     4:'Bilge',
-    5:'WeatherDeck'
+    5:'WeatherDeck',
+    6:'Girder'
 }
 def normals2D(geom,flip_n = False):
     eta = [[None,None]]*len(geom)
@@ -407,11 +409,10 @@ class stiffener():
         M = []
         for i in self.plates:
             tmp = i.render_data()
-            X.append(tmp[0])
-            Y.append(tmp[1])
+            [X.append(i) for i in tmp[0]]
+            [Y.append(i) for i in tmp[1]]
             T.append(tmp[2])
             M.append(tmp[3])
-        
         return X,Y,T,M
     def update(self):
         for plate in self.plates:
@@ -442,10 +443,15 @@ class stiff_plate():
         self.r_pad = r_pad*1e-3
         self.skip = skip
         self.null = null
-        if self.plate.tag != 4 and not self.null:
-            net_l = self.plate.length - self.l_pad - self.r_pad
-            N = math.floor(net_l/self.spacing)
-            _range = linespace(1,N,1,skip=skip)
+        # if self.plate.tag != 4 or not self.null and len(stiffener_) != 0:
+        if self.tag != 4 and not self.null and len(stiffener_) != 0:
+            try:
+                net_l = self.plate.length - self.l_pad - self.r_pad
+                N = math.floor(net_l/self.spacing)
+                _range = linespace(1,N,1,skip=skip)
+            except ZeroDivisionError:
+                c_error(f'(classes.py) stiff_plate: Plate {self} has no valid dimensions.')
+                quit()
             for i in _range:
                 root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),
                         self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
@@ -463,7 +469,7 @@ class stiff_plate():
         #renew stiffener
 
     def b_eff(self,PSM_spacing):
-        if len(self.stiffeners)!=0:
+        if len(self.stiffeners)!=0 and self.tag != 6:
             bef = min( self.spacing, PSM_spacing*200)
             if self.plate.net_thickness < 8*1e-3 : bef = max(0.6,bef)
             self.plate.length = len(self.stiffeners)*bef
@@ -570,6 +576,9 @@ class stiff_plate():
     def local_P(self,key,point):
         ''' point can be whatever. As i have no brain capacity to code a check, PLZ use only the roots of the stiffeners '''
         try:
+            if self.tag == 6:
+                c_error('(classes.py) stiff_plate/local_P: Pressures are not currently calculated for girders and bulkheads...')
+                quit()
             min_r = 1e5
             index = 0
             for i,data in enumerate(self.Pressure[key]):
@@ -966,6 +975,7 @@ class ship():
         MoM_y = 0
 
         for i in self.stiff_plates:
+            if i.null:continue # null plates are not to be taken for calculations
             area += i.area
             MoM_x += i.area*i.CoA[1]
             MoM_y += i.area*i.CoA[0]
@@ -976,6 +986,7 @@ class ship():
         Ixx = 0
         Iyy = 0
         for i in self.stiff_plates:
+            if i.null:continue # null plates are not to be taken for calculations
             if n50:
                 Ixx += i.n50_Ixx_c + (i.CoA[1]-self.yo)**2*i.area
                 Iyy += i.n50_Iyy_c + (i.CoA[0]-self.xo)**2*i.area
