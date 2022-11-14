@@ -72,12 +72,13 @@ def lin_int_dict(dict:dict,key:float,*f_args,suppress = False) -> float:
         out = linear_inter((tmp_x[0],tmp_y[0]),(tmp_x[1],tmp_y[1]),key)
     return out
 
-def linespace(start:int,end:int,step:int,skip=0):
+def linespace(start:int,end:int,step:int,skip=0,truncate_end=True):
     """
     A function that creates a linear space from start to end with step.
     skip = N -> skips every other N element
     """
     out =[]
+    if not truncate_end: end+=1
     if skip !=0:
         for i,j in enumerate(range(start,end,step)):
             if i%skip != 0 and skip !=0:

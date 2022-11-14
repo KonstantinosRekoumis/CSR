@@ -24,10 +24,13 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
     save += '{\"id\":'+str(stiff_plate.id)+',\"plate\":'+plate_save(stiff_plate.plate)+","
     if len(stiff_plate.stiffeners) != 0:
         save += '\"stiffeners\":'+stiff_save(stiff_plate.stiffeners[0])+","
+    else:
+        save += '\"stiffeners\": {},'
+
     save += '\"spacing\":'+json.dumps(stiff_plate.spacing*1e3)+","
     save += '\"skip\":'+json.dumps(stiff_plate.skip)+","
-    save += '\"l_pad\":'+json.dumps(stiff_plate.l_pad*1e3)+","
-    save += '\"r_pad\":'+json.dumps(stiff_plate.r_pad*1e3)
+    save += '\"s_pad\":'+json.dumps(stiff_plate.s_pad*1e3)+","
+    save += '\"e_pad\":'+json.dumps(stiff_plate.e_pad*1e3)
     if stiff_plate.null: save += ","+'\"null\":'+json.dumps(stiff_plate.null)
     return save+"}"
 
@@ -144,7 +147,7 @@ def geometry_parser(geo_t:list):
                     null = i['null']
                 else:
                     null = False
-                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['l_pad'],i['r_pad'],tmp_s,i['skip'],null=null)
+                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['s_pad'],i['e_pad'],tmp_s,i['skip'],null=null)
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:

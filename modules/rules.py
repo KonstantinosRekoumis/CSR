@@ -184,22 +184,29 @@ def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:p
     t = lambda point, P : 0.0158*ap*plate.spacing*math.sqrt(abs(P)/x[plate.tag]/Ca(point)/Reh)
     max_t = 0
     if Debug: c_info(f'net_plating plate:{plate}')
-    for i,stif in enumerate(plate.stiffeners):
-        P = plate.local_P(case.cond,stif.plates[0].start)
-        if Debug: c_info(f'Press : {P},Stiff: {stif.plates[0].start},sigma {abs(case.sigma(*stif.plates[0].start))},Ca {Ca(stif.plates[0].start)}',default=False)
-        t_temp = t(stif.plates[0].start,P)
-        if Debug: c_info(f't_temp:{t_temp}',default=False)
-        max_t = t_temp if max_t < t_temp else max_t
-    if Debug:c_info(f', max_t:{ max_t}',default=False)
-
+    try:
+        for i,data in enumerate(plate.Pressure[case.cond]):
+            point = (data[0],data[1])
+            P =  data[-1]
+            if Debug: c_info(f'Press : {P},Point: {point},sigma {abs(case.sigma(*point))},Ca {Ca(point)}',default=False)
+            t_temp = t(point,P)
+            if Debug: c_info(f't_temp:{t_temp}',default=False)
+            max_t = t_temp if max_t < t_temp else max_t
+        if Debug:c_info(f', max_t:{ max_t}',default=False)
+    except KeyError:
+            c_warn(f'(rules.py) plating_thickness_calculation: The {case.cond} condition has not been calculated for  plate {plate}. Checking only the empirical thickness value...')
+            minimum_plate_net_thickness(plate,L2 = min(300,case.Lsc),Debug=Debug)
+            return None 
     # Special Cases
     if (plate.tag == 0)and((plate.plate.start[1] > ship.Tmin and plate.plate.start[1] < 1.25*ship.Tsc)\
             or (plate.plate.end[1] > ship.Tmin and plate.plate.end[1] < 1.25*ship.Tsc)):
-        t = 26*(plate.plate.length+0.7)*(ship.B*ship.Tsc/Reh**2)**(0.25)*1e-3 #m
+        t = 26*(plate.spacing+0.7)*(ship.B*ship.Tsc/Reh**2)**(0.25)*1e-3 #m
+        if Debug:c_info(f'(rules.py) plating_thickness_calculation: Plate {plate} Contact Fender Zone special t {t*1e3} while local scantlings t {max_t*1e3} [mm]')
     elif plate.tag == 4:
         P = plate.Pressure[case.cond][0][-1]
-        R = abs(plate.plate.start[1]-plate.plate.end[1]) +0.5*(plate.l_pad+plate.r_pad) 
+        R = abs(plate.plate.start[1]-plate.plate.end[1]) +0.5*(plate.s_pad+plate.e_pad) 
         t = 6.45*(P*ship.PSM_spacing*1e3)**(0.4)*(R*1e3)**(0.6)*1e-7 # m
+        if Debug:c_info(f'(rules.py) plating_thickness_calculation: Plate {plate} Bilge Zone special t {t*1e3} while local scantlings t {max_t*1e3} [mm]')
     else: t=0
     # t=0
     if plate.plate.net_thickness < max(t,max_t):
@@ -256,8 +263,14 @@ def stiffener_plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_pl
 
     max_t = 0
     max_Z = 0
+    P = 0
     for i, stiff in enumerate(plate.stiffeners):
-        t_tmp = tw(plate.local_P(case.cond,stiff.plates[0].start))
+        try:
+            P = plate.local_P(case.cond,stiff.plates[0].start)
+        except KeyError:
+            c_warn(f'(rules.py) stiffener_plating_thickness_calculation: The {case.cond} condition has not been calculated for this plate. Checking only the empirical thickness value...')
+            break
+        t_tmp = tw(P)
         if max_t < t_tmp:
             max_t = t_tmp
     if plate.stiffeners[0].plates[0].net_thickness < max_t:
@@ -270,7 +283,7 @@ def stiffener_plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_pl
     minimum_stiff_net_thickness(plate,min(300,case.Lsc),Debug=Debug)
     plate.update()
     for i, stiff in enumerate(plate.stiffeners):
-        Z_tmp = Z(plate.local_P(case.cond,stiff.plates[0].start),stiff.plates[0].start)
+        Z_tmp = Z(P,stiff.plates[0].start)
         if max_Z < Z_tmp:
             max_Z = Z_tmp
     Z_local = plate.stiffeners[0].calc_Z(plate.stiffeners[0].Ixx_c,plate.stiffeners[0].Iyy_c,)[0]
@@ -362,8 +375,14 @@ def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
         blocks = []
         max_eval = False
         for block in ship.blocks:
-            if plate.id in block.list_plates_id and block.space_type not in condition['skip value']:
+            if (plate.id in block.list_plates_id or -plate.id in block.list_plates_id) and block.space_type not in condition['skip value']:
                 blocks.append(block)
+            elif (plate.id in block.list_plates_id or -plate.id in block.list_plates_id) and block.space_type in condition['skip value']:
+                #use a zero pressure pseudo block as the plate is well defined and raising an exception is unwanted behavior
+                zero = cls.block('zero',False,'VOID',[plate.id,])
+                zero.get_coords([plate,])
+                zero.Pressure[case.cond] = [0 for i in zero.pressure_coords ]
+                blocks.append(zero)
         if len(blocks)> 2: 
             c_error(f'(rules.py) Loading_cases: Detected a plate: {plate} which is contained in multiple blocks. A stiffened plate can be boundary of only 2 Blocks at most at a time!')
             c_error(f'Involved Blocks:\n {blocks}')
@@ -384,7 +403,9 @@ def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
             plate.Pressure[case.cond] = P[index]
         else:
             phzx.block_to_plate_perCase(plate,blocks,case,condition['Dynamics']) # let the function handle the proper aggregation
-            # if plate.id in (3,1,2):c_info(f'plate: {plate}\nAGG_eval: {plate.Pressure[case.cond]}')
+        # if plate.id in (3,1,2):c_info(f'plate: {plate}\nAGG_eval: {plate.Pressure[case.cond]}')
+        
+
 def ship_scantlings(ship:cls.ship):
     In50  = 2.7*ship.Cw*ship.Lsc**3*ship.B*(ship.Cb+0.7)*1e-8
     Zrn50 = 0.9*ship.Cw*ship.Lsc**2*ship.B*(ship.Cb+0.7)*1e-6 # k = 1.0 Grade A steel
@@ -454,12 +475,19 @@ def corrosion_addition(stiff_plate: cls.stiff_plate, blocks : list[cls.block], T
     #Grab tags
     tags = []
     for i in blocks:
-        if stiff_plate.id in i.list_plates_id:
+        if stiff_plate.id in i.list_plates_id or -stiff_plate.id in i.list_plates_id:
             tags.append(i.space_type)
     plate_t_corr = {
         'in':0,
         'out':0,
     }
+    if len(tags) == 0: 
+        c_warn((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are not present.'
+                'Resetting to the Hopper case for both sides'))
+        plate_t_corr['in'] = Corr["CHP"]["Hopper/InBot"]
+        plate_t_corr['out'] = Corr["CHP"]["Hopper/InBot"]
+        return plate_t_corr
+
     if stiff_plate.tag in (0,4): #Shell plates
         Y = max(stiff_plate.plate.start[1],stiff_plate.plate.end[1])
         if Y <= Tmin:
@@ -486,6 +514,10 @@ def corrosion_addition(stiff_plate: cls.stiff_plate, blocks : list[cls.block], T
         t= (0,0)
         ind = 0
         c = 0 
+        if len(tags) == 1:
+            c_warn((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are not adequate.'
+                'Using the data for the one side for both sides ...'))
+            tags.append(tags[0])
         while c <= 1: #not the best way but oh well
             for tag,i in enumerate(tags):
                 if "WB" == tag :
@@ -493,8 +525,8 @@ def corrosion_addition(stiff_plate: cls.stiff_plate, blocks : list[cls.block], T
                         t[c] = Corr['WBT']['FacePlate']['=< 3,tank_top'] 
                         ind = i
                 elif 'DC' == tag:
-                    if t[c] < Corr["CHP"]["UpperPart"]:
-                        t[c] = Corr["CHP"]["UpperPart"]
+                    if t[c] < Corr["CHP"]["Hopper/InBot"]:
+                        t[c] = Corr["CHP"]["Hopper/InBot"]
                         ind = i
                 elif 'OIL' == tag or 'FW' == tag:
                     if t[c] < Corr["Misc"]["FO/FW/LO/VS"] : 

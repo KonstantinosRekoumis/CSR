@@ -333,9 +333,9 @@ class stiffener():
         for i in self.plates:
             area += i.area
             n50_area += i.n50_area
-            MoM_x += i.area*i.CoA[0]
-            MoM_y += i.area*i.CoA[1]
-        self.CoA=(MoM_x/area,MoM_y/area)
+            MoM_x += i.area*i.CoA[1]
+            MoM_y += i.area*i.CoA[0]
+        self.CoA=(MoM_y/area,MoM_x/area)
         self.area=area
         self.n50_area=n50_area 
     
@@ -422,14 +422,14 @@ class stiffener():
 
 class stiff_plate():
     def __init__(
-                self,id:int,plate:plate, spacing:float, l_pad:float, r_pad:float,
+                self,id:int,plate:plate, spacing:float, s_pad:float, e_pad:float,
                 stiffener_:dict, skip :int, null:bool= False ):
         """
         The stiff_plate class is the Union of the plate and the stiffener(s).
         Its args are :
         plate -> A plate object
         spacing -> A float number, to express the distance between two stiffeners in mm.
-        l_pad, r_pad -> Float numbers, to express the padding distance (in mm) of the stiffeners with respect to the left and right 
+        s_pad, e_pad -> Float numbers, to express the padding distance (in mm) of the stiffeners with respect to the starting and ending 
                         edge of the base plate.
         stiffener_dict -> A dict containing data to create stiffeners : {type : str, dims : [float (in mm)],mat:str}
         Spacing is in mm.
@@ -439,22 +439,22 @@ class stiff_plate():
         self.tag = plate.tag #it doesn't make sense not to grab it here
         self.stiffeners = []
         self.spacing = spacing*1e-3 
-        self.l_pad = l_pad*1e-3
-        self.r_pad = r_pad*1e-3
+        self.s_pad = s_pad*1e-3
+        self.e_pad = e_pad*1e-3
         self.skip = skip
         self.null = null
         # if self.plate.tag != 4 or not self.null and len(stiffener_) != 0:
         if self.tag != 4 and not self.null and len(stiffener_) != 0:
             try:
-                net_l = self.plate.length - self.l_pad - self.r_pad
+                net_l = self.plate.length - self.s_pad - self.e_pad
                 N = math.floor(net_l/self.spacing)
-                _range = linespace(1,N,1,skip=skip)
+                _range = linespace(1,N,1,skip=skip,truncate_end=False)
             except ZeroDivisionError:
                 c_error(f'(classes.py) stiff_plate: Plate {self} has no valid dimensions.')
                 quit()
             for i in _range:
-                root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.l_pad),
-                        self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.l_pad))
+                root = (self.plate.start[0]+math.cos(self.plate.angle)*(self.spacing*i+self.s_pad),
+                        self.plate.start[1]+math.sin(self.plate.angle)*(self.spacing*i+self.s_pad))
                 self.stiffeners.append(stiffener(
                                                 stiffener_['type'],stiffener_['dimensions'],
                                                 self.plate.angle,root,stiffener_['material'],
@@ -541,7 +541,7 @@ class stiff_plate():
                 total_Mx += i.area*i.CoA[1]
                 total_My += i.area*i.CoA[0]
         
-        self.CoA  = (total_Mx/total_A,total_My/total_A) 
+        self.CoA  = (total_My/total_A,total_Mx/total_A) 
         self.area = total_A
         self.n50_area = total_A_n50
     
@@ -574,24 +574,22 @@ class stiff_plate():
         self.plate.render(r_m=r_m)
         [i.render() for i in self.stiffeners]
     def local_P(self,key,point):
-        ''' point can be whatever. As i have no brain capacity to code a check, PLZ use only the roots of the stiffeners '''
-        try:
-            if self.tag == 6:
-                c_error('(classes.py) stiff_plate/local_P: Pressures are not currently calculated for girders and bulkheads...')
-                quit()
-            min_r = 1e5
-            index = 0
-            for i,data in enumerate(self.Pressure[key]):
-                radius = math.sqrt((data[0]-point[0])**2+(data[1]-point[1])**2)
-                if min_r > radius:
-                    index = i
-                    min_r = radius
-            # c_info(f'self.Pressure : {self.Pressure[key][index]}')
-            return self.Pressure[key][index][-1]
-                
-        except KeyError:
-            c_error(f'(classes.py) stiff_plate/local_P: The {key} condition has not been calculated for this plate.')
+        '''
+        !!! USE ONLY WITH CUSTOM TRY - EXCEPT TO CATCH SPECIAL CASES !!! 
+        ! point can be whatever. As i have no brain capacity to code a check, 
+        PLZ use only the roots of the stiffeners '''
+        if self.tag == 6:
+            c_error('(classes.py) stiff_plate/local_P: Pressures are not currently calculated for girders and bulkheads...')
             quit()
+        min_r = 1e5
+        index = 0
+        for i,data in enumerate(self.Pressure[key]):
+            radius = math.sqrt((data[0]-point[0])**2+(data[1]-point[1])**2)
+            if min_r > radius:
+                index = i
+                min_r = radius
+        # c_info(f'self.Pressure : {self.Pressure[key][index]}')
+        return self.Pressure[key][index][-1]
     def update(self):
         self.plate.update()
         for stiff in self.stiffeners:
@@ -636,7 +634,7 @@ class block():
         if space_type in TAGS:
             self.space_type = space_type
         else:
-            c_error("The block type is not currently supported or non-existent.")
+            c_error("(classes.py) block :The block type is not currently supported or non-existent.")
         self.list_plates_id = list_plates_id
 
         # containing the various coefficients to calculate internal pressures
@@ -709,7 +707,11 @@ class block():
                             if j.tag == 4: #Bilge
                                 X,Y = j.plate.render_data()[:2]
                                 s = len(X)-2
-                                for i in range(1,len(X)-1):
+                                if self.list_plates_id[c-1] >= 0:
+                                    r_ = range(1,len(X)-1)
+                                elif self.list_plates_id[c-1] <0:
+                                    r_ = range(len(X)-2,0,-1)
+                                for i in r_:
                                     self.coords.append((X[i],Y[i]))
                                     self.Kc_eval(start,end,j.tag)
                                     self.plates_indices.append(j.id)
@@ -996,12 +998,15 @@ class ship():
         if self.symmetrical: return 2*Ixx, 2*Iyy
         else: return Ixx, Iyy 
 
-    def render(self,r_m='w'):
+    def render(self,r_m='w',path=""):
         fig = plt.figure()
         for i in self.stiff_plates:
             i.render(r_m=r_m)
         # plt.axis([-1,self.B/2+1,-1,self.D+3])
-        plt.show()
+        if path !='':
+            plt.savefig(path,bbox_inches='tight',orientation = "landscape")
+        else:
+            plt.show()
     def update(self,update_all=False):
         if update_all:
             [i.update() for i in self.stiff_plates]
@@ -1094,7 +1099,7 @@ class ship():
             '\\caption{Ship\'s Plating Data}\n'
             '\\label{tab:Plates_Data}\n'
             '\\begin{adjustbox}{center}\n'
-            '\\begin{tabular}{*{8}{>{\centering}m{2cm}}}\n'
+            '\\begin{tabular}{{>{\centering}m{2cm}}*{3}{>{\centering}m{1.5cm}}{>{\centering}m{3cm}}*{3}{>{\centering}m{1.5cm}}}\n'
             '\\hline\n'
             'No & Material & Breadth & Spacing & Center of Area & Thickness & Net Thickness & Corrosion Thickness \\tabularnewline \\hline\n'
             '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]   \\tabularnewline \\hline\n')

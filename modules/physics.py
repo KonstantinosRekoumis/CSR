@@ -621,7 +621,11 @@ def DynamicDryCargo_Pressure(block:cls.block,case:PhysicsData,debug=False):
     block.Pressure[case.cond] = P
     return P
 
-
+def Void_Pressure(block:cls.block,case:PhysicsData,debug=False):
+    P = [0]*len(block.pressure_coords)
+    block.Pressure[case.cond] = P
+    block.Pressure['STATIC'] = P
+    return P
 #------------------------------------------------------------------------------
 #------- Total Evaluation of Pressure Distribution ----------------------------
 
@@ -644,10 +648,13 @@ def Dynamic_total_eval(ship:cls.ship,Tlc:float,case:str,LOG = True):
             elif i.space_type == 'DC':
                 F = DynamicDryCargo_Pressure
                 def args(x): return (i,x,False)
-            else: 
+            elif i.space_type in ('WB','LC','OIL','FW'): 
                 F = DynamicLiquid_Pressure
                 def args(x): return (i,x,False)
-        
+            elif i.space_type == 'VOID':
+                F = Void_Pressure
+                def args(x) : return (i,x,False)
+
             Pd = F(*args(c))
             if (None not in Pd) and LOG:
                 
@@ -665,9 +672,10 @@ def Static_total_eval(ship:cls.ship,Tlc:float,rho:float,LOG = True):
             F = StaticDryCargo_Pressure
             args = (i,False)
         elif i.space_type =='ATM':continue
-        else: 
+        elif i.space_type in ('WB','LC','OIL','FW'): 
             F = StaticLiquid_Pressure
             args = (i,False)
+        
     
         Pd = F(*args)
         if (None not in Pd) and LOG:
