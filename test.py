@@ -61,21 +61,23 @@ if __name__ == "__main__":
         
         plt.show()
     else:
-        papor = IO.load_ship("in.json")
+        papor = IO.load_ship("test.json")
         # print(papor.Ixx)
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
-        papor.render(r_m = 'wC')
-        rnr.contour_plot(papor,show_w=True,key = 'id')
-        rnr.block_plot(papor,fill=False)
-        rnr.pressure_plot(papor,'NORMALS','DC',normals_mode=True)
+        papor.render(r_m = 'wC',path='section.pdf')
+        # # rnr.contour_plot(papor,show_w=True,key = 'id')
+        # rnr.block_plot(papor,fill=False)
+        # rnr.pressure_plot(papor,'NORMALS','DC',normals_mode=True)
+        # rnr.pressure_plot(papor,'NORMALS','WB',normals_mode=True)
         # phzx.BSP_total_eval(papor,15.3)
         # phzx.HSM_total_eval(papor,15.3)
         # phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
         # for i in papor.blocks:
         #     if i.space_type == 'DC':
         #         print(i.coords)
-        # rnr.pressure_plot(papor,'HSM-1','all')
+        # rnr.pressure_plot(papor,'H
+        # SM-1','all')
         # rnr.pressure_plot(papor,'HSM-2','DC')
         # rnr.pressure_plot(papor,'BSP-1P','DC')
         # rnr.pressure_plot(papor,'BSP-2P','DC')

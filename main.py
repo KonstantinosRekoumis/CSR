@@ -82,13 +82,12 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 
     c_info(f'#=> Evaluating Full Load Condition...')
     for case in (HSM1,HSM2,BSP1,BSP2):
-        # rnr.pressure_plot(ship,case.cond,'DC')
+        if PRESSURE_PLOTS: rnr.pressure_plot(ship,case.cond,'DC,SEA')
         csr.Loading_cases_eval(ship,case,FLC)
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...',default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...',default= False)
     for case in (HSM1,HSM2,BSP1,BSP2):
         csr.net_scantling(ship,case,FLC['Dynamics'],Debug=False)
-    # csr.net_scantling(ship,HSM1,Debug=False)
 
     c_info(f'#=> Evaluating Water Ballast Condition...')
     for case in (HSM1,HSM2,BSP1,BSP2):
@@ -97,6 +96,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     c_info('# => Evaluating Local Scantlings of stiffened plates...',default= False)
     for case in (HSM1,HSM2,BSP1,BSP2):
         csr.net_scantling(ship,case,WB['Dynamics'],Debug=False)
+
     c_info('# => Evaluating Sitffened Plates Slenderness Requirements...')
     ship.evaluate_beff()
     csr.buckling_evaluator(ship,Debug=False)
@@ -119,7 +119,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 if __name__ == "__main__":
     # main(True,True)
     # Three step automated design method 
-    auto = True
+    auto = False
     if auto:
         main('./in.json',False,True)
         main('./out.json',False,False)
