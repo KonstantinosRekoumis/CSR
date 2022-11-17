@@ -3,6 +3,7 @@
 ## Major Importance
 
 - [ ] Do the project
+- [ ] Add info about the null corrosion check done for girders
 - [x] Fix the input file for the Tmin, Lsc and Tsc  
 - [x] Account for symmetry  
 - [x] Add I calculation for symmetrical sections 
@@ -15,7 +16,7 @@
 - [x] Check special plating cases -> side shell (ez) -> Bilge plates(medium) Bilge plate needs to have as paddings the neighboring plates' inverse paddings
 - [x] Program T beams for stiffeners 
 - [x] IMPLEMENT BUCKLING STRENGTH CHECK -> Implement shear beam reduction (check for total Moment of Inertia) Part 1 Chapter 8 Section 2  
-- [ ] **Finalize the Section Modelling**
+- [x] **Finalize the Section Modelling**
 - [x] Create exception for fender contact zone
 - [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition)  
 - [x] **ESSAY -> Change the table figures, iamges, check for mistakes, add beff in Inertia Calculations**

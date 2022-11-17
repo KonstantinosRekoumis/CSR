@@ -9,8 +9,6 @@ STUDIES HSM and BSP conditions at midships
 # #################################
 #_____ IMPORTS _____
 # import ezdxf #to be installed 
-import matplotlib.pyplot as plt
-import numpy as np 
 
 #_____ CALLS _______
 import modules.classes as cl

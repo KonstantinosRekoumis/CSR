@@ -124,9 +124,9 @@ def geometry_parser(geo_t:list):
                 tmp_p = cls.plate(i['plate'][0],i['plate'][1],t,i['plate'][3],i['plate'][4])
                 if i['plate'][4] != 'Bilge' and 'stiffeners' in i and  len(i['stiffeners']) != 0:
                     tmp_d = i['stiffeners']["dimensions"]
-                    if len(tmp_d)==2 and i['stiffeners']["type"] == 'fb':
+                    if len(tmp_d)>=2 and i['stiffeners']["type"] == 'fb': # extra dimensions than the first N required are omitted
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1]}
-                    elif len(tmp_d)==4 and i['stiffeners']["type"] in ('g','tb'):
+                    elif len(tmp_d)>=4 and i['stiffeners']["type"] in ('g','tb'): # extra dimensions than the first N required are omitted
                         dims = {'lw':tmp_d[0],'bw':tmp_d[1],'lf':tmp_d[2],'bf':tmp_d[3]}
                     else: 
                         c_error("(IO.py) You input a stiffener type that has less dims than needed",i['stiffeners'])
