@@ -38,7 +38,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
         'This code is developed to aid the design of the \n'
         'principal strength members of a ship\'s Midship. \n'
         'For the time being is developed for Bulk Carriers,\n'
-        ' under Common Structural Rules 2022 Version.'
+        ' under Common Structural Rules 2022 Version.\n'
         f'{line}'
         )
     print(title)
@@ -60,7 +60,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     if PRESSURE_PLOTS:
         rnr.pressure_plot(ship,'HSM-1','SEA,ATM',path ='./essay/HSM1_Shell.pdf')
         rnr.pressure_plot(ship,'STATIC','SEA,ATM',path ='./essay/STATIC_Shell.pdf')
-        rnr.pressure_plot(ship,'Normals','WB',True,path='./essay/NORMALS.png')
+        rnr.pressure_plot(ship,'Normals','SEA',True,path='./essay/NORMALS.png')
         rnr.pressure_plot(ship,'HSM-2','SEA,ATM',path ='./essay/HSM2_Shell.pdf')
         rnr.pressure_plot(ship,'BSP-1P','SEA,ATM',path ='./essay/BSP1_Shell.pdf')
         rnr.pressure_plot(ship,'BSP-2P','SEA,ATM',path ='./essay/BSP2_Shell.pdf')
@@ -80,8 +80,9 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
 
     c_info(f'#=> Evaluating Full Load Condition...')
     for case in (HSM1,HSM2,BSP1,BSP2):
-        if PRESSURE_PLOTS: rnr.pressure_plot(ship,case.cond,'DC,SEA')
+        # if PRESSURE_PLOTS: rnr.pressure_plot(ship,case.cond,'DC,SEA')
         csr.Loading_cases_eval(ship,case,FLC)
+    # quit()
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...',default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...',default= False)
     for case in (HSM1,HSM2,BSP1,BSP2):
@@ -119,10 +120,10 @@ if __name__ == "__main__":
     # Three step automated design method 
     auto = False
     if auto:
-        main('./in.json',False,True)
+        main('./in.json',False,False)
         main('./out.json',False,False)
-        main('./out.json',False,False)
+        # main('./out.json',False,False)
     # Single Step Manual Design evaluation
     else:
-        main('./test.json',False,False)
+        main('./test.json',False,True)
     

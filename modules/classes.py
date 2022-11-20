@@ -29,22 +29,25 @@ _PLACE_ = {
 }
 def normals2D(geom,flip_n = False):
     eta = [[None,None]]*len(geom)
+    eta = []
     for i in range(len(geom)-1):
+        _eta = [0,0]
         xba = geom[i+1][0]-geom[i][0]
         yba = geom[i+1][1]-geom[i][1]
         if flip_n:
             yba = - yba
             xba = - xba
-        nrm2 = np.sqrt(yba**2+xba**2)
+        nrm2 = math.sqrt(yba**2+xba**2)
         if nrm2 == 0:
-            eta[i][0] = yba/nrm2
-            eta[i][1] = -xba/nrm2
+            _eta[i][0] = yba/nrm2
+            _eta[i][1] = -xba/nrm2
             c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
         else:
-            eta[i][0] = yba/nrm2
-            eta[i][1] = -xba/nrm2
+            _eta[0] = yba/nrm2
+            _eta[1] = -xba/nrm2
+        eta.append(_eta)
     # last point (a somewhat simplistic approach)
-    eta[-1] = eta[-2]    
+    eta.append(eta[-1])    
     return eta
 
 class plate():
@@ -60,8 +63,10 @@ class plate():
         """
         self.start = start
         self.end = end
+        if thickness == 0: thickness = 1
         self.thickness = thickness*1e-3 #convert mm to m
         self.net_thickness = self.thickness
+        self.net_thickness_calc = 0
         self.cor_thickness = -1e-3
         self.material = material
         try:
@@ -237,6 +242,8 @@ class plate():
         geom = [[X[i],Y[i]] for i in range(len(X))]
         return normals2D(geom)
     def update(self):
+        if self.net_thickness < self.net_thickness_calc:
+            self.net_thickness = self.net_thickness_calc
         self.thickness = self.net_thickness+self.cor_thickness
         # self.angle, self.length = self.calc_lna() # They are not supposed to change for the time being
         self.area = self.length*self.thickness
@@ -286,6 +293,7 @@ class stiffener():
         self.n50_area = 0
         self.n50_Ixx_c = 0
         self.n50_Iyy_c = 0
+        self.Z_rule = 0 
         self.dimensions = dimensions
         if self.type=="fb":#flat bar
             pw = plate(root,
@@ -382,21 +390,31 @@ class stiffener():
                 print("The axis dictionary has no proper values.\n","axis :",axis['axis'],type(axis['axis']),"\noffset :",axis['offset'],type(axis['offset']))
                 return None
 
-    def calc_Z(self,Ixx,Iyy):
-        max_r = 0
-        max_point = []
-        for plate in self.plates:
-            rs = math.sqrt((plate.start[0]-self.CoA[0])**2+(plate.start[1]-self.CoA[1])**2)
-            re = math.sqrt((plate.end[0]-self.CoA[0])**2+(plate.end[1]-self.CoA[1])**2)
-            if max_r<rs: 
-                max_r = rs 
-                max_point = plate.start
-            elif max_r<re:
-                max_r = re
-                max_point = plate.end
-            Zxx = Ixx/abs(max_point[1]-self.CoA[1]) if abs(max_point[1]-self.CoA[1])!=0 else Ixx/abs(self.plates[0].thickness)
-            Zyy = Iyy/abs(max_point[0]-self.CoA[0]) if abs(max_point[0]-self.CoA[0])!=0 else Ixx/abs(self.plates[0].thickness)
-        return Zxx,Zyy 
+    def calc_Z(self):
+
+        if self.type in ('tb','g'):
+            '''
+            ----x----               ----x----
+                |                   |
+                |                   |
+                x o       OR        x   o
+                |                   |
+        ________|________   ________|________
+            '''
+            ylc_web = self.plates[0].length/2
+            ylc_flg = self.plates[0].length
+
+            ylc_st = (ylc_flg*self.plates[1].area+ylc_web*self.plates[0].area)/(self.area)
+
+            Ixx = ( self.plates[0].net_thickness*self.plates[0].length**3/12
+                +self.plates[1].net_thickness**3*self.plates[1].length/12
+                +self.plates[0].area*(ylc_web-ylc_st)**2 # Parallel Axis Theorem
+                +self.plates[1].area*(ylc_flg-ylc_st)**2 # Parallel Axis Theorem
+            )
+            return Ixx/(ylc_flg-ylc_st)
+        elif self.type in ('fb'):
+            Ixx = self.plates[0].net_thickness*self.plates[0].length**3/12
+        return Ixx/(self.plates[0].length/2)
 
 
     def render(self,r_m = 'w'):
@@ -487,6 +505,18 @@ class stiff_plate():
             'g' :'Angled Bar',
             'tb':'T Bar'
         }
+        if self.tag == 6:
+            pntc,pct = 'Not Evaluated', 'Not Evaluated'
+            if len(self.stiffeners)!=0:
+                sntcw,sctw = 'Not Evaluated', 'Not Evaluated'
+                if len(self.stiffeners[0].plates) == 2:
+                    sntcf,sctf = 'Not Evaluated', 'Not Evaluated'
+        else:
+            pntc,pct = round(self.plate.net_thickness_calc*1e3,2), round(self.plate.cor_thickness*1e3,2)
+            if len(self.stiffeners)!=0:
+                sntcw,sctw = round(self.stiffeners[0].plates[0].net_thickness_calc*1e3,2), round(self.stiffeners[0].plates[0].cor_thickness*1e3,2)
+                if len(self.stiffeners[0].plates) == 2:
+                    sntcf,sctf = round(self.stiffeners[0].plates[1].net_thickness_calc*1e3,2), round(self.stiffeners[0].plates[1].cor_thickness*1e3,2)
 
         out_plate = (
             f'Plate {self.id} & '
@@ -494,32 +524,41 @@ class stiff_plate():
             f' {round(self.plate.length,3)} & '
             f' {round(self.spacing*1e3,2)} & '
             f' {_round(self.CoA,3)} & '
-            f' {round(self.plate.thickness*1e3,2)} & '
+            f' {pntc} & '
+            f' {pct} &'
             f' {round(self.plate.net_thickness*1e3,2)} & '
-            f' {round(self.plate.cor_thickness*1e3,2)} '
+            f' {round(self.plate.thickness*1e3,2)} '
             '\\tabularnewline \\hline\n')
         if len(self.stiffeners) != 0:
             out_stif = (
                 ' Web &'
-                f' {self.stiffeners[0].plates[0].material} & '
                 f' {round(self.stiffeners[0].plates[0].length*1e3,2)} & '
-                f' {round(self.stiffeners[0].plates[0].thickness*1e3,2)} & '
+                f' {sntcw} & '
+                f' {sctw}  & '
                 f' {round(self.stiffeners[0].plates[0].net_thickness*1e3,2)} & '
-                f' {round(self.stiffeners[0].plates[0].cor_thickness*1e3,2)}  '
+                f' {round(self.stiffeners[0].plates[0].thickness*1e3,2)}  '
             )
             if len(self.stiffeners[0].plates) == 2:
                 out_stif += (
-                    '\\tabularnewline \\cline{3-8}\n & & Flange &'
-                    f' {self.stiffeners[0].plates[0].material} & '
+                    '\\tabularnewline \\cline{6-11}\n & & & & & Flange &'
                     f' {round(self.stiffeners[0].plates[1].length*1e3,2)} & '
-                    f' {round(self.stiffeners[0].plates[1].thickness*1e3,2)} & '
+                    f' {sntcf} & '
+                    f' {sctf}  & '
                     f' {round(self.stiffeners[0].plates[1].net_thickness*1e3,2)} & '
-                    f' {round(self.stiffeners[0].plates[1].cor_thickness*1e3,2)}  '
+                    f' {round(self.stiffeners[0].plates[1].thickness*1e3,2)} '
                 )
                 out_stif = ('\\multirow{2}{*}{'+f'Plate {self.id}'+'} & '
-                            '\\multirow{2}{*}{'+V[self.stiffeners[0].type]+'} & ' + out_stif)
+                            '\\multirow{2}{*}{'+V[self.stiffeners[0].type]+'} & '
+                            '\\multirow{2}{*}{'+self.stiffeners[0].plates[0].material+'} & '
+                            '\\multirow{2}{*}{'+f'{round(self.stiffeners[0].calc_Z()*1e6,3)}'+'} & '
+                            '\\multirow{2}{*}{'+f'{round(self.stiffeners[0].Z_rule*1e6,3)}'+'} & '
+                            + out_stif)
             else:
-                out_stif = f'Plate {self.id} & '+V[self.stiffeners[0].type]+' & '  + out_stif
+                out_stif = (f'Plate {self.id} & '+V[self.stiffeners[0].type]+' & '
+                            f'{self.stiffeners[0].plates[0].material} & '
+                            f'{round(self.stiffeners[0].calc_Z()*1e6,3)} & '
+                            f'{round(self.stiffeners[0].Z_rule*1e6,3)} & '
+                            + out_stif)
             out_stif += '\\tabularnewline \\hline\n'
             return out_plate, out_stif 
         else:
@@ -699,7 +738,7 @@ class block():
                         if start not in self.coords:
                             self.coords.append(start)
                             self.Kc_eval(start,end,j.tag)
-                            self.plates_indices.append(j.id)
+                            self.plates_indices.append(-1) # Null id 
                             Mx += N*start[0]-start_p[0]
                             My += N*start[1]-start_p[1]
                             A  += N*1
@@ -729,7 +768,7 @@ class block():
                         # c is not incremented to re-parse the first plate and register its end point
                         self.coords.append(start)
                         self.Kc_eval(start,end,j.tag)
-                        self.plates_indices.append(j.id)
+                        # self.plates_indices.append(j.id)
                         start_p = start
                         A    += j.plate.length//Dx
                     
@@ -748,12 +787,12 @@ class block():
         K = []
         P = []
         eta = []
+        temp = linespace(1,resolution,1)
         for i in range(len(self.coords)-1):
             if (self.coords[i] not in self.pressure_coords): #eliminate duplicate entries -> no problems with normal vectors
                 self.pressure_coords.append(self.coords[i])
-                P.append(self.plates_indices[i])
+                # P.append(self.plates_indices[i])
                 if self.Kc != None: K.append(self.Kc[i]) 
-            temp = linespace(1,resolution,1)
             dy = self.coords[i+1][1]-self.coords[i][1]
             dx = self.coords[i+1][0]-self.coords[i][0]
             span = math.sqrt(dy**2+dx**2)
@@ -768,9 +807,7 @@ class block():
 
         self.plates_indices = P
         if self.Kc != None: self.Kc = K
-        
         self.eta=normals2D(self.pressure_coords)
-
 
     def render_data(self):
         X = [i[0] for i in self.coords]
@@ -788,7 +825,7 @@ class block():
         X = [i[0] for i in self.pressure_coords]
         Y = [i[1] for i in self.pressure_coords]
         try:
-            P = self.Pressure[pressure_index] if not graphical else [1 for i in self.plates_indices]
+            P = self.Pressure[pressure_index] if not graphical else [1 for i in self.pressure_coords]
         except KeyError:
             c_warn(f'(classes.py) block/pressure_data: A pressure distribution for block :{self} is not calculated for Dynamic Condition {pressure_index} !!! Treat this appropriately !')
             P = None
@@ -801,9 +838,11 @@ class block():
                 if val == stiff_plate.id and start:
                     x0 = i
                     start = False
-                elif (val != stiff_plate.id or i==len(self.plates_indices)-1) and not start:
-                    x1 = i
+                elif val != stiff_plate.id  and not start:
+                    x1 = i-1
                     break
+                elif i==len(self.plates_indices)-1:
+                    x1 = i
             try:
                 return [(*self.pressure_coords[i],*self.eta[i],self.Pressure[pressure_index][i]) for i in range(x0,x1+1,1)]
             except KeyError:
@@ -811,7 +850,7 @@ class block():
                     c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i],*self.eta[i],0) for i in range(x0,x1+1,1)]
         else:
-            print('blyat',stiff_plate,'cyka',self)
+            print('blyat',stiff_plate,'cyka',self)# To FIX
             return None
 
 
@@ -1052,10 +1091,10 @@ class ship():
         '''
         mid = ''
         GeneralPart = (
-            '\\chapter{General Particulars}\n'
+            '\\chapter{General Input Data Particulars}\n'
             '\\label{sec:General Particulars}\n'
             '\\begin{table}[h]\n'
-            '\\caption{Ship\'s General Particulars}\n'
+            '\\caption{Ship\'s General Input Data Particulars}\n'
             '\\label{tab:Gen_Part}\n'
             '\\begin{tabular}{{>{\centering}m{6cm}}*{2}{>{\centering}m{4cm}}}\n'
             '\\hline\n'
@@ -1094,43 +1133,58 @@ class ship():
 
         plates = (
             '\\chapter{Plating Data}\n'
+            '\\KOMAoptions{paper=landscape,pagesize}\n'
             '\\label{sec:Plating Data}\n'
             '\\begin{table}[h]\n'
             '\\caption{Ship\'s Plating Data}\n'
             '\\label{tab:Plates_Data}\n'
-            '\\begin{adjustbox}{center}\n'
-            '\\begin{tabular}{{>{\centering}m{2cm}}*{3}{>{\centering}m{1.5cm}}{>{\centering}m{3cm}}*{3}{>{\centering}m{1.5cm}}}\n'
+            '\\begin{tabular}{{>{\centering}m{2cm}}*{3}{>{\centering}m{1.5cm}}{>{\centering}m{3cm}}*{4}{>{\centering}m{2cm}}}\n'
             '\\hline\n'
-            'No & Material & Breadth & Spacing & Center of Area & Thickness & Net Thickness & Corrosion Thickness \\tabularnewline \\hline\n'
-            '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]   \\tabularnewline \\hline\n')
+            'No & Material & Breadth & Stiffener Spacing & Center of Area & Net Thickness Calculated & Corrosion Thickness & Net Thickness As Built & Total Thickness As Built \\tabularnewline \\hline\n'
+            '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]  &    [mm]   \\tabularnewline \\hline\n')
         stiffeners = (
             '\\chapter{Stiffeners Data}\n'
             '\\label{sec:Stiffeners Data}\n'
             '\\begin{table}[h]\n'
             '\\caption{Ship\'s Stiffeners Data}\n'
             '\\label{tab:Stiff_Data}\n'
-            '\\begin{adjustbox}{center}\n'
-            '\\begin{tabular}{*{8}{>{\centering}m{2cm}}}\n'
+            '\\begin{tabular}{*{11}{>{\centering}m{2cm}}}\n'
             '\\hline\n'
-            'No & Type & & Material & L   & Thickness & Net Thickness & Corrosion Thickness \\tabularnewline \\hline\n'
-            '   &      & &          & [mm] & [mm]      &    [mm]       &    [mm]            \\tabularnewline \\hline\n') 
+            'No & Type & Material & Z stiffener & Z rule  & & L    & Net Thickness calculated & Corrosion Thickness & Net Thickness As Built & Thickness As Built   \\tabularnewline \\hline\n'
+            '   &      &          & [$cm^6$]    & [$cm^6$]& & [mm] &    [mm]                  &    [mm]             &    [mm]                &           [mm]        \\tabularnewline \\hline\n') 
+        c = 0
         for i in self.stiff_plates:
+            if c == 13:
+                plates += ( '\\end{tabular}\n\\end{table}\n\\newpage\n'
+                            '\\begin{table}[h!]\n'
+                            '\\begin{tabular}{{>{\centering}m{2cm}}*{3}{>{\centering}m{1.5cm}}{>{\centering}m{3cm}}*{4}{>{\centering}m{2cm}}}\n'
+                            '\\hline\n'
+                            'No & Material & Breadth & Stiffener Spacing & Center of Area & Net Thickness Calculated & Corrosion Thickness & Net Thickness As Built & Total Thickness As Built \\tabularnewline \\hline\n'
+                            '   &          &    [m]   & [mm]   & $(y,z)$ [m]    &    [mm]   &    [mm]   &    [mm]  &    [mm]   \\tabularnewline \\hline\n')
+                stiffeners += ( '\\end{tabular}\n\\end{table}\n\\newpage\n'
+                                '\\begin{table}[h!]\n'
+                                '\\begin{tabular}{*{11}{>{\centering}m{2cm}}}\n'
+                                '\\hline\n'
+                                'No & Type & Material & Z stiffener & Z rule  & & L    & Net Thickness calculated & Corrosion Thickness & Net Thickness As Built & Thickness As Built   \\tabularnewline \\hline\n'
+                                '   &      &          & [$cm^6$]    & [$cm^6$]& & [mm] &    [mm]                  &    [mm]             &    [mm]                &           [mm]        \\tabularnewline \\hline\n')  
+                c = 0
             tmp = i.LaTeX_output()
             plates += tmp[0]
             stiffeners += tmp[1]
+            c+=1
         
-        plates += '\\end{tabular}\n\\end{adjustbox}\n\\end{table}\n\n'
-        stiffeners += '\\end{tabular}\n\\end{adjustbox}\n\\end{table}\n\n'
-        mid += GeneralPart+figures+plates+stiffeners 
+        plates += '\\end{tabular}\n\\end{table}\n\n'
+        stiffeners += '\\end{tabular}\n\\end{table}\n\n'
+        mid += GeneralPart+figures+plates+stiffeners + '\\clearpage\\KOMAoptions{paper=portrait,pagesize} '
         
         if standalone:
                     out = ('\\documentclass[12pt,a4paper]{report}\n\\usepackage{array}\n'
                 '\\usepackage{multirow}\n'
-                '\\usepackage{adjustbox}\n'
                 '\\usepackage{spalign}\n'
                 '\\usepackage{amsmath}\n'
                 '\\usepackage{comment}\n'
                 '\\usepackage{caption}\n'
+                '\\usepackage{typearea}\n'
                 '\\begin{document}\n'+mid+''
                 '\\end{document}')
         else:

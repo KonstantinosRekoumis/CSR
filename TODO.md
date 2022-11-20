@@ -4,6 +4,10 @@
 
 - [ ] Do the project
 - [ ] Add info about the null corrosion check done for girders
+- [X] Fix Z calculation for stiffener
+- [x] Add t_net calculated
+- [x] Girder LaTeX fix for Corrosion thickness
+- [x] Add info about the null corrosion check done for girders
 - [x] Fix the input file for the Tmin, Lsc and Tsc  
 - [x] Account for symmetry  
 - [x] Add I calculation for symmetrical sections 

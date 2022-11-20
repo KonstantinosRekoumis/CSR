@@ -87,7 +87,7 @@
         { "id":102, "plate":[[15.33,0],[20,0],19.5,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[300,15,100,15],
+                "dimensions":[350,15,200,15],
                 "material":"AH32"
             },
             "spacing": 820,"skip" : 0,"s_pad":250,"e_pad":100
@@ -104,13 +104,13 @@
             },
             "spacing": 820,"skip" : 0,"s_pad":-720,"e_pad":100
         },
-        { "id":105, "plate":[[22.5,6],[22.5,8.6],19.5,"AH32","Shell"],
+        { "id":105, "plate":[[22.5,6],[22.5,8],19.5,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
                 "dimensions":[300,15,200,15],
                 "material":"AH32"
             },
-            "spacing": 820,"skip" : 0,"s_pad":-140,"e_pad":1900
+            "spacing": 820,"skip" : 0,"s_pad":-120,"e_pad":1200
         },
         { "id":202, "plate":[[22.5,8.763],[15.53,2.5],23.5,"AH32","Hopper"],
             "stiffeners":{
@@ -120,19 +120,19 @@
             },
             "spacing": 820,"skip" : 0,"s_pad":1400,"e_pad":100
         },
-        { "id":106, "plate":[[22.5,8.6],[22.5,10.6],19.5,"DH32","Shell"],
+        { "id":106, "plate":[[22.5,8],[22.5,10],19.5,"DH32","Shell"],
+            "stiffeners":{},
+            "spacing": 820,"skip" : 0,"s_pad":-120,"e_pad":1200
+        },
+        { "id":107, "plate":[[22.5,10],[22.5,16.2],19.5,"AH32","Shell"],
             "stiffeners":{ },
             "spacing": 820,"skip" : 0,"s_pad":0,"e_pad":0
         },
-        { "id":107, "plate":[[22.5,10.6],[22.5,15.6],19.5,"AH32","Shell"],
-            "stiffeners":{ },
-            "spacing": 820,"skip" : 0,"s_pad":0,"e_pad":0
-        },
-        { "id":108, "plate":[[22.5,15.6],[22.5,20],19.5,"AH32","Shell"],
+        { "id":108, "plate":[[22.5,16.2],[22.5,20],19.5,"AH32","Shell"],
             "stiffeners":{  "type":"tb",
                             "dimensions":[300,15,250,17],
                             "material":"AH32" },
-            "spacing": 820,"skip" : 0,"s_pad":820,"e_pad":100
+            "spacing": 820,"skip" : 0,"s_pad":220,"e_pad":100
         },
         { "id":109, "plate":[[22.5,20],[22.5,22.5],19.5,"AH36","Shell"],
             "stiffeners":{  "type":"tb",

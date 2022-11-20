@@ -3,9 +3,6 @@ This module provides the functions that calculate the pressures applied on the p
 This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
-import numpy as np
-from multiprocessing.sharedctypes import Value
-from operator import le
 from modules.utilities import c_error, c_success,c_warn,lin_int_dict,d2r
 import modules.classes as cls
 from modules.constants import RHO_F,RHO_S,G
@@ -427,8 +424,8 @@ def BSP_wave_pressure(cons_:list[float],_1_:bool,block:cls.block,Port=True):
     if Port:
         fyz = lambda y,z : 2*z/Tlc+2.5*fyB(y)+0.5 #worst case scenario 
     else:
-        print('Dont mess with the Port Setting. For the time being...')
-        pass
+        c_error('(physics.py) BSP_wave_pressure: Dont mess with the Port Setting. For the time being...')
+        quit()
         
     Pbsp = lambda y,z : 4.5*fbeta*fps*fnl*fyz(y,z)*Cw*math.sqrt((l+Lsc-125)/LBP)
 
@@ -700,13 +697,14 @@ def block_to_plate_perCase(plate:cls.stiff_plate,blocks:list[cls.block],case:Phy
         '''
         Consider 2 vectors 2-D vectors
         '''
+        
         try:
             for i in (a,b):
-                if len(i) == 2:
-                    return a[0]*b[0]+a[1]*b[1]
-                else: raise ValueError()
+                if len(i) != 2:
+                    raise ValueError()
+            return a[0]*b[0]+a[1]*b[1]
         except ValueError:
-            c_error(f'(physics.py) block_to_plate_perCase/mul: Vector {i} is not of proper type.')
+            c_error(f'(physics.py) block_to_plate_perCase/mul: Plate {plate} Vector {i} is not of proper type.')
             quit()
 
     def add_proj(a,b,proj_v,intermediate=False):
@@ -715,10 +713,10 @@ def block_to_plate_perCase(plate:cls.stiff_plate,blocks:list[cls.block],case:Phy
         '''
         P = []
         if (len(a) != len(b)):
-            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Vector a has length {len(a)} while Vector b has length {len(b)} !')
+            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Vector b has length {len(b)} !')
             quit()
         elif (len(a) != len(proj_v)):
-            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Vector a has length {len(a)} while Projection Vector  has length {len(proj_v)} !')
+            c_error(f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Projection Vector  has length {len(proj_v)} !')
             # quit()
         for i in range(len(a)):
             P0 = (a[i][2]*a[i][4],a[i][3]*a[i][4]) # (etax*P,etay*P)
@@ -738,6 +736,7 @@ def block_to_plate_perCase(plate:cls.stiff_plate,blocks:list[cls.block],case:Phy
         quit()
     for i,block in enumerate(blocks):
         tmp = []
+        #     print(block, case.cond,'\n',block.plates_indices,'\n',block.eta,'\n')
         if "D" in Load: 
             tmp.append(block.pressure_over_plate(plate,case.cond))
         if 'S' in Load:
@@ -749,7 +748,7 @@ def block_to_plate_perCase(plate:cls.stiff_plate,blocks:list[cls.block],case:Phy
             P.append(tmp[0])
     
     if len(P)==2:
-        out_P = add_proj(tmp[0],tmp[1],[plate.plate.eta[0] for i in tmp[0]])
+        out_P = add_proj(P[0],P[1],[plate.plate.eta[0] for i in P[0]])
     elif len(P)==1:
         out_P = P[0]
 
