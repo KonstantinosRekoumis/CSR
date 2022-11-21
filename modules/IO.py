@@ -174,5 +174,5 @@ def LaTeX_output(ship:cls.ship,path='./',_standalone = True):
     out = ship.LaTeX_output(standalone=_standalone,figs=('id_plt.pdf','tag_plt.pdf'))
     with open(path+'tabs.tex','w') as file:
             file.write(out)
-    rnr.contour_plot(ship,key="id",path=path+'id_plt.pdf')
+    rnr.contour_plot(ship,key="id",path=path+'id_plt.pdf',cmap='jet')
     rnr.contour_plot(ship,key="tag",path=path+'tag_plt.pdf')

@@ -122,7 +122,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         T.append(t*1e3)
         M.append(m)
         Tag.append(tag)
-        Id.append(i.id)
+        Id.append(f'{i.id}')
 
         for j in i.stiffeners:
             ax.plot(*j.render_data()[:2],color = color)
@@ -130,7 +130,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         'thickness':[T,'number'],
         'material':[M,'string'],
         'tag':[Tag,'string'],
-        'id':[Id,'number']
+        'id':[Id,'string']
     }
 
     ax.set_ylim([-1,ship.D+3])
