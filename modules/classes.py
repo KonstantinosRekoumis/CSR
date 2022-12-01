@@ -28,7 +28,7 @@ _PLACE_ = {
     6:'Girder'
 }
 def normals2D(geom,flip_n = False):
-    eta = [[None,None]]*len(geom)
+    #eta = [[None,None]]*len(geom)#COPE
     eta = []
     for i in range(len(geom)-1):
         _eta = [0,0]
@@ -39,8 +39,8 @@ def normals2D(geom,flip_n = False):
             xba = - xba
         nrm2 = math.sqrt(yba**2+xba**2)
         if nrm2 == 0:
-            _eta[i][0] = yba/nrm2
-            _eta[i][1] = -xba/nrm2
+            _eta[0] = yba/nrm2
+            _eta[1] = -xba/nrm2
             c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
         else:
             _eta[0] = yba/nrm2
@@ -61,14 +61,6 @@ class plate():
         Initializing a plate item requires the start and end point coordinates in meters, the plate's thickness in mm,
         and the plate's chosen material.
         """
-        self.start = start
-        self.end = end
-        if thickness == 0: thickness = 1
-        self.thickness = thickness*1e-3 #convert mm to m
-        self.net_thickness = self.thickness
-        self.net_thickness_calc = 0
-        self.cor_thickness = -1e-3
-        self.material = material
         try:
             self.tag = _PLACE_[tag]
         except KeyError:
@@ -77,6 +69,14 @@ class plate():
             c_warn(warn)
             [print(_PLACE_[i],") ->", i ) for i in _PLACE_ if type(i) == str]
             c_warn("The program defaults to Inner Bottom Plate")
+        self.start = start
+        self.end = end
+        if thickness == 0: thickness = 1
+        self.thickness = thickness*1e-3 #convert mm to m
+        self.net_thickness = self.thickness
+        self.net_thickness_calc = 0
+        self.cor_thickness = -1e-3 if self.tag != 6 else 0
+        self.material = material
         self.angle, self.length = self.calc_lna()
         self.area = self.length*self.thickness
         self.Ixx_c, self.Iyy_c = self.calc_I_center(b = self.net_thickness)
@@ -484,6 +484,7 @@ class stiff_plate():
         self.Ixx_c, self.Iyy_c = self.calc_I(n50=False)
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
+        self.DataCell = DataCell(self)
         #renew stiffener
 
     def b_eff(self,PSM_spacing):
@@ -1192,5 +1193,213 @@ class ship():
 
         if Debug: print(out)
         return out
-        
+class DataCell:
+    def __init__(self,stiff_plate:stiff_plate): 
+        self.name = f'Plate {stiff_plate.id} '
+        self.N_st = len(stiff_plate.stiffeners)
+        self.tag = stiff_plate.tag
+        if self.N_st == 0 : self.N_st = '-'
+        self.plate_material = stiff_plate.plate.material
+        self.spacing = round(stiff_plate.spacing*1e3,2)
+        self.breadth = round(stiff_plate.plate.length,3)
+        self.CoA = self._round(stiff_plate.CoA,3)
+        # Pressure
+        self.Pressure = {}
+        # Primary stresses 
+        self.Ixx_c = stiff_plate.n50_Ixx_c
+        self.Steiner = stiff_plate.n50_Ixx-stiff_plate.n50_Ixx_c
+        self.Ixx = stiff_plate.n50_Ixx
+        self.Area = stiff_plate.n50_area
+        # plate stuff
+        self.p_A_n50  = round(stiff_plate.plate.n50_area*1e6,2)
+        self.p_thick  = round(stiff_plate.plate.thickness*1e3,2)
+        self.p_net_t  = round(stiff_plate.plate.net_thickness*1e3,2)
+        self.p_corr_t = round(stiff_plate.plate.cor_thickness*1e3,2) if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_calc_t = 0 if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_empi_t = 0 if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_tn50_c = round(stiff_plate.plate.n50_thickness*1e3,2) if stiff_plate.tag!=6 else round(stiff_plate.plate.thickness*1e3,2)
+        self.Area_Data = [[self.p_A_n50, self._round(stiff_plate.plate.CoA,2), [round(x*self.p_A_n50*1e6,2) for x in stiff_plate.plate.CoA],
+                            stiff_plate.plate.n50_Ixx_c, (stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*self.p_A_n50,
+                            stiff_plate.plate.n50_Ixx_c + (stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*self.p_A_n50]]
+        # stiffener stuff
+        if len(stiff_plate.stiffeners) != 0:
+            self.s_A_n50  = round(stiff_plate.stiffeners[0].n50_area*1e6,2)
+            self.type = stiff_plate.stiffeners[0].type
+            self.Zc = round(stiff_plate.stiffeners[0].calc_Z()*1e6,3)
+            self.Zrule = round(stiff_plate.stiffeners[0].Z_rule*1e6,3)
+            self.heights = [round(i.length*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_thick  = [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_net_t  = [round(i.net_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_corr_t = [round(i.cor_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else 'Not Evaluated'
+            self.s_calc_t = [0 for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else 'Not Evaluated'
+            self.s_buck_t = [0 for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else 'Not Evaluated'
+            self.s_empi_t = [0 for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else 'Not Evaluated'
+            self.s_tn50_c = [round(i.n50_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            for stif in stiff_plate.stiffeners:
+                stif = stiffener()
+                self.Area_Data.append([self.s_A_n50, self._round(stif.CoA,2), [round(x*stif.n50_area*1e6,2) for x in stif.CoA],
+                                    stif.n50_Ixx_c, (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50, 
+                                    stif.n50_Ixx_c + (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50])
+        else:
+            self.Zc = ''
+            self.Zrule = ''
+            self.s_thick  = ''
+            self.s_net_t  = ''
+            self.s_corr_t = ''
+            self.s_calc_t = ''
+            self.s_buck_t = ''
+            self.s_empi_t = ''
+            self.s_tn50_c = ''
+            self.Area_Data = []
+
+    def _round(tp:tuple, dig:int):
+        out = []
+        for i in tp:
+            out.append(round(i,dig))
+        return tuple(out)
+    def update(self,stiff_plate:stiff_plate):
+        self.Ixx_c = stiff_plate.n50_Ixx_c
+        self.Steiner = stiff_plate.n50_Ixx-stiff_plate.n50_Ixx_c
+        self.Ixx = stiff_plate.n50_Ixx
+        self.Area = stiff_plate.n50_area
+        self.p_thick  = round(stiff_plate.plate.thickness*1e3,2)
+        self.p_net_t  = round(stiff_plate.plate.net_thickness*1e3,2)
+        self.p_corr_t = round(stiff_plate.plate.cor_thickness*1e3,2) if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_tn50_c = round(stiff_plate.plate.n50_thickness*1e3,2) if stiff_plate.tag!=6 else round(stiff_plate.plate.thickness*1e3,2)
+        self.Area_Data = [[self.p_A_n50, self._round(stiff_plate.plate.CoA,2), [round(x*self.p_A_n50*1e6,2) for x in stiff_plate.plate.CoA],
+                            stiff_plate.plate.n50_Ixx_c, (stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*self.p_A_n50, 
+                            stiff_plate.plate.n50_Ixx_c + (stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*self.p_A_n50]]
+        if len(stiff_plate.stiffeners) != 0:
+            self.Zc = round(stiff_plate.stiffeners[0].calc_Z()*1e6,3)
+            self.Zrule = round(stiff_plate.stiffeners[0].Z_rule*1e6,3)
+            self.s_A_n50  = round(stiff_plate.stiffeners[0].n50_area*1e6,2) 
+            self.s_thick  = [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_net_t  = [round(i.net_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_corr_t = [round(i.cor_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else 'Not Evaluated'
+            self.s_tn50_c = [round(i.n50_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            for stif in stiff_plate.stiffeners:
+                self.Area_Data = [self.s_A_n50, self._round(stif.CoA,2), [round(x*stif.n50_area*1e6,2) for x in stif.CoA],
+                                    stif.n50_Ixx_c, (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50, 
+                                    stif.n50_Ixx_c + (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50]
+    def pressure_append(self,stiff_plate:stiff_plate):
+        '''Holds the maximum Pressure value for each EDW across all Loading Conditions''' 
+        key_f = lambda x: abs(x[-1])
+        if len(self.Pressure) == 0:
+            for i in stiff_plate.Pressure:
+                tmp = stiff_plate.Pressure[i]
+                val = max(tmp,key=key_f)
+                self.Pressure[i] = val[-1]
+        else:
+            for i in stiff_plate.Pressure:
+                tmp = stiff_plate.Pressure[i]
+                val = max(tmp,key=key_f)
+                if i in self.Pressure: 
+                    if self.Pressure[i] < val[-1]:
+                        self.Pressure[i] = val[-1]
+                else:
+                    self.Pressure[i] = val[-1]
+    
+class DataLogger:
+    '''
+    Datalogging class that acts as Grabber of the DataCell contained in each stiff plate.
+    Creates tabular data for export. TO BE USED after the calculations are already done. 
+    IF NOT wont yield useful results. 
+    '''   
+    def plate_name(name:str): return int(name[6:])
+
+    def __init__(self,_ship:ship,_conds:list[str]):
+        self.conds = _conds #EDWs that were documented
+        self.Cells = []
+        self.Press_D = []
+        self.Plate_D = []
+        self.Stiff_D = []
+        self.St_Pl_D = []
+        self.PrimS_D = []
+        self.update(_ship)
+    
+    def update(self,_ship:ship):
+        self.Cells = [] # may be slow for performance but it is meant to be called 1-2 times per main run
+        for st_pl in _ship.stiff_plates:
+            if st_pl.null : continue
+            self.Cells.append(st_pl.DataCell)
+        self.Cells.sort(key=self.plate_name)
+
+    def CreateTabularData(self):
+        '''
+        Press_D : Name & Breadth [m] & CoA [m] & HSM-1 & ... & EDW-last & Max Pressure
+        Plate_D : Name & Material & Breadth [m] & Stiffener Spacing [mm] & CoA [m] 
+                    & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]
+                    & Design Net Thickness [mm]& Design Net Thickness + 50% Corrosion [mm] & As Built Thickness [mm] 
+        Stiff_D : Name & Material & Type & Z actual [cm^3] & Z rule [cm^3] & Web | Flange &
+                    Length [mm] & & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] 
+                    Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] 
+                    & Design Net Thickness + 50% Corrosion [mm] & As Built Thickness [mm]
+        St_Pl_D : Name & Plate | St 1,2,..,N | St_plate & Area n-50 [mm^2] & CoA [m] & Moments of Area [cm^3] 
+                    & ixx,c [mm^4] & Area*(x_{CoA}*10^3)^2 [mm^4] & ixx,pl [mm^4]
+        PrimS_D : Name & & Area n-50 [mm^2] & CoA [m] & Moments of Area [cm^3] 
+                    & Ixx,c [mm^4] & Area*(x_{CoA}*10^3)^2 [mm^4] & ixx,pl [mm^4]
+        '''
+        def max_p(l):
+            max_ = -1e8
+            for i in l:
+                try:
+                    if max_< abs(i): max_ = abs(i)
+                except TypeError:
+                    continue
+            return max_
+        # reset tables
+        self.Press_D = []
+        self.Plate_D = []
+        self.Stiff_D = []
+        self.St_Pl_D = []
+        self.PrimS_D = []
+
+        for i,cell in enumerate(self.Cells):
+            p = []
+            for i in self.conds:
+                if i in cell.Pressure:
+                    p.append(cell.Pressure[i])
+                else:
+                    p.append('-')
+            if len(self.Plate_D) == 0: 
+                # Plate Group Initial ( Annotation Purpose only !)
+                self.Press_D.append(cell.tag)
+                self.Plate_D.append(cell.tag)
+                self.Stiff_D.append(cell.tag)
+                self.St_Pl_D.append(cell.tag)
+                self.PrimS_D.append(cell.tag)
+            else:
+                # Shift to new group ( Annotation Purpose only !)
+                if self.Cells[i-1].tag != cell.tag:
+                    self.Press_D.append(cell.tag)
+                    self.Plate_D.append(cell.tag)
+                    self.Stiff_D.append(cell.tag)
+                    self.PrimS_D.append(cell.tag)
+            cell = DataCell()
+            # Pressure Table
+            self.Press_D.append([cell.name, cell.breadth, cell.CoA, *p, max_p(p)])
+            # Plating Table
+            self.Plate_D.append([cell.name, cell.breadth, cell.spacing, cell.CoA, max_p(p),
+                                cell.p_calc_t, cell.p_empi_t, cell.p_corr_t, cell.p_net_t, cell.p_tn50_c, cell.p_thick])
+            # Stiffened Plate Table
+            self.St_Pl_D.append([cell.name,'Main Plate',*cell.Area_Data[0]])
+            for j in range(1,len(cell.Area_Data)): self.St_Pl_D.append([cell.name,f'Stiffener : {j}',*cell.Area_Data[j]])
+            self.St_Pl_D.append([cell.name,'Stiffened Plate', cell.Area, cell.CoA,(cell.CoA[0]*cell.Area,cell.CoA[0]*cell.Area)])
+            # Stiffeners Table
+            self.Stiff_D.append([cell.name, cell.material, cell.type, cell.Zc, cell.Zrule])
+            for j in range(len(cell.s_empi_t)):
+                self.Stiff_D.append([cell.heights[j], cell.s_calc_t[j], cell.s_empi_t[j], 
+                    cell.s_buck_t[j], cell.s_corr_t[j], cell.s_net_t[j],cell.s_tn50_c[j], cell.s_thick[j] ])
+            
+            self.PrimS_D.append([cell.name, cell.Area, cell.CoA,(cell.CoA[0]*cell.Area,cell.CoA[0]*cell.Area),
+                                cell.Ixx_c, cell.Steiner, cell.Ixx ] )
+            # self.PrimS_D.append([]) # No brain to finish 1/12/22
+            
+
+            
+            
+
+
+            
+
 #end of file

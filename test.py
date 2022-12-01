@@ -65,9 +65,9 @@ if __name__ == "__main__":
         # print(papor.Ixx)
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
-        # papor.render(r_m = 'wC',path='section.pdf')
+        papor.render(r_m = 'wC',path='section.pdf')
         # # rnr.contour_plot(papor,show_w=True,key = 'id')
-        rnr.block_plot(papor,fill=True)
+        # rnr.block_plot(papor,fill=True)
         # rnr.pressure_plot(papor,'NORMALS','DC',normals_mode=True)
         # rnr.pressure_plot(papor,'NORMALS','WB',normals_mode=True)
         # phzx.BSP_total_eval(papor,15.3)
