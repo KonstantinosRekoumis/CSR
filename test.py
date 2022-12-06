@@ -66,6 +66,20 @@ if __name__ == "__main__":
         # # print(papor.stiff_plates)
         # [print(i.coords) for i in papor.blocks]
         papor.render(r_m = 'wC',path='section.pdf')
+        HSM = phzx.Dynamic_total_eval(papor,15.3,'HSM',LOG=False)
+        FLC =  {
+        'Dynamics':'S+D',
+        'max value': 'DC',
+        'skip value':'LC,WB,OIL,FW,VOID'
+        }
+        [csr.Loading_cases_eval(papor,case,FLC) for case in HSM]
+        out = cls.DataLogger()
+        data = out.CreateTabularData(papor,['HSM-1','HSM-2'])
+        for i in data:
+            print('%'*40)
+            for j in i:
+                print(j)
+            print('%'*40)
         # # rnr.contour_plot(papor,show_w=True,key = 'id')
         # rnr.block_plot(papor,fill=True)
         # rnr.pressure_plot(papor,'NORMALS','DC',normals_mode=True)
