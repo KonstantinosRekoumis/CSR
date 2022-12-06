@@ -28,6 +28,7 @@ def stiff_pl_save(stiff_plate:cls.stiff_plate):
         save += '\"stiffeners\": {},'
 
     save += '\"spacing\":'+json.dumps(stiff_plate.spacing*1e3)+","
+    save += '\"PSM_spacing\":'+json.dumps(stiff_plate.PSM_spacing)+","
     save += '\"skip\":'+json.dumps(stiff_plate.skip)+","
     save += '\"s_pad\":'+json.dumps(stiff_plate.s_pad*1e3)+","
     save += '\"e_pad\":'+json.dumps(stiff_plate.e_pad*1e3)
@@ -65,7 +66,7 @@ def ship_save(ship:cls.ship,filename:str):
     save += "\"Cp\":"+str(ship.Cp)+',\n'
     save += "\"Cm\":"+str(ship.Cm)+',\n'
     save += "\"DWT\":"+str(ship.DWT)+',\n'
-    save += "\"PSM_spacing\":"+str(ship.PSM_spacing)+',\n'
+    # save += "\"PSM_spacing\":"+str(ship.PSM_spacing)+',\n'
 
     save += section_save(ship) +"\n}"
 
@@ -76,7 +77,7 @@ def ship_save(ship:cls.ship,filename:str):
 def load_ship(filename):
     with open(filename,'r') as file:
         data = json.loads(file.read())
-    tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT','PSM_spacing']
+    tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT']#,'PSM_spacing']
     particulars = []
     for i in tags:
         try:
@@ -147,7 +148,7 @@ def geometry_parser(geo_t:list):
                     null = i['null']
                 else:
                     null = False
-                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['s_pad'],i['e_pad'],tmp_s,i['skip'],null=null)
+                tmp = cls.stiff_plate(i['id'],tmp_p,i['spacing'],i['s_pad'],i['e_pad'],tmp_s,i['skip'],i['PSM_spacing'],null=null)
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:

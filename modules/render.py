@@ -113,6 +113,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
     M = []
     Tag = []
     Id = []
+    PSM_spacing = []
     fig,ax = plt.subplots(1,1)
     for i in ship.stiff_plates:
         if i.null and key != 'tag': continue # skip rendering null plates except for locality
@@ -123,20 +124,22 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         M.append(m)
         Tag.append(tag)
         Id.append(f'{i.id}')
+        PSM_spacing.append(i.PSM_spacing)
 
         for j in i.stiffeners:
             ax.plot(*j.render_data()[:2],color = color)
     data = {
-        'thickness':[T,'number'],
-        'material':[M,'string'],
-        'tag':[Tag,'string'],
-        'id':[Id,'string']
+        'thickness':[T,'number','As Built Thickness [mm]'],
+        'PSM_spacing':[T,'number','Web Section Spacing [m]'],
+        'material':[M,'string','Material'],
+        'tag':[Tag,'string','Locality Tag'],
+        'id':[Id,'string','Plate\'s Id']
     }
 
     ax.set_ylim([-1,ship.D+3])
     ax.set_xlim([-1,ship.B/2+1])
     try:
-        fig,ax = c_contour(X,Y,data[key][0],key,fig,ax,cmap,key = data[key][1])
+        fig,ax = c_contour(X,Y,data[key][0],data[key][2],fig,ax,cmap,key = data[key][1])
         plt.title(f'Plating\'s {key} Plot')
         ax.invert_xaxis()
         if path !='':

@@ -73,10 +73,14 @@ class plate():
         self.end = end
         if thickness == 0: thickness = 1
         self.thickness = thickness*1e-3 #convert mm to m
-        self.net_thickness = self.thickness
-        self.net_thickness_calc = 0
-        self.cor_thickness = -1e-3 if self.tag != 6 else 0
         self.material = material
+        self.net_thickness = self.thickness
+        # Calculations' Data Output 
+        self.cor_thickness = -1e-3 if self.tag != 6 else 0
+        self.net_thickness_calc = 0
+        self.net_thickness_empi = 0
+        self.net_thickness_buck = 0
+        # Implicitly Calculated Quantities
         self.angle, self.length = self.calc_lna()
         self.area = self.length*self.thickness
         self.Ixx_c, self.Iyy_c = self.calc_I_center(b = self.net_thickness)
@@ -242,8 +246,8 @@ class plate():
         geom = [[X[i],Y[i]] for i in range(len(X))]
         return normals2D(geom)
     def update(self):
-        if self.net_thickness < self.net_thickness_calc:
-            self.net_thickness = self.net_thickness_calc
+        if self.net_thickness < max(self.net_thickness_calc,self.net_thickness_empi,self.net_thickness_buck):
+            self.net_thickness = max(self.net_thickness_calc,self.net_thickness_empi,self.net_thickness_buck)
         self.thickness = self.net_thickness+self.cor_thickness
         # self.angle, self.length = self.calc_lna() # They are not supposed to change for the time being
         self.area = self.length*self.thickness
@@ -441,7 +445,7 @@ class stiffener():
 class stiff_plate():
     def __init__(
                 self,id:int,plate:plate, spacing:float, s_pad:float, e_pad:float,
-                stiffener_:dict, skip :int, null:bool= False ):
+                stiffener_:dict, skip :int, PSM_spacing:float, null:bool= False ):
         """
         The stiff_plate class is the Union of the plate and the stiffener(s).
         Its args are :
@@ -450,7 +454,7 @@ class stiff_plate():
         s_pad, e_pad -> Float numbers, to express the padding distance (in mm) of the stiffeners with respect to the starting and ending 
                         edge of the base plate.
         stiffener_dict -> A dict containing data to create stiffeners : {type : str, dims : [float (in mm)],mat:str}
-        Spacing is in mm.
+        PSM_spacing is in m.
         """
         self.id = id
         self.plate = plate
@@ -461,6 +465,8 @@ class stiff_plate():
         self.e_pad = e_pad*1e-3
         self.skip = skip
         self.null = null
+        self.PSM_spacing = PSM_spacing
+        self.b_eff = 0
         # if self.plate.tag != 4 or not self.null and len(stiffener_) != 0:
         if self.tag != 4 and not self.null and len(stiffener_) != 0:
             try:
@@ -484,15 +490,15 @@ class stiff_plate():
         self.Ixx_c, self.Iyy_c = self.calc_I(n50=False)
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
-        self.DataCell = DataCell(self)
         #renew stiffener
 
-    def b_eff(self,PSM_spacing):
+    def L_eff (self):
         if len(self.stiffeners)!=0 and self.tag != 6:
-            bef = min( self.spacing, PSM_spacing*200)
-            if self.plate.net_thickness < 8*1e-3 : bef = max(0.6,bef)
+            bef = min( self.spacing, self.PSM_spacing*0.2)
+            if self.plate.net_thickness < 8*1e-3 : bef = min(0.6,bef)
             self.plate.length = len(self.stiffeners)*bef
             self.update()
+            self.b_eff = bef
 
     def LaTeX_output(self):
         if self.null:return ('','')
@@ -853,10 +859,6 @@ class block():
         else:
             print('blyat',stiff_plate,'cyka',self)# To FIX
             return None
-
-
-
-
 class Sea_Sur(block):
     def __init__(self,list_plates_id: list[int]):
         super().__init__("SEA",True,'VOID',list_plates_id)
@@ -891,7 +893,7 @@ class Atm_Sur(block):
 
 class ship():
 
-    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,PSM_spacing, 
+    def __init__(self, LBP,Lsc, B, T, Tmin, Tsc, D, Cb, Cp, Cm, DWT,#PSM_spacing, 
                     stiff_plates:list[stiff_plate],blocks:list[block]):
         self.symmetrical = True # Checks that implies symmetry. For the time being is arbitary constant
         self.LBP = LBP
@@ -905,7 +907,7 @@ class ship():
         self.Cp = Cp
         self.Cm = Cm
         self.DWT = DWT
-        self.PSM_spacing = PSM_spacing
+        # self.PSM_spacing = PSM_spacing
         self.Mwh = 0
         self.Mws = 0
         self.Msw_h_mid = 0
@@ -928,7 +930,7 @@ class ship():
         '''
         To be used after corrosion addition evaluation. Plates have -1 mm initial corrosion.
         '''
-        [plate.b_eff(self.PSM_spacing) for plate in self.stiff_plates] # b effective evaluation 
+        [plate.L_eff() for plate in self.stiff_plates] # b effective evaluation 
     def validate_blocks(self,blocks :list[block]):
         # The blocks are already constructed but we need to validate their responding plates' existence
         ids = [i.id for i in self.stiff_plates]
@@ -1110,7 +1112,7 @@ class ship():
             '$C_p$ '+f'&{self.Cp}&'+' \\tabularnewline \\hline\n'
             '$C_m$ '+f'&{self.Cm}&'+' \\tabularnewline \\hline\n'
             '$DWT$ '+f'&{self.DWT}&'+' \\tabularnewline \\hline\n'
-            'PSM spacing '+f'&{self.PSM_spacing}&'+' [m]\\tabularnewline \\hline\n'
+            # 'PSM spacing '+f'&{self.PSM_spacing}&'+' [m]\\tabularnewline \\hline\n'
             '$M_{wh}$ '+f'&{round(self.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{ws}$ '+f'&{round(self.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{sw,h-mid}$ '+f'&{round(self.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
@@ -1201,7 +1203,8 @@ class DataCell:
         if self.N_st == 0 : self.N_st = '-'
         self.plate_material = stiff_plate.plate.material
         self.spacing = round(stiff_plate.spacing*1e3,2)
-        self.breadth = round(stiff_plate.plate.length,3)
+        self.breadth = round(stiff_plate.plate.calc_lna()[1],3)
+        self.breadth_eff = round(stiff_plate.plate.length,3)
         self.CoA = self._round(stiff_plate.CoA,3)
         # Pressure
         self.Pressure = {}
@@ -1240,17 +1243,17 @@ class DataCell:
                 self.Area_Data.append([self.s_A_n50, self._round(stif.CoA,2), [round(x*stif.n50_area*1e6,2) for x in stif.CoA],
                                     stif.n50_Ixx_c, (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50, 
                                     stif.n50_Ixx_c + (stif.CoA[1]-stiff_plate.CoA[1])**2*self.s_A_n50])
-        else:
-            self.Zc = ''
-            self.Zrule = ''
-            self.s_thick  = ''
-            self.s_net_t  = ''
-            self.s_corr_t = ''
-            self.s_calc_t = ''
-            self.s_buck_t = ''
-            self.s_empi_t = ''
-            self.s_tn50_c = ''
-            self.Area_Data = []
+        # else:
+        #     self.Zc = ''
+        #     self.Zrule = ''
+        #     self.s_thick  = ''
+        #     self.s_net_t  = ''
+        #     self.s_corr_t = ''
+        #     self.s_calc_t = ''
+        #     self.s_buck_t = ''
+        #     self.s_empi_t = ''
+        #     self.s_tn50_c = ''
+        #     self.Area_Data = []
 
     def _round(tp:tuple, dig:int):
         out = []
