@@ -111,7 +111,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     c_info('# => Outputing Data to /out.json file...',default= False)
     IO.ship_save(ship,'out.json')
     c_info('# => Generating LaTeX Report Data to /out.json file...',default= False)
-    IO.LaTeX_output(ship,path = './essay/',_standalone=False)
+    IO.LaTeX_output(ship,[x.cond for x in (HSM1,HSM2,BSP1,BSP2)],path = './essay/',_standalone=False)
     c_success('Program terminated succesfully!')
 
 

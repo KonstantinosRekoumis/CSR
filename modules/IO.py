@@ -171,8 +171,8 @@ def blocks_parser(blocks_t:list):
             c_error(f"(IO.py) blocks_parser: KeyError: Loading block {i} has resulted in an error. Thus the code will ignore its existence.")
     return out
 
-def LaTeX_output(ship:cls.ship,path='./',_standalone = True):
-    out = ship.LaTeX_output(standalone=_standalone,figs=('id_plt.pdf','tag_plt.pdf'))
+def LaTeX_output(ship:cls.ship,conds: list[str],path='./',_standalone = True):
+    out = ship.LaTeX_output(conds,standalone=_standalone,figs=('id_plt.pdf','tag_plt.pdf'))
     with open(path+'tabs.tex','w') as file:
             file.write(out)
     rnr.contour_plot(ship,key="id",path=path+'id_plt.pdf',cmap='jet')

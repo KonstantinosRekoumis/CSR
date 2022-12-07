@@ -75,12 +75,13 @@ if __name__ == "__main__":
         [csr.Loading_cases_eval(papor,case,FLC) for case in HSM]
         out = cls.DataLogger()
         data = out.CreateTabularData(papor,['HSM-1','HSM-2'],dump=True)
-        out.LaTeX_output()
-        for i in data[-1:]:
-            print('%'*40)
-            for j in i:
-                print(j)
-            print('%'*40)
+        out.LaTeX_output(Debug=True)
+        IO.LaTeX_output(papor,['HSM-1','HSM-2'],path='./essay/test/')
+        # for i in data[-1:]:
+        #     print('%'*40)
+        #     for j in i:
+        #         print(j)
+        #     print('%'*40)
         # # rnr.contour_plot(papor,show_w=True,key = 'id')
         # rnr.block_plot(papor,fill=True)
         # rnr.pressure_plot(papor,'NORMALS','DC',normals_mode=True)
