@@ -74,8 +74,9 @@ if __name__ == "__main__":
         }
         [csr.Loading_cases_eval(papor,case,FLC) for case in HSM]
         out = cls.DataLogger()
-        data = out.CreateTabularData(papor,['HSM-1','HSM-2'])
-        for i in data:
+        data = out.CreateTabularData(papor,['HSM-1','HSM-2'],dump=True)
+        out.LaTeX_output()
+        for i in data[-1:]:
             print('%'*40)
             for j in i:
                 print(j)
