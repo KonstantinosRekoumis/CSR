@@ -4,7 +4,7 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from modules.constants import LOADS
+from modules.constants import LOADS,TEX_PREAMBLE
 from modules.utilities import c_error, c_info,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
 import math
@@ -496,6 +496,7 @@ class stiff_plate():
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
         #renew stiffener
+        self.datacell = DataCell(self)
 
     def L_eff (self):
         if len(self.stiffeners)!=0 and self.tag != 6:
@@ -646,7 +647,8 @@ class stiff_plate():
         self.n50_Ixx, self.n50_Iyy = self.calc_I(n50=True)
 
     def return_data(self):
-        return DataCell(self)
+        self.datacell.update(self)
+        return self.datacell
 
 class block():
     """
@@ -1141,33 +1143,42 @@ class ship():
                     f'{i}'
                     '}\n\\end{figure}\n')
         pressure = (
+            '\\newgeometry{margin=1.5cm}\n'
             '\\chapter{Pressure Data}\n'
-            '\\label{sec:Pressure_Data}\n'+text[2])
+            '\\label{sec:Pressure_Data}\n'+text[0])
         plates = (
             '\\chapter{Plating Data}\n'
-            '\\KOMAoptions{paper=landscape,pagesize}\n'
-            '\\label{sec:Plating_Data}\n'+ text[1])
+            '\\label{sec:Plating_Data}\n'
+            '\\newpage\n'
+            '\\thispagestyle{lscape}\n'
+            '\\pagestyle{lscape}\n'
+            '\\begin{landscape}\n'
+            +text[1]+
+            '\\end{landscape}\n'
+            '\\thispagestyle{normal}\n'
+            '\\pagestyle{normal}\n')
         stiffeners = (
             '\\chapter{Stiffeners Data}\n'
-            '\\label{sec:Stiffeners_Data}\n'+text[2]) 
+            '\\label{sec:Stiffeners_Data}\n'
+            '\\newpage\n'
+            '\\thispagestyle{lscape}\n'
+            '\\pagestyle{lscape}\n'
+            '\\begin{landscape}\n'
+            +text[2]+
+            '\\end{landscape}\n'
+            '\\thispagestyle{normal}\n'
+            '\\pagestyle{normal}\n') 
         stiff_plates = (
+            '\\clearpage'
             '\\chapter{Stiffened Plates Data}\n'
             '\\label{sec:Stiffened_Plates_Data}\n'+text[3])
         ordinary_section = (
             '\\chapter{Ordinary Section\'s Stiffened Plates Data}\n'
             '\\label{sec:Stiffeners Data}\n'+text[4])
-        mid += GeneralPart+figures+plates+stiffeners+stiff_plates+ordinary_section + '\\clearpage\\KOMAoptions{paper=portrait,pagesize} '
+        mid += GeneralPart+figures+pressure+plates+stiffeners+stiff_plates+ordinary_section + '\\clearpage\\restoregeometry'
         
         if standalone:
-                    out = ('\\documentclass[12pt,a4paper]{report}\n\\usepackage{array}\n'
-                '\\usepackage{multirow}\n'
-                '\\usepackage{spalign}\n'
-                '\\usepackage{amsmath}\n'
-                '\\usepackage{comment}\n'
-                '\\usepackage{caption}\n'
-                '\\usepackage{typearea}\n'
-                '\\begin{document}\n'+mid+''
-                '\\end{document}')
+                    out = TEX_PREAMBLE+'\\begin{document}'+mid+'\\end{document}'
         else:
             out = mid
 
@@ -1227,17 +1238,41 @@ class DataCell:
                                     round(stif.n50_Ixx_c*1e12,2), round((stif.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.s_A_n50,2 ),
                                     round(stif.n50_Ixx_c*1e12 + (stif.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.s_A_n50,2)])
         self.pressure_append(stiff_plate)
-        # else:
-        #     self.Zc = ''
-        #     self.Zrule = ''
-        #     self.s_thick  = ''
-        #     self.s_net_t  = ''
-        #     self.s_corr_t = ''
-        #     self.s_calc_t = ''
-        #     self.s_buck_t = ''
-        #     self.s_empi_t = ''
-        #     self.s_tn50_c = ''
-        #     self.Area_Data = []
+    def update(self,stiff_plate:stiff_plate): 
+        # Primary stresses 
+        self.Ixx_c = round(stiff_plate.n50_Ixx_c*1e12,2)
+        # self.Steiner = round(self.Area*se,6)
+        # self.Ixx = round(stiff_plate.n50_Ixx,6)
+        self.Area = round(stiff_plate.n50_area*1e6,2)
+        # plate stuff
+        self.p_A_n50  = round(stiff_plate.plate.n50_area*1e6,2) #mm^2
+        self.p_thick  = round(stiff_plate.plate.thickness*1e3,2)
+        self.p_net_t  = round(stiff_plate.plate.net_thickness*1e3,2)
+        self.p_corr_t = round(stiff_plate.plate.cor_thickness*1e3,2) if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_calc_t = round(stiff_plate.plate.net_thickness_calc*1e3,2) if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_empi_t = round(stiff_plate.plate.net_thickness_empi*1e3,2) if stiff_plate.tag!=6 else 'Not Evaluated'
+        self.p_tn50_c = round(stiff_plate.plate.n50_thickness*1e3,2) if stiff_plate.tag!=6 else round(stiff_plate.plate.thickness*1e3,2)
+        self.Area_Data = [[self.p_A_n50, _round(stiff_plate.plate.CoA,2), [round(x*self.p_A_n50,2) for x in stiff_plate.plate.CoA],
+                            round(stiff_plate.plate.n50_Ixx_c*1e12,2), round((stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.p_A_n50,2),
+                            round(stiff_plate.plate.n50_Ixx_c*1e12 + (stiff_plate.plate.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.p_A_n50,2)]]
+        # stiffener stuff
+        if len(stiff_plate.stiffeners) != 0:
+            self.s_A_n50  = round(stiff_plate.stiffeners[0].n50_area*1e6,2) #mm^2
+            self.Zc = round(stiff_plate.stiffeners[0].calc_Z()*1e6,3)
+            self.Zrule = round(stiff_plate.stiffeners[0].Z_rule*1e6,3)
+            self.s_thick  = [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_net_t  = [round(i.net_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            self.s_corr_t = [round(i.cor_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else ['Not Evaluated' for i in stiff_plate.stiffeners[0].plates]
+            self.s_calc_t = [round(i.net_thickness_calc*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else ['Not Evaluated' for i in stiff_plate.stiffeners[0].plates]
+            self.s_buck_t = [round(i.net_thickness_buck*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else ['Not Evaluated' for i in stiff_plate.stiffeners[0].plates]
+            self.s_empi_t = [round(i.net_thickness_empi*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else ['Not Evaluated' for i in stiff_plate.stiffeners[0].plates]
+            self.s_tn50_c = [round(i.n50_thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else [round(i.thickness*1e3,2) for i in stiff_plate.stiffeners[0].plates]
+            for stif in stiff_plate.stiffeners:
+                self.Area_Data.append([self.s_A_n50, _round(stif.CoA,2), [round(x*self.s_A_n50,2) for x in stif.CoA],
+                                    round(stif.n50_Ixx_c*1e12,2), round((stif.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.s_A_n50,2 ),
+                                    round(stif.n50_Ixx_c*1e12 + (stif.CoA[1]-stiff_plate.CoA[1])**2*1e6*self.s_A_n50,2)])
+        self.pressure_append(stiff_plate)
+
 
     def pressure_append(self,stiff_plate:stiff_plate):
         '''Holds the maximum Pressure value for each EDW across all Loading Conditions''' 
@@ -1247,6 +1282,10 @@ class DataCell:
                 tmp = stiff_plate.Pressure[i]
                 val = max(tmp,key=key_f)
                 self.Pressure[i] = val[-1]
+                # print(stiff_plate)
+                # print(i)
+                # print(self.Pressure[i])
+                # print('%'*40)
         else:
             for i in stiff_plate.Pressure:
                 tmp = stiff_plate.Pressure[i]
@@ -1256,6 +1295,10 @@ class DataCell:
                         self.Pressure[i] = val[-1]
                 else:
                     self.Pressure[i] = val[-1]
+                # print(stiff_plate)
+                # print(i)
+                # print(self.Pressure[i])
+                # print('%'*40)
     
 class DataLogger:
     '''
@@ -1317,11 +1360,13 @@ class DataLogger:
 
         for i,cell in enumerate(self.Cells):
             p = []
+
             for cond in self.conds:
                 if cond in cell.Pressure:
                     p.append(round(cell.Pressure[cond],2))
                 else:
                     p.append('-')
+
             if len(self.Plate_D) == 0: 
                 # Plate Group Initial ( Annotation Purpose only !)
                 self.Press_D.append(cell.tag)
@@ -1345,7 +1390,7 @@ class DataLogger:
             # Stiffened Plate Table
             self.St_Pl_D.append([cell.name,'Main Plate',*cell.Area_Data[0]])
             for j in range(1,len(cell.Area_Data)): self.St_Pl_D.append([cell.name,f'Stiffener : {j}',*cell.Area_Data[j]])
-            self.St_Pl_D.append([cell.name,'Total Stiffened Plate', cell.Area, cell.CoA,[round(x*cell.Area,2) for x in cell.CoA],
+            self.St_Pl_D.append([cell.name,'Total St. Plate', cell.Area, cell.CoA,[round(x*cell.Area,2) for x in cell.CoA],
                                 '','',cell.Ixx_c])
             # Stiffeners Table
             if cell.N_st != '-':
@@ -1363,52 +1408,58 @@ class DataLogger:
 
     def LaTeX_output(self,Debug = False):
         endl = '\\tabularnewline\\hline\n'
-        def tabular(data,out,clmns,header):
-            _br = 0 #counter to break pages
-            out += header
+        def bold(a):
+            return '\\textbf{'+a+'}'
+        def f(a):
+            if type(a) in(int, float, np.float64, np.float32):
+                return f'{a:0.4g}'
+            elif type(a) in (list,tuple) and len(a) <= 2:
+                out = '('
+                for i in a: out += f(i)+', '
+                return out[:-2]+')'
+            elif type(a) == str:
+                return a
+            else:
+                c_warn(f'(classes.py) DataLogger/LaTeX_output/f: Variable {a} of {type(a)} is not supported. Thus f() will return value None.')
+        def tabular(data,clmns,header):
+            out = header
             for line in data:
-                if _br == 13:
-                    out += '\\end{tabular}\n\\end{table}\n\\begin{table}[h]'+header
-                    _br = 0
+                _bold = False
                 if type(line) == list:
                     if type(line[-1]) == list and len(line[-1]) > 2: #Stiffeners Data
                         s = -1 # slice
                         if type(line[-2]) == list and len(line[-2]) > 2:
                             s = -2
                         c = 0 
-                        for elem in line[:s-1]:
-                            if type(elem) == float:
-                                elem = f'{elem:06.3e}'
+                        for elem in line[:s]:
+                            elem = f(elem)
                             c += 1
-                            out += '\\multirow{2}{*}{'+str(elem)+' } & '
+                            out += '\\multirow{'+str(abs(s))+'}{*}{'+str(elem)+' } & '
                         out += ' Web & '
                         if s == -2 :
                             for elem in line[-2]:
-                                if type(elem) == float:
-                                    elem = f'{elem:06.3e}'
-                                out += f'{elem} & '
-                            out += endl+' &'*c + ' Flange & '
+                                elem = f(elem)
+                                out += f' {elem} &'
+                            out = out[:-1]+'\\tabularnewline\\cline{6-14}\n'+' &'*c + ' Flange & '
                             for elem in line[-1]:
-                                if type(elem) == float:
-                                    elem = f'{elem:06.3e}'
-                                out += f'{elem} & '
+                                elem = f(elem)
+                                out += f' {elem} &'
                         elif s == -1:
                             for elem in line[-1]:
-                                if type(elem) == float:
-                                    elem = f'{elem:06.3e}'
-                                out += f'{elem} & '
+                                elem = f(elem)
+                                out += f' {elem} &'
                     else:
+                        if line[1] in ('Total St. Plate','Total'): # Stiffened Plate Data
+                            _bold = True
                         for elem in line:
-                            if type(elem) == float:
-                                elem = f'{elem:06.3e}'
+                            elem = bold(f(elem)) if _bold else f(elem)
                             out += f' {elem} &'
                     out = out[:-1] + endl
-                    if line[1] == 'Total Stiffened Plate': # Stiffened Plate Data
+                    if line[1] == 'Total St. Plate': # Stiffened Plate Data
                         out = out[:-1]+ '\\hline\n'
 
                 elif type(line) == str: 
                     out += '\\multicolumn{'+str(clmns)+'}{l}{'+line+'}' + endl
-                _br += 1
             return out
 
         # Sanity Check 
@@ -1419,70 +1470,86 @@ class DataLogger:
                 return ''
         # Pressure Table
         clm_pres = 4 + len(self.conds)
-        press_tab = ('\\begin{table}[h]\n'
-                    '\\caption{Plating Pressure Data}\n'
-                    '\\label{tab:Press_Data}\n'
-                    )
-        press_head = '\\begin{tabular}{*{'+str(clm_pres)+'}{>{\centering}m{1.5cm}}}\n\\hline\n' 
+        press_head = ('\\begin{longtable}{*{2}{>{\centering}m{1.5cm}}*{'+str(clm_pres-2)+'}{>{\centering}m{2cm}}}\n'
+                        '\\caption{Plating Pressure Data}\n'
+                        '\\label{tab:Press_Data}\n'
+                        '\\tabularnewline'
+                        '\\hline\n')
         press_head += 'Name & Breadth [m] & CoA [m] &'
         for i in self.conds: press_head += f' {i} [kN/$m^2$] &'
-        press_head += ' Max Pressure [kN/$m^2$] '+endl
-        press_tab = tabular(self.Press_D,press_tab,clm_pres,press_head)
-        press_tab += '\\end{tabular}\n\\end{table}\n\n'
+        press_head += ' Max Pressure [kN/$m^2$] '+endl+'\\endfirsthead\n'
+        press_tab = tabular(self.Press_D,clm_pres,press_head)
+        press_tab += '\\end{longtable}\n\n'
         if Debug: print(press_tab)
 
         # Plating Table
-        plate_tab = ('\\begin{table}[h]\n'
+        plate_head = ('\\begin{longtable}{*{4}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{2cm}}}\n'
                     '\\caption{Plating Data}\n'
                     '\\label{tab:Plate_Data}\n'
-                    )
-        plate_head = ('\\begin{tabular}{*{12}{>{\centering}m{1.5cm}}}\n'
+                    '\\tabularnewline'
                     '\\hline\n'
-                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] '
+                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] & Design Pressure [kN/$m^2$]'
                     '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
-                    '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl)
-        plate_tab = tabular(self.Plate_D,plate_tab,12,plate_head)
-        plate_tab += '\\end{tabular}\n\\end{table}\n\n'
+                    '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endfirsthead\n'
+                    '\multicolumn{12}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
+                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] & Design Pressure [kN/$m^2$]'
+                    '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
+                    '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endhead\n')
+        plate_tab = tabular(self.Plate_D,12,plate_head)
+        plate_tab += '\\end{longtable}\n\n'
         if Debug: print(plate_tab)
 
         # Stiffeners Table
-        stiff_tab = ('\\begin{table}[h]\n'
+        stiff_head =('\\begin{longtable}{*{6}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{1.75cm}}}\n'
                     '\\caption{Stiffener Data}\n'
-                    '\\label{tab:Stiff_Data}\n')
-        stiff_head =('\\begin{tabular}{*{14}{>{\centering}m{1.5cm}}}\n'
+                    '\\label{tab:Stiff_Data}\n'
+                    '\\tabularnewline'
                     '\\hline\n'
                     'Name & Material & Type & Z actual [$cm^3$] & Z rule [$cm^3$] &  &'
-                    'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] '
+                    'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] &'
                     'Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] '
-                    '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl)
-        stiff_tab = tabular(self.Stiff_D,stiff_tab,14,stiff_head)
-        stiff_tab += '\\end{tabular}\n\\end{table}\n\n'
+                    '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endfirsthead\n'
+                    '\multicolumn{14}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
+                    'Name & Material & Type & Z actual [$cm^3$] & Z rule [$cm^3$] &  &'
+                    'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] &'
+                    'Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] '
+                    '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endhead\n')
+        stiff_tab = tabular(self.Stiff_D,14,stiff_head)
+        stiff_tab += '\\end{longtable}\n\n'
         if Debug: print(stiff_tab)
 
         # Stiffened Plate Table
-        st_pl_tab = ('\\begin{table}[h]\n'
+        st_pl_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
                     '\\caption{Stiffened Plate Data}\n'
-                    '\\label{tab:St_Pl_Data}\n')
-        st_pl_head =('\\begin{tabular}{*{8}{>{\centering}m{1.5cm}}}\n'
+                    '\\label{tab:St_Pl_Data}\n'
+                    '\\tabularnewline'
                     '\\hline\n'
                     'Name &  & Area n-50 [$mm^2$] '
                     '& CoA [m] & Moments of Area [$cm^3$] '
-                    '& ixx,c [$mm^4$] & Area*(x_{CoA}*10^3)^2 [$mm^4$] & ixx,pl [$mm^4$]'+endl)
-        st_pl_tab = tabular(self.St_Pl_D,st_pl_tab,8,st_pl_head)
-        st_pl_tab += '\\end{tabular}\n\\end{table}\n\n'
+                    '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endfirsthead\n'
+                    '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
+                    'Name &  & Area n-50 [$mm^2$] '
+                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endhead\n')
+        st_pl_tab = tabular(self.St_Pl_D,8,st_pl_head)
+        st_pl_tab += '\\end{longtable}\n\n'
         if Debug: print(st_pl_tab)
 
         # Ordinary Section Data
-        or_se_tab = ('\\begin{table}[h]\n'
+        or_se_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
                     '\\caption{Stiffened Plate Data}\n'
-                    '\\label{tab:St_Pl_Data}\n')
-        or_se_head =('\\begin{tabular}{*{8}{>{\centering}m{1.5cm}}}\n'
+                    '\\label{tab:St_Pl_Data}\n'
+                    '\\tabularnewline'
                     '\\hline\n'
-                    'Name &  & Area n-50 [$mm^2$] '
+                    'Name & Area n-50 [$mm^2$] '
                     '& CoA [m] & Moments of Area [$cm^3$] '
-                    '& Ixx,pc [$mm^4$] & Area*(x_{CoA}*10^3)^2 [$mm^4$] & Ixx [$mm^4$]'+endl)
-        or_se_tab = tabular(self.PrimS_D,or_se_tab,8,or_se_head)
-        or_se_tab += '\\end{tabular}\n\\end{table}\n\n'
+                    '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endfirsthead\n'
+                    '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
+                    'Name & Area n-50 [$mm^2$] '
+                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endhead\n')
+        or_se_tab = tabular(self.PrimS_D,8,or_se_head)
+        or_se_tab += '\\end{longtable}\n\n'
         if Debug: print(or_se_tab)
         
         return press_tab, plate_tab, stiff_tab, st_pl_tab, or_se_tab

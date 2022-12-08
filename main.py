@@ -125,5 +125,5 @@ if __name__ == "__main__":
         # main('./out.json',False,False)
     # Single Step Manual Design evaluation
     else:
-        main('./test.json',False,True)
+        main('./test.json',False,False)
     

@@ -402,7 +402,7 @@ def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
         else:
             phzx.block_to_plate_perCase(plate,blocks,case,condition['Dynamics']) # let the function handle the proper aggregation
         # if plate.id in (3,1,2):c_info(f'plate: {plate}\nAGG_eval: {plate.Pressure[case.cond]}')
-        
+        plate.datacell.update(plate)# save pressure maximum pressure data
 
 def ship_scantlings(ship:cls.ship):
     In50  = 2.7*ship.Cw*ship.Lsc**3*ship.B*(ship.Cb+0.7)*1e-8
@@ -509,15 +509,15 @@ def corrosion_addition(stiff_plate: cls.stiff_plate, blocks : list[cls.block], T
         plate_t_corr['in'] = t_in
 
     elif stiff_plate.tag in (1,2,3): #Inner Bottom, Hopper, Wing
-        t= (0,0)
+        t= [0,0]
         ind = 0
         c = 0 
         if len(tags) == 1:
-            c_warn((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are not adequate.'
-                'Using the data for the one side for both sides ...'))
+            c_warn((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are inadequate.'
+                'Using the data of the one side for both sides ...'))
             tags.append(tags[0])
         while c <= 1: #not the best way but oh well
-            for tag,i in enumerate(tags):
+            for i,tag in enumerate(tags):
                 if "WB" == tag :
                     if t[c] < Corr['WBT']['FacePlate']['=< 3,tank_top'] : 
                         t[c] = Corr['WBT']['FacePlate']['=< 3,tank_top'] 

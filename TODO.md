@@ -3,7 +3,7 @@
 ## Major Importance
 
 - [ ] Do the project
-- [ ] Add functions to export calculation data to a reportable form (copium) (base is probably done, need to actually use and grab function values)
+- [x] Add functions to export calculation data to a reportable form (copium) (base is probably done, need to actually use and grab function values)
 - [x] PSM spacing per plate to account for Bulk Carriers (reasonable)
 - [x] Add info about the null corrosion check done for girders
 - [X] Fix Z calculation for stiffener
