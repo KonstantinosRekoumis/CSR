@@ -409,18 +409,19 @@ def ship_scantlings(ship:cls.ship):
     Zrn50 = 0.9*ship.Cw*ship.Lsc**2*ship.B*(ship.Cb+0.7)*1e-6 # k = 1.0 Grade A steel
     Zn50k_ship = ship.n50_Ixx/(ship.yo)
     Zn50d_ship = ship.n50_Ixx/abs(ship.yo-ship.D)
+    c_info(f'(rules.py) ship_scantlings: The ship\'s neutral axis is at {ship.yo:0.5g} meters from Keel')
     if ship.n50_Ixx < In50:
-        c_warn(f'(rules.py) ship_scantlings: The Area Inertia Moment of the ship In50 :{ship.n50_Ixx} is less than In50: {In50} calculated by the rules')
+        c_warn(f'(rules.py) ship_scantlings: The Area Inertia Moment of the ship In50 : {ship.n50_Ixx:0.5g} is less than In50: {In50:0.5g} calculated by the rules')
     else:
-        c_success(f'(rules.py) ship_scantlings: The Area Inertia Moment of the ship In50 :{ship.n50_Ixx} is adequate compared to In50: {In50} calculated by the rules')
+        c_success(f'(rules.py) ship_scantlings: The Area Inertia Moment of the ship In50 : {ship.n50_Ixx:0.5g} is adequate compared to In50: {In50:0.5g} calculated by the rules')
     if Zn50k_ship < Zrn50:
-        c_warn(f'(rules.py) ship_scantlings: The Section Modulus at Keel of the ship Zn50,keel :{Zn50k_ship} is less than Zrn50: {Zrn50} calculated by the rules')
+        c_warn(f'(rules.py) ship_scantlings: The Section Modulus at Keel of the ship Zn50,keel : {Zn50k_ship:0.5g} is less than Zrn50: {Zrn50:0.5g} calculated by the rules')
     else:
-        c_success(f'(rules.py) ship_scantlings: The Section Modulus at Keel of the ship Zn50,keel :{Zn50k_ship} is adequate compared to Zrn50: {Zrn50} calculated by the rules')
+        c_success(f'(rules.py) ship_scantlings: The Section Modulus at Keel of the ship Zn50,keel : {Zn50k_ship:0.5g} is adequate compared to Zrn50: {Zrn50:0.5g} calculated by the rules')
     if Zn50d_ship < Zrn50:
-        c_warn(f'(rules.py) ship_scantlings: The Section Modulus at Depth of the ship Zn50,Depth :{Zn50d_ship} is less than Zrn50: {Zrn50} calculated by the rules')
+        c_warn(f'(rules.py) ship_scantlings: The Section Modulus at Depth of the ship Zn50,Depth : {Zn50d_ship:0.5g} is less than Zrn50: {Zrn50:0.5g} calculated by the rules')
     else:
-        c_success(f'(rules.py) ship_scantlings: The Section Modulus at Depth of the ship Zn50,Depth :{Zn50d_ship} is adequate compared to Zrn50: {Zrn50} calculated by the rules')
+        c_success(f'(rules.py) ship_scantlings: The Section Modulus at Depth of the ship Zn50,Depth : {Zn50d_ship:0.5g} is adequate compared to Zrn50: {Zrn50:0.5g} calculated by the rules')
 
 
 def net_scantling(ship : cls.ship,case:phzx.PhysicsData,Dynamics :str ,Debug = True):

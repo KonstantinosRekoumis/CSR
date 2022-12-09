@@ -11,6 +11,7 @@ STUDIES HSM and BSP conditions at midships
 # import ezdxf #to be installed 
 
 #_____ CALLS _______
+import os
 import modules.classes as cl
 from modules.constants import RHO_S
 import modules.physics as phzx
@@ -125,5 +126,11 @@ if __name__ == "__main__":
         # main('./out.json',False,False)
     # Single Step Manual Design evaluation
     else:
-        main('./test.json',False,False)
+        main('./initial.json',False,False)
+        c_info('# => Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
+        os.rename('./out.json','./inter.json')
+        c_info('# =>  Initializing second Pass... ')
+        main('./inter.json',False,False)
+        c_info('# => Second pass evaluated results successfully. Renaming ./out.json to ./final.json.  ')
+        os.rename('./out.json','./final.json')
     
