@@ -1176,8 +1176,8 @@ class ship():
         ordinary_section = (
             '\\chapter{Ordinary Section\'s Stiffened Plates Data}\n'
             '\\label{sec:Stiffeners Data}\n'
-            '\\underline{Due to the vessel having a symmetrical cross section, Area and Area Inertia Moments are double than the stiffened plates sums.}' if self.symmetrical else ''
-            +text[4])
+            'Due to the vessel having a symmetrical cross section, Area and Area Inertia Moments are double than the stiffened plates sums.\n'+text[4] if self.symmetrical else ''+text[4]
+            )
         mid += GeneralPart+figures+pressure+plates+stiffeners+stiff_plates+ordinary_section + '\\clearpage\\restoregeometry'
         
         if standalone:
