@@ -1144,7 +1144,7 @@ class ship():
             '$C_p$ '+f'&{self.Cp}&'+' \\tabularnewline \\hline\n'
             '$C_m$ '+f'&{self.Cm}&'+' \\tabularnewline \\hline\n'
             '$DWT$ '+f'&{self.DWT}&'+' \\tabularnewline \\hline\n'
-            'k (material factor) '+f'&{self.kappa}&'+' [m]\\tabularnewline \\hline\n'
+            'k (material factor) '+f'&{self.kappa : 0.3g}&'+' [m]\\tabularnewline \\hline\n'
             '$M_{wh}$ '+f'&{round(self.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{ws}$ '+f'&{round(self.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{sw,h-mid}$ '+f'&{round(self.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'

@@ -146,14 +146,14 @@
         },
         { "id":108, "plate":[[22.5,16.2],[22.5,20],19.5,"AH32","Shell"],
             "stiffeners":{  "type":"tb",
-                            "dimensions":[300,15,250,17],
+                            "dimensions":[400,15,200,18],
                             "material":"AH32" },
             "PSM_spacing":5.52,
             "spacing": 820,"skip" : 0,"s_pad":220,"e_pad":100
         },
         { "id":109, "plate":[[22.5,20],[22.5,22.5],19.5,"AH36","Shell"],
             "stiffeners":{  "type":"tb",
-                            "dimensions":[300,15,200,17.5],
+                            "dimensions":[400,15,200,18],
                             "material":"AH36" },
             "PSM_spacing":5.52,
             "spacing": 780,"skip" : 0,"s_pad":0,"e_pad":0

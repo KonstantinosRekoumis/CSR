@@ -66,6 +66,9 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
         rnr.pressure_plot(ship,'BSP-1P','SEA,ATM',path ='./essay/BSP1_Shell.pdf')
         rnr.pressure_plot(ship,'BSP-2P','SEA,ATM',path ='./essay/BSP2_Shell.pdf')
 
+    c_info('# => Evaluating Stiffened Plates Slenderness Requirements...')
+    ship.evaluate_beff()
+    csr.buckling_evaluator(ship,Debug=False)
     c_info('# => Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..',default=False)
     #calculation Recipes
     FLC =  {
@@ -97,9 +100,6 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     for case in (HSM1,HSM2,BSP1,BSP2):
         csr.net_scantling(ship,case,WB['Dynamics'],Debug=False)
 
-    c_info('# => Evaluating Sitffened Plates Slenderness Requirements...')
-    ship.evaluate_beff()
-    csr.buckling_evaluator(ship,Debug=False)
     c_info('# => Evaluating the Sections Moments and Checking with the Rules...')
     csr.ship_scantlings(ship)
     c_info('# => Evaluating Corrosion Addition for stiffened plates...',default= False)

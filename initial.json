@@ -14,20 +14,20 @@
     "geometry":[
         {   "id":100,"plate":[[0,0],[2.7,0],19,"AH32","Shell"],
             "stiffeners":{
-                "type":"tb",
-                "dimensions":[300,15,150,15],
+                "type":"fb",
+                "dimensions":[250,22],
                 "material":"AH32"
             },
-            "PSM_spacing":2.76,
+            "PSM_spacing":1.38,
             "spacing": 820,"skip" : 0,"s_pad":0,"e_pad":820
         },
         { "id":200, "plate":[[2.7,2.50],[0,2.50],19,"AH32","InnerBottom"],
             "stiffeners":{
-                "type":"tb",
-                "dimensions":[300,15,250,15],
+                "type":"fb",
+                "dimensions":[200,22],
                 "material":"AH32"
             },
-            "PSM_spacing":2.76,
+            "PSM_spacing":1.38,
             "spacing": 820,"skip" : 0,"s_pad":240,"e_pad":200
         },
         { "id":300, "plate":[[2.46,0],[2.46,2.50],16,"AH32","Girder"],
@@ -78,7 +78,7 @@
         { "id":101, "plate":[[2.7,0],[15.33,0],19,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[300,15,150,15],
+                "dimensions":[350,15,150,15],
                 "material":"AH32"
             },
             "PSM_spacing":2.76,
@@ -96,7 +96,7 @@
         { "id":102, "plate":[[15.33,0],[20,0],19.5,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[350,15,200,15],
+                "dimensions":[350,15,150,15],
                 "material":"AH32"
             },
             "PSM_spacing":2.76,
@@ -110,7 +110,7 @@
         { "id":104, "plate":[[22.5,2.5],[22.5,6],19,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[300,15,250,20],
+                "dimensions":[300,15,100,20],
                 "material":"AH32"
             },
             "PSM_spacing":2.76,
@@ -119,7 +119,7 @@
         { "id":105, "plate":[[22.5,6],[22.5,8],19,"AH32","Shell"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[300,15,200,15],
+                "dimensions":[300,15,100,20],
                 "material":"AH32"
             },
             "PSM_spacing":2.76,
@@ -128,7 +128,7 @@
         { "id":202, "plate":[[22.5,8.763],[15.53,2.5],23,"AH32","Hopper"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[300,15,200,15],
+                "dimensions":[300,15,100,17],
                 "material":"AH32"
             },
             "PSM_spacing":2.76,
@@ -160,8 +160,8 @@
         },
         { "id":110, "plate":[[22.5,22.5],[9.7,23.22],28,"DH36","WeatherDeck"],
             "stiffeners":{
-                "type":"fb",
-                "dimensions":[400,30,200,20],
+                "type":"tb",
+                "dimensions":[400,30,100,20],
                 "material":"AH36"
             },
             "PSM_spacing":5.52,
