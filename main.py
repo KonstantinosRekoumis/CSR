@@ -112,7 +112,7 @@ def main(filepath,SHIP_PLOTS,PRESSURE_PLOTS):
     c_info('# => Outputing Data to /out.json file...',default= False)
     IO.ship_save(ship,'out.json')
     c_info('# => Generating LaTeX Report Data to /out.json file...',default= False)
-    IO.LaTeX_output(ship,[x.cond for x in (HSM1,HSM2,BSP1,BSP2)],path = './essay/',_standalone=False)
+    IO.LaTeX_output(ship,[x.cond for x in (HSM1,HSM2,BSP1,BSP2)],path = './essay/',_standalone=True)
     c_success('Program terminated succesfully!')
 
 
@@ -128,9 +128,10 @@ if __name__ == "__main__":
     else:
         main('./initial.json',False,False)
         c_info('# => Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
+        os.remove('./inter.json')
         os.rename('./out.json','./inter.json')
-        c_info('# =>  Initializing second Pass... ')
-        main('./inter.json',False,False)
-        c_info('# => Second pass evaluated results successfully. Renaming ./out.json to ./final.json.  ')
-        os.rename('./out.json','./final.json')
+        # c_info('# =>  Initializing second Pass... ')
+        # main('./inter.json',False,False)
+        # c_info('# => Second pass evaluated results successfully. Renaming ./out.json to ./final.json.  ')
+        # os.rename('./out.json','./final.json')
     

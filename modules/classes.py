@@ -4,7 +4,7 @@
     stiffener class. Their fusion gives the stiffened plate class.
 '''
 # #############################
-from modules.constants import LOADS,TEX_PREAMBLE
+from modules.constants import LOADS,TEX_PREAMBLE,MATERIALS
 from modules.utilities import c_error, c_info,c_warn, d2r,linespace
 import matplotlib.pyplot as plt
 import math
@@ -930,8 +930,30 @@ class ship():
         self.yo, self.xo, self.cross_section_area = self.calc_CoA()
         self.Ixx, self.Iyy = self.Calculate_I(n50=False)
         self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
+        self.kappa = 1.0 #material factor
 
         self.a0 = (1.58-0.47*self.Cb)*(2.4/math.sqrt(self.Lsc)+34/self.Lsc-600/self.Lsc**2) # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
+        self.evaluate_kappa()
+    def evaluate_kappa(self):
+        '''
+        CSR Part 1 Chapter 3 Section 1.2.2.1 page 82
+        Find the kappa factor by finding the density of material occurrence.
+        Used after the stiff plates are loaded.
+        '''
+        a = [0,0,0,0]
+        N = 0
+        for plate in self.stiff_plates:
+            if plate.tag == 6 or plate.null: continue
+            if '32' in plate.plate.material: a[1] = a[1] + 1
+            elif '36' in plate.plate.material: a[2] = a[2] + 1
+            elif '40' in plate.plate.material: a[3] = a[3] + 1
+            else: a[0] = a[0] + 1
+            N += 1
+        for i in range(len(a)):
+            a[i] = a[i]/N
+        self.kappa = a[0]*1+a[1]*0.78+a[2]*0.72+a[3]*0.68
+
+
     def evaluate_beff(self):
         '''
         To be used after corrosion addition evaluation. Plates have -1 mm initial corrosion.
@@ -1122,7 +1144,7 @@ class ship():
             '$C_p$ '+f'&{self.Cp}&'+' \\tabularnewline \\hline\n'
             '$C_m$ '+f'&{self.Cm}&'+' \\tabularnewline \\hline\n'
             '$DWT$ '+f'&{self.DWT}&'+' \\tabularnewline \\hline\n'
-            # 'PSM spacing '+f'&{self.PSM_spacing}&'+' [m]\\tabularnewline \\hline\n'
+            'k (material factor) '+f'&{self.kappa}&'+' [m]\\tabularnewline \\hline\n'
             '$M_{wh}$ '+f'&{round(self.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{ws}$ '+f'&{round(self.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
             '$M_{sw,h-mid}$ '+f'&{round(self.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'

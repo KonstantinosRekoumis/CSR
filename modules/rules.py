@@ -254,7 +254,7 @@ def stiffener_plating_net_thickness_calculation(plate:cls.stiff_plate,case:phzx.
     dshr = (plate.plate.length + plate.stiffeners[0].plates[0].net_thickness + 0.5*plate.plate.cor_thickness - 0.5*plate.stiffeners[0].plates[0].net_thickness)*1.0 #hardcoded that phiw = 90 deg This is a critical assumption
 
     fshr = 0.7 #lower end of vertical stiffeners is the minimum worst condition
-    fbdg = 10  #lower end of vertical stiffeners is the minimum worst condition
+    fbdg = 12  #horizontal stiffeners
 
     lbdg = plate.PSM_spacing #worst case scenario dont know the stiffener span
     lshr = plate.PSM_spacing - plate.spacing/2 #worst case scenario dont know the stiffener span
@@ -406,7 +406,7 @@ def Loading_cases_eval(ship:cls.ship,case:phzx.PhysicsData,condition:dict):
 
 def ship_scantlings(ship:cls.ship):
     In50  = 2.7*ship.Cw*ship.Lsc**3*ship.B*(ship.Cb+0.7)*1e-8
-    Zrn50 = 0.9*ship.Cw*ship.Lsc**2*ship.B*(ship.Cb+0.7)*1e-6 # k = 1.0 Grade A steel
+    Zrn50 = 0.9*ship.kappa*ship.Cw*ship.Lsc**2*ship.B*(ship.Cb+0.7)*1e-6 # k = 1.0 Grade A steel(not a good idea, pretty retarded)
     Zn50k_ship = ship.n50_Ixx/(ship.yo)
     Zn50d_ship = ship.n50_Ixx/abs(ship.yo-ship.D)
     c_info(f'(rules.py) ship_scantlings: The ship\'s neutral axis is at {ship.yo:0.5g} meters from Keel')
@@ -576,7 +576,7 @@ def corrosion_assign(ship:cls.ship,input:bool):
             if stiff_plate.plate.net_thickness < 0 : stiff_plate.plate.net_thickness = 1e-3 #maybe redundant but a good sanity check
             for stiffener in stiff_plate.stiffeners:
                 for plate in stiffener.plates:
-                    plate.cor_thickness = (round_to_p5(2*c_t['in'])+0.5)*1e-3
+                    plate.cor_thickness = (round_to_p5(c_t['out']+c_t['in'])+0.5)*1e-3
                     plate.net_thickness = plate.thickness - plate.cor_thickness
                     if plate.net_thickness < 0: plate.net_thickness = 1e-3
     else:
