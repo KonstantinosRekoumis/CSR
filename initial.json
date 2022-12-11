@@ -125,7 +125,7 @@
             "PSM_spacing":2.76,
             "spacing": 820,"skip" : 0,"s_pad":-120,"e_pad":1200
         },
-        { "id":202, "plate":[[22.5,8.763],[15.53,2.5],23,"AH32","Hopper"],
+        { "id":202, "plate":[[22.5,8.763],[15.53,2.5],19,"AH32","Hopper"],
             "stiffeners":{
                 "type":"tb",
                 "dimensions":[300,15,100,17],
@@ -146,14 +146,14 @@
         },
         { "id":108, "plate":[[22.5,16.2],[22.5,20],19,"AH36","Shell"],
             "stiffeners":{  "type":"tb",
-                            "dimensions":[450,15,220,20],
+                            "dimensions":[450,15,250,20],
                             "material":"AH36" },
             "PSM_spacing":5.52,
             "spacing": 820,"skip" : 0,"s_pad":220,"e_pad":100
         },
         { "id":109, "plate":[[22.5,20],[22.5,22.5],20,"AH36","Shell"],
             "stiffeners":{  "type":"tb",
-                            "dimensions":[450,15,220,20],
+                            "dimensions":[450,15,250,20],
                             "material":"AH36" },
             "PSM_spacing":5.52,
             "spacing": 780,"skip" : 0,"s_pad":0,"e_pad":0
@@ -161,11 +161,11 @@
         { "id":110, "plate":[[22.5,22.5],[9.7,23.22],28,"DH36","WeatherDeck"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[400,30,100,20],
+                "dimensions":[400,30,150,20],
                 "material":"AH36"
             },
             "PSM_spacing":5.52,
-            "spacing": 800,"skip" : 0,"s_pad":0,"e_pad":800
+            "spacing": 900,"skip" : 0,"s_pad":0,"e_pad":800
         },
         { "id":111, "plate":[[9.71,23.22],[0,23.22],24.5,"A","WeatherDeck"],"null":true,
             "stiffeners":{},
@@ -175,7 +175,7 @@
         { "id":210, "plate":[[9.71,22.17],[22.5,15.22],18,"AH32","Wing"],
             "stiffeners":{
                 "type":"tb",
-                "dimensions":[400,15,200,20],
+                "dimensions":[350,15,150,20],
                 "material":"AH32"
             },
             "PSM_spacing":5.52,

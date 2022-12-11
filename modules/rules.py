@@ -214,6 +214,7 @@ def plating_net_thickness_calculation(ship:cls.ship,plate:cls.stiff_plate,case:p
         #program some checks according to Chapter 6 Section 4.2 page 383
 
     minimum_plate_net_thickness(plate,L2 = min(300,case.Lsc),Debug=Debug) #need to check what L2 is
+    plate.update()
 
 def stiffener_plating_net_thickness_calculation(plate:cls.stiff_plate,case:phzx.PhysicsData,Dynamic=False,Debug=False):
     '''

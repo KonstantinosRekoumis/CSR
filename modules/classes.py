@@ -1198,7 +1198,7 @@ class ship():
         ordinary_section = (
             '\\chapter{Ordinary Section\'s Stiffened Plates Data}\n'
             '\\label{sec:Stiffeners Data}\n'
-            'Due to the vessel having a symmetrical cross section, Area and Area Inertia Moments are double than the stiffened plates sums.\n'+text[4] if self.symmetrical else ''+text[4]
+            'Due to the vessel having a symmetrical cross section, Area and Area Inertia Moments are double the stiffened plates sums.\n'+text[4] if self.symmetrical else ''+text[4]
             )
         mid += GeneralPart+figures+pressure+plates+stiffeners+stiff_plates+ordinary_section + '\\clearpage\\restoregeometry'
         
@@ -1316,7 +1316,7 @@ class DataCell:
                 tmp = stiff_plate.Pressure[i]
                 val = max(tmp,key=key_f)
                 if i in self.Pressure: 
-                    if self.Pressure[i] < val[-1]:
+                    if abs(self.Pressure[i]) < abs(val[-1]):
                         self.Pressure[i] = val[-1]
                 else:
                     self.Pressure[i] = val[-1]
@@ -1415,7 +1415,7 @@ class DataLogger:
             # Stiffened Plate Table
             self.St_Pl_D.append([cell.name,'Main Plate',*cell.Area_Data[0]])
             for j in range(1,len(cell.Area_Data)): self.St_Pl_D.append([cell.name,f'Stiffener : {j}',*cell.Area_Data[j]])
-            self.St_Pl_D.append([cell.name,'Total St. Plate', cell.Area, cell.CoA,[round(x*cell.Area,2) for x in cell.CoA],
+            self.St_Pl_D.append([cell.name,'Total St. Plate Sums:', cell.Area, cell.CoA,[round(x*cell.Area,2) for x in cell.CoA],
                                 '','',cell.Ixx_c])
             # Stiffeners Table
             if cell.N_st != '-':
@@ -1426,7 +1426,7 @@ class DataLogger:
                 self.Stiff_D.append(tmp)
             self.PrimS_D.append([cell.name, cell.Area, cell.CoA,[round(x*cell.Area,2) for x in cell.CoA],
                                 cell.Ixx_c, cell.Area*(cell.CoA[1]-_ship.yo)**2, cell.Ixx_c+cell.Area*(cell.CoA[1]-_ship.yo)**2 ] )
-        self.PrimS_D.append(['Total',_ship.cross_section_area*1e6, (_ship.xo,_ship.yo),
+        self.PrimS_D.append(['Total Sums :',_ship.cross_section_area*1e6, (_ship.xo,_ship.yo),
                             (round(_ship.xo*_ship.cross_section_area*1e6,2),round(_ship.yo*_ship.cross_section_area*1e6,2)),' ',' ',
                             _ship.n50_Ixx*1e12]) 
         if dump : return self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D
@@ -1474,15 +1474,15 @@ class DataLogger:
                                 elem = f(elem)
                                 out += f' {elem} &'
                     else:
-                        if line[1] in ('Total St. Plate','Total'): # Stiffened Plate Data
+                        if (type(line[1]) == str and 'Total' in line[1]) or (type(line[0]) == str and 'Total' in line[0]) : # Stiffened Plate Data
                             _bold = True
+                            out += '\\hline\n'
                         for elem in line:
                             elem = bold(f(elem)) if _bold else f(elem)
                             out += f' {elem} &'
                     out = out[:-1] + endl
                     if line[1] == 'Total St. Plate': # Stiffened Plate Data
                         out = out[:-1]+ '\\hline\n'
-
                 elif type(line) == str: 
                     out += '\\multicolumn{'+str(clmns)+'}{l}{'+line+'}' + endl
             return out
