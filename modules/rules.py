@@ -222,7 +222,7 @@ def stiffener_plating_net_thickness_calculation(plate:cls.stiff_plate,case:phzx.
 
     '''
     try:
-        Reh, Rem,Teh = MATERIALS[plate.plate.material]
+        Reh, Rem,Teh = MATERIALS[plate.stiffeners[0].plates[0].material]
     except KeyError:
         c_warn(f'(rules.py) plating_thickness_calculation: Stiffened plate\'s plate {plate} has material {plate.plate.material} that is not documented in this program. Either consider changing it or modify constants.py MATERIALS dict. Defaulting to A grade steel (Rm = 255)...')
     x = {

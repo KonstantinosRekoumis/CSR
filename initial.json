@@ -21,7 +21,7 @@
             "PSM_spacing":1.38,
             "spacing": 820,"skip" : 0,"s_pad":0,"e_pad":820
         },
-        { "id":200, "plate":[[2.7,2.50],[0,2.50],19,"AH32","InnerBottom"],
+        { "id":200, "plate":[[2.7,2.50],[0,2.50],19,"A","InnerBottom"],
             "stiffeners":{
                 "type":"fb",
                 "dimensions":[200,22],
@@ -84,7 +84,7 @@
             "PSM_spacing":2.76,
             "spacing": 820,"skip" : 4,"s_pad":-1060,"e_pad":100
         },
-        { "id":201, "plate":[[15.53,2.5],[2.7,2.5],19,"AH32","InnerBottom"],
+        { "id":201, "plate":[[15.53,2.5],[2.7,2.5],19.5,"A","InnerBottom"],
             "stiffeners":{
                 "type":"tb",
                 "dimensions":[300,15,100,15],
@@ -102,7 +102,7 @@
             "PSM_spacing":2.76,
             "spacing": 820,"skip" : 0,"s_pad":250,"e_pad":100
         },
-        { "id":103, "plate":[[20,0],[22.5,2.5],19.5,"AH32","Bilge"],
+        { "id":103, "plate":[[20,0],[22.5,2.5],20,"AH32","Bilge"],
             "stiffeners":{},
             "PSM_spacing":2.76,
             "spacing": 500,"skip" : 0,"s_pad":400,"e_pad":200
@@ -125,7 +125,7 @@
             "PSM_spacing":2.76,
             "spacing": 820,"skip" : 0,"s_pad":-120,"e_pad":1200
         },
-        { "id":202, "plate":[[22.5,8.763],[15.53,2.5],19,"AH32","Hopper"],
+        { "id":202, "plate":[[22.5,8.763],[15.53,2.5],19,"A","Hopper"],
             "stiffeners":{
                 "type":"tb",
                 "dimensions":[300,15,100,17],
