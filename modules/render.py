@@ -130,7 +130,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
             ax.plot(*j.render_data()[:2],color = color)
     data = {
         'thickness':[T,'number','As Built Thickness [mm]'],
-        'PSM_spacing':[T,'number','Web Section Spacing [m]'],
+        'spacing':[PSM_spacing,'string','Web Section Spacing [m]'],
         'material':[M,'string','Material'],
         'tag':[Tag,'string','Locality Tag'],
         'id':[Id,'string','Plate\'s Id']
@@ -147,7 +147,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         else:
             plt.show()
     except KeyError:
-        c_warn(f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\'. Thus no plot is produced.')
+        c_warn(f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\',\'spacing\'. Thus no plot is produced.')
         pass
 
 
@@ -236,16 +236,16 @@ def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="+",lines = Tr
                 d_map[i] = c
                 d_map[c] = i
                 vals.append(c)
-                text.append(i)
+                text.append('- '+str(i))
                 c += 1
-        
         vals.sort()
         _map_.set_array(vals)
         cb = fig.colorbar(_map_,ticks=vals)
         cb.ax.set_title(data_label)
         cb.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(text):
-            cb.ax.text(4,  j+1 , lab, ha='center', va='center')
+            y_off  = j+1-0.02
+            cb.ax.text(1, y_off  , lab, ha='left', va='center')
 
     for i in range(len(X)):
         breaks = 0 #Int to increment where a break by nan is encountered
