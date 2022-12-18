@@ -863,7 +863,7 @@ class block():
                     c_warn(f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated for block {self}.\n !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i],*self.eta[i],0) for i in range(x0,x1+1,1)]
         else:
-            print('blyat',stiff_plate,'cyka',self)# To FIX
+            c_warn(f'(classes.py) blocks/pressure_over_plate : Requesting pressure over plate {stiff_plate} that does not belong in the block {self}. Returning None')# Fixed
             return None
 class Sea_Sur(block):
     def __init__(self,list_plates_id: list[int]):
@@ -1284,7 +1284,7 @@ class DataCell:
         if len(stiff_plate.stiffeners) != 0:
             self.s_A_n50  = round(stiff_plate.stiffeners[0].n50_area*1e6,2) #mm^2
             self.Zc = round(stiff_plate.stiffeners[0].calc_Z()*1e6,3)
-            self.Zrule = round(stiff_plate.stiffeners[0].Z_rule*1e6,3)
+            self.Zrule = round(stiff_plate.stiffeners[0].Z_rule*1e6,3) if stiff_plate.tag!=6 else 'Not Evaluated'
             self.s_thick  = [round(i.thickness*1e3,4) for i in stiff_plate.stiffeners[0].plates]
             self.s_net_t  = [round(i.net_thickness*1e3,4) for i in stiff_plate.stiffeners[0].plates]
             self.s_corr_t = [round(i.cor_thickness*1e3,4) for i in stiff_plate.stiffeners[0].plates] if stiff_plate.tag!=6 else ['Not Evaluated' for i in stiff_plate.stiffeners[0].plates]
@@ -1456,12 +1456,12 @@ class DataLogger:
                         if type(line[-2]) == list and len(line[-2]) > 2:
                             s = -2
                         c = 0 
-                        for elem in line[:s]:
-                            elem = f(elem)
-                            c += 1
-                            out += '\\multirow{'+str(abs(s))+'}{*}{'+str(elem)+' } & '
-                        out += ' Web & '
                         if s == -2 :
+                            for elem in line[:s]:
+                                elem = f(elem)
+                                c += 1
+                                out += '\\multirow{'+str(abs(s))+'}{*}{'+str(elem)+' } & '
+                            out += ' Web & '
                             for elem in line[-2]:
                                 elem = f(elem)
                                 out += f' {elem} &'
@@ -1470,6 +1470,11 @@ class DataLogger:
                                 elem = f(elem)
                                 out += f' {elem} &'
                         elif s == -1:
+                            for elem in line[:s]:
+                                elem = f(elem)
+                                c += 1
+                                out += elem+' & '
+                            out += ' Web & '
                             for elem in line[-1]:
                                 elem = f(elem)
                                 out += f' {elem} &'
