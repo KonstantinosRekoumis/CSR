@@ -505,73 +505,7 @@ class stiff_plate():
             self.plate.length = len(self.stiffeners)*bef
             self.update()
             self.b_eff = bef
-
-    def LaTeX_output(self):
-        if self.null:return ('','')
-        def _round(tp:tuple, dig:int):
-            out = []
-            for i in tp:
-                out.append(round(i,dig))
-            return tuple(out)
-        
-        if self.tag == 6:
-            pntc,pct = 'Not Evaluated', 'Not Evaluated'
-            if len(self.stiffeners)!=0:
-                sntcw,sctw = 'Not Evaluated', 'Not Evaluated'
-                if len(self.stiffeners[0].plates) == 2:
-                    sntcf,sctf = 'Not Evaluated', 'Not Evaluated'
-        else:
-            pntc,pct = round(self.plate.net_thickness_calc*1e3,2), round(self.plate.cor_thickness*1e3,2)
-            if len(self.stiffeners)!=0:
-                sntcw,sctw = round(self.stiffeners[0].plates[0].net_thickness_calc*1e3,2), round(self.stiffeners[0].plates[0].cor_thickness*1e3,2)
-                if len(self.stiffeners[0].plates) == 2:
-                    sntcf,sctf = round(self.stiffeners[0].plates[1].net_thickness_calc*1e3,2), round(self.stiffeners[0].plates[1].cor_thickness*1e3,2)
-
-        out_plate = (
-            f'Plate {self.id} & '
-            f' {self.plate.material} & '
-            f' {round(self.plate.length,3)} & '
-            f' {round(self.spacing*1e3,2)} & '
-            f' {_round(self.CoA,3)} & '
-            f' {pntc} & '
-            f' {pct} &'
-            f' {round(self.plate.net_thickness*1e3,2)} & '
-            f' {round(self.plate.thickness*1e3,2)} '
-            '\\tabularnewline \\hline\n')
-        if len(self.stiffeners) != 0:
-            out_stif = (
-                ' Web &'
-                f' {round(self.stiffeners[0].plates[0].length*1e3,2)} & '
-                f' {sntcw} & '
-                f' {sctw}  & '
-                f' {round(self.stiffeners[0].plates[0].net_thickness*1e3,2)} & '
-                f' {round(self.stiffeners[0].plates[0].thickness*1e3,2)}  '
-            )
-            if len(self.stiffeners[0].plates) == 2:
-                out_stif += (
-                    '\\tabularnewline \\cline{6-11}\n & & & & & Flange &'
-                    f' {round(self.stiffeners[0].plates[1].length*1e3,2)} & '
-                    f' {sntcf} & '
-                    f' {sctf}  & '
-                    f' {round(self.stiffeners[0].plates[1].net_thickness*1e3,2)} & '
-                    f' {round(self.stiffeners[0].plates[1].thickness*1e3,2)} '
-                )
-                out_stif = ('\\multirow{2}{*}{'+f'Plate {self.id}'+'} & '
-                            '\\multirow{2}{*}{'+V[self.stiffeners[0].type]+'} & '
-                            '\\multirow{2}{*}{'+self.stiffeners[0].plates[0].material+'} & '
-                            '\\multirow{2}{*}{'+f'{round(self.stiffeners[0].calc_Z()*1e6,3)}'+'} & '
-                            '\\multirow{2}{*}{'+f'{round(self.stiffeners[0].Z_rule*1e6,3)}'+'} & '
-                            + out_stif)
-            else:
-                out_stif = (f'Plate {self.id} & '+V[self.stiffeners[0].type]+' & '
-                            f'{self.stiffeners[0].plates[0].material} & '
-                            f'{round(self.stiffeners[0].calc_Z()*1e6,3)} & '
-                            f'{round(self.stiffeners[0].Z_rule*1e6,3)} & '
-                            + out_stif)
-            out_stif += '\\tabularnewline \\hline\n'
-            return out_plate, out_stif 
-        else:
-            return out_plate, ''  
+ 
 
     def __repr__(self) -> str:
         tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
@@ -1351,7 +1285,7 @@ class DataLogger:
 
     def CreateTabularData(self,_ship:ship,_conds:list[str],dump = False):
         '''
-        Press_D : Name & Breadth [m] & CoA [m] & HSM-1 & ... & EDW-last & Max Pressure
+        Press_D : Name & Breadth [m] & CoA [m] (y,z) & HSM-1 & ... & EDW-last & Max Pressure
         Plate_D : Name & Material & Breadth [m] & Stiffener Spacing [mm] & CoA [m] 
                     & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]
                     & Design Net Thickness [mm]& Design Net Thickness + 50% Corrosion [mm] & As Built Thickness [mm] 
@@ -1359,16 +1293,16 @@ class DataLogger:
                     Length [mm] & & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] 
                     Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] 
                     & Design Net Thickness + 50% Corrosion [mm] & As Built Thickness [mm]
-        St_Pl_D : Name & Plate | St 1,2,..,N | St_plate & Area n-50 [mm^2] & CoA [m] & Moments of Area [cm^3] 
+        St_Pl_D : Name & Plate | St 1,2,..,N | St_plate & Area n-50 [mm^2] & CoA [m] (y,z) & Moments of Area [cm^3] 
                     & ixx,c [mm^4] & Area*(x_{CoA}*10^3)^2 [mm^4] & ixx,pl [mm^4]
-        PrimS_D : Name & & Area n-50 [mm^2] & CoA [m] & Moments of Area [cm^3] 
+        PrimS_D : Name & & Area n-50 [mm^2] & CoA [m] (y,z) & Moments of Area [cm^3] 
                     & Ixx,c [mm^4] & Area*(x_{CoA}*10^3)^2 [mm^4] & ixx,pl [mm^4]
         '''
         def max_p(l):
             max_ = -1e8
             for i in l:
                 try:
-                    if max_< abs(i): max_ = abs(i)
+                    if abs(max_)< abs(i): max_ = i
                 except TypeError:
                     continue
             if max_ == -1e8: return 'Not Evaluated'
@@ -1505,7 +1439,7 @@ class DataLogger:
                         '\\label{tab:Press_Data}\n'
                         '\\tabularnewline'
                         '\\hline\n')
-        press_head += 'Name & Breadth [m] & CoA [m] &'
+        press_head += 'Name & Breadth [m] & CoA [m] (y,z) &'
         for i in self.conds: press_head += f' {i} [kN/$m^2$] &'
         press_head += ' Max Pressure [kN/$m^2$] '+endl+'\\endfirsthead\n'
         press_tab = tabular(self.Press_D,clm_pres,press_head)
@@ -1518,11 +1452,11 @@ class DataLogger:
                     '\\label{tab:Plate_Data}\n'
                     '\\tabularnewline'
                     '\\hline\n'
-                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] & Design Pressure [kN/$m^2$]'
+                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] (y,z) & Design Pressure [kN/$m^2$]'
                     '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
                     '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endfirsthead\n'
                     '\multicolumn{12}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
-                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] & Design Pressure [kN/$m^2$]'
+                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] (y,z) & Design Pressure [kN/$m^2$]'
                     '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
                     '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endhead\n')
         plate_tab = tabular(self.Plate_D,12,plate_head)
@@ -1555,11 +1489,11 @@ class DataLogger:
                     '\\tabularnewline'
                     '\\hline\n'
                     'Name &  & Area n-50 [$mm^2$] '
-                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endfirsthead\n'
                     '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
                     'Name &  & Area n-50 [$mm^2$] '
-                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endhead\n')
         st_pl_tab = tabular(self.St_Pl_D,8,st_pl_head)
         st_pl_tab += '\\end{longtable}\n\n'
@@ -1572,11 +1506,11 @@ class DataLogger:
                     '\\tabularnewline'
                     '\\hline\n'
                     'Name & Area n-50 [$mm^2$] '
-                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endfirsthead\n'
                     '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
                     'Name & Area n-50 [$mm^2$] '
-                    '& CoA [m] & Moments of Area [$cm^3$] '
+                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endhead\n')
         or_se_tab = tabular(self.PrimS_D,8,or_se_head)
         or_se_tab += '\\end{longtable}\n\n'
