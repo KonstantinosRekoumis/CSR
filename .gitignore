@@ -2,11 +2,13 @@
 /essay/
 DOM*
 out.json
-in.json
+in*.json
 blyat.json
 blyat1.json
 /csr_mods/
 *.pdf
 *.aux
 settings.json
+test.json
+GUI_notes*
 # /modules/test.py

@@ -126,7 +126,7 @@ if __name__ == "__main__":
         # main('./out.json',False,False)
     # Single Step Manual Design evaluation
     else:
-        main('./initial.json',False,False)
+        main('./initial.json',True,True)
         c_info('# => Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
         os.remove('./inter.json')
         os.rename('./out.json','./inter.json')

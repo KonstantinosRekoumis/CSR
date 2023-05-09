@@ -1,0 +1,6 @@
+# base cli program modules
+colorama
+numpy
+matplotlib
+# gui (in development) modules
+pyside6
