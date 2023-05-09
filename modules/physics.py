@@ -141,23 +141,13 @@ class PhysicsData:
         OSA_1P  =[0.75-0.5*self.ft,(0.6-0.4*self.ft)*self.flp,.55+0.2*self.ft,-self.flp_osa,0.1*self.ft-0.45,1,-1,-0.2-0.1*self.ft,0.3-0.2*self.ft,0.1*self.ft-0.2,-0.2*self.ft,0.3-0.2*self.ft,1]
         OST_1P  =[-0.3-0.2*self.ft,(-.35-.2*self.ft)*self.flp,-.9,-self.flp_ost,0.1*self.ft-0.15,0.7-0.3*self.ft,0.2*self.ft-0.45,0,0.4*self.ft-0.25,0.1-0.2*self.ft,0.2*self.ft-0.05,0.4*self.ft-0.25,0.7-0.3*self.ft] 
         
+        MAP = {'HSM': HSM_1, 'HSA':HSA_1,'FSM':FSM_1,'BSR':BSR_1P,'BSP':BSP_1P,'OSA':OSA_1P,'OST':OST_1P}
         
-        Cwv = {'HSM-1': HSM_1[ 0] ,'HSM-2': -1*HSM_1[ 0],'HSA-1': HSA_1[ 0] ,'HSA-2': -1*HSA_1[ 0] ,'FSM-1': FSM_1[ 0] ,'FSM-2': -1*FSM_1[ 0] ,'BSR-1P': BSR_1P[ 0] ,'BSR-2P': -1*BSR_1P[ 0] ,'BSP-1P': BSP_1P[ 0],'BSP-2P': -1*BSP_1P[ 0],'OST-1P': OST_1P[ 0],'OST-2P': -1*OST_1P[ 0],'OSA-1P': OSA_1P[ 0] ,'OSA-2P': -1*OSA_1P[ 0] }
-        Cqw = {'HSM-1': HSM_1[ 1] ,'HSM-2': -1*HSM_1[ 1],'HSA-1': HSA_1[ 1] ,'HSA-2': -1*HSA_1[ 1] ,'FSM-1': FSM_1[ 1] ,'FSM-2': -1*FSM_1[ 1] ,'BSR-1P': BSR_1P[ 1] ,'BSR-2P': -1*BSR_1P[ 1] ,'BSP-1P': BSP_1P[ 1],'BSP-2P': -1*BSP_1P[ 1],'OST-1P': OST_1P[ 1],'OST-2P': -1*OST_1P[ 1],'OSA-1P': OSA_1P[ 1] ,'OSA-2P': -1*OSA_1P[ 1] }
-        Cwh = {'HSM-1': HSM_1[ 2] ,'HSM-2': -1*HSM_1[ 2],'HSA-1': HSA_1[ 2] ,'HSA-2': -1*HSA_1[ 2] ,'FSM-1': FSM_1[ 2] ,'FSM-2': -1*FSM_1[ 2] ,'BSR-1P': BSR_1P[ 2] ,'BSR-2P': -1*BSR_1P[ 2] ,'BSP-1P': BSP_1P[ 2],'BSP-2P': -1*BSP_1P[ 2],'OST-1P': OST_1P[ 2],'OST-2P': -1*OST_1P[ 2],'OSA-1P': OSA_1P[ 2] ,'OSA-2P': -1*OSA_1P[ 2] }
-        Cwt = {'HSM-1': HSM_1[ 3] ,'HSM-2': -1*HSM_1[ 3],'HSA-1': HSA_1[ 3] ,'HSA-2': -1*HSA_1[ 3] ,'FSM-1': FSM_1[ 3] ,'FSM-2': -1*FSM_1[ 3] ,'BSR-1P': BSR_1P[ 3] ,'BSR-2P': -1*BSR_1P[ 3] ,'BSP-1P': BSP_1P[ 3],'BSP-2P': -1*BSP_1P[ 3],'OST-1P': OST_1P[ 3],'OST-2P': -1*OST_1P[ 3],'OSA-1P': OSA_1P[ 3] ,'OSA-2P': -1*OSA_1P[ 3] }
-        Cxs = {'HSM-1': HSM_1[ 4] ,'HSM-2': -1*HSM_1[ 4],'HSA-1': HSA_1[ 4] ,'HSA-2': -1*HSA_1[ 4] ,'FSM-1': FSM_1[ 4] ,'FSM-2': -1*FSM_1[ 4] ,'BSR-1P': BSR_1P[ 4] ,'BSR-2P': -1*BSR_1P[ 4] ,'BSP-1P': BSP_1P[ 4],'BSP-2P': -1*BSP_1P[ 4],'OST-1P': OST_1P[ 4],'OST-2P': -1*OST_1P[ 4],'OSA-1P': OSA_1P[ 4] ,'OSA-2P': -1*OSA_1P[ 4] }
-        Cxp = {'HSM-1': HSM_1[ 5] ,'HSM-2': -1*HSM_1[ 5],'HSA-1': HSA_1[ 5] ,'HSA-2': -1*HSA_1[ 5] ,'FSM-1': FSM_1[ 5] ,'FSM-2': -1*FSM_1[ 5] ,'BSR-1P': BSR_1P[ 5] ,'BSR-2P': -1*BSR_1P[ 5] ,'BSP-1P': BSP_1P[ 5],'BSP-2P': -1*BSP_1P[ 5],'OST-1P': OST_1P[ 5],'OST-2P': -1*OST_1P[ 5],'OSA-1P': OSA_1P[ 5] ,'OSA-2P': -1*OSA_1P[ 5] }
-        Cxg = {'HSM-1': HSM_1[ 6] ,'HSM-2': -1*HSM_1[ 6],'HSA-1': HSA_1[ 6] ,'HSA-2': -1*HSA_1[ 6] ,'FSM-1': FSM_1[ 6] ,'FSM-2': -1*FSM_1[ 6] ,'BSR-1P': BSR_1P[ 6] ,'BSR-2P': -1*BSR_1P[ 6] ,'BSP-1P': BSP_1P[ 6],'BSP-2P': -1*BSP_1P[ 6],'OST-1P': OST_1P[ 6],'OST-2P': -1*OST_1P[ 6],'OSA-1P': OSA_1P[ 6] ,'OSA-2P': -1*OSA_1P[ 6] }
-        Cys = {'HSM-1': HSM_1[ 7] ,'HSM-2': -1*HSM_1[ 7],'HSA-1': HSA_1[ 7] ,'HSA-2': -1*HSA_1[ 7] ,'FSM-1': FSM_1[ 7] ,'FSM-2': -1*FSM_1[ 7] ,'BSR-1P': BSR_1P[ 7] ,'BSR-2P': -1*BSR_1P[ 7] ,'BSP-1P': BSP_1P[ 7],'BSP-2P': -1*BSP_1P[ 7],'OST-1P': OST_1P[ 7],'OST-2P': -1*OST_1P[ 7],'OSA-1P': OSA_1P[ 7] ,'OSA-2P': -1*OSA_1P[ 7] }
-        Cyr = {'HSM-1': HSM_1[ 8] ,'HSM-2': -1*HSM_1[ 8],'HSA-1': HSA_1[ 8] ,'HSA-2': -1*HSA_1[ 8] ,'FSM-1': FSM_1[ 8] ,'FSM-2': -1*FSM_1[ 8] ,'BSR-1P': BSR_1P[ 8] ,'BSR-2P': -1*BSR_1P[ 8] ,'BSP-1P': BSP_1P[ 8],'BSP-2P': -1*BSP_1P[ 8],'OST-1P': OST_1P[ 8],'OST-2P': -1*OST_1P[ 8],'OSA-1P': OSA_1P[ 8] ,'OSA-2P': -1*OSA_1P[ 8] }
-        Cyg = {'HSM-1': HSM_1[ 9] ,'HSM-2': -1*HSM_1[ 9],'HSA-1': HSA_1[ 9] ,'HSA-2': -1*HSA_1[ 9] ,'FSM-1': FSM_1[ 9] ,'FSM-2': -1*FSM_1[ 9] ,'BSR-1P': BSR_1P[ 9] ,'BSR-2P': -1*BSR_1P[ 9] ,'BSP-1P': BSP_1P[ 9],'BSP-2P': -1*BSP_1P[ 9],'OST-1P': OST_1P[ 9],'OST-2P': -1*OST_1P[ 9],'OSA-1P': OSA_1P[ 9] ,'OSA-2P': -1*OSA_1P[ 9] }
-        Czh = {'HSM-1': HSM_1[10] ,'HSM-2': -1*HSM_1[10],'HSA-1': HSA_1[10] ,'HSA-2': -1*HSA_1[10] ,'FSM-1': FSM_1[10] ,'FSM-2': -1*FSM_1[10] ,'BSR-1P': BSR_1P[10] ,'BSR-2P': -1*BSR_1P[10] ,'BSP-1P': BSP_1P[10],'BSP-2P': -1*BSP_1P[10],'OST-1P': OST_1P[10],'OST-2P': -1*OST_1P[10],'OSA-1P': OSA_1P[10] ,'OSA-2P': -1*OSA_1P[10] }
-        Czr = {'HSM-1': HSM_1[11] ,'HSM-2': -1*HSM_1[11],'HSA-1': HSA_1[11] ,'HSA-2': -1*HSA_1[11] ,'FSM-1': FSM_1[11] ,'FSM-2': -1*FSM_1[11] ,'BSR-1P': BSR_1P[11] ,'BSR-2P': -1*BSR_1P[11] ,'BSP-1P': BSP_1P[11],'BSP-2P': -1*BSP_1P[11],'OST-1P': OST_1P[11],'OST-2P': -1*OST_1P[11],'OSA-1P': OSA_1P[11] ,'OSA-2P': -1*OSA_1P[11] }
-        Czp = {'HSM-1': HSM_1[12] ,'HSM-2': -1*HSM_1[12],'HSA-1': HSA_1[12] ,'HSA-2': -1*HSA_1[12] ,'FSM-1': FSM_1[12] ,'FSM-2': -1*FSM_1[12] ,'BSR-1P': BSR_1P[12] ,'BSR-2P': -1*BSR_1P[12] ,'BSP-1P': BSP_1P[12],'BSP-2P': -1*BSP_1P[12],'OST-1P': OST_1P[12],'OST-2P': -1*OST_1P[12],'OSA-1P': OSA_1P[12] ,'OSA-2P': -1*OSA_1P[12] }
-
         try:
-            return Cwv[self.cond],Cqw[self.cond],Cwh[self.cond],Cwt[self.cond],Cxs[self.cond],Cxp[self.cond],Cxg[self.cond],Cys[self.cond],Cyr[self.cond],Cyg[self.cond],Czh[self.cond],Czr[self.cond],Czp[self.cond]
+            RES = MAP[self.cond[:3]]
+            if '_2' in self.cond:
+                RES = [ -1*i for i in RES]
+            return RES
         except KeyError:
             c_error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
             c_error("Invalid condition to study. Enter an appropriate Condition out of :",default=False)
