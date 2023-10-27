@@ -74,7 +74,7 @@ def ship_save(ship:cls.ship,filename:str):
         file.write(save)
 
 
-def load_ship(filename):
+def load_ship(filename,file=None):
     with open(filename,'r') as file:
         data = json.loads(file.read())
     tags = ['LBP','Lsc','B','T','Tmin','Tsc','D','Cb','Cp','Cm','DWT']#,'PSM_spacing']

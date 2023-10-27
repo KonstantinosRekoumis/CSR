@@ -580,7 +580,7 @@ class stiff_plate():
         self.Ixx, self.Iyy = self.calc_I(n50=False)
         self.n50_Ixx, self.n50_Iyy = self.calc_I(n50=True)
 
-    def return_data(self):
+    def get_data(self):
         self.datacell.update(self)
         return self.datacell
 
@@ -947,15 +947,15 @@ class ship():
             quit()
 
     def Moments_wave(self):
-        # CSR PART 1 CHAPTER 4.3
-        #
-        # fm = {
-        #     "<= 0" : 0.0,
-        #     0.4 : 1.0,
-        #     0.65: 1.0,
-        #     ">= Lbp": 0.0
-        # }
-
+        ''' CSR PART 1 CHAPTER 4.3
+        
+         fm = {
+             "<= 0" : 0.0,
+             0.4 : 1.0,
+             0.65: 1.0,
+             ">= Lbp": 0.0
+         }
+        '''
         self.Mws = -110*self.Cw*self.LBP**2*self.B*(self.Cb+0.7)*1e-3
         self.Mwh =  190*self.Cw*self.LBP**2*self.B*self.Cb*1e-3
 
@@ -1258,7 +1258,21 @@ class DataCell:
                 # print(i)
                 # print(self.Pressure[i])
                 # print('%'*40)
-    
+    def get_data(self, mode='Plate', getHeader = True):
+        '''
+        function to return the datacell components as tabular data for the UI
+        '''
+        if mode.lower() == 'plate':
+            header = ['Name ',' Material ',' Breadth [m] ',' Stiffener Spacing [mm] '
+                    ,' CoA [m]',' Yield Net Thickness [mm] ',
+                    ' Minimum Empirical Net Thickness [mm] ',' Corrosion Thickness [mm]',
+                    ' Design Net Thickness [mm]',' Design Net Thickness + 50% Corrosion [mm] '
+                    ,' As Built Thickness [mm]']
+            data = [self.name,self.plate_material, self.breadth_eff, self.spacing, 
+                    self.CoA,self.p_calc_t, self.p_empi_t, self.p_corr_t, self.p_net_t,
+                    self.p_tn50_c, self.p_thick]
+        if getHeader: return data, header
+        else: return data
 class DataLogger:
     '''
     Datalogging class that acts as Grabber of the DataCell contained in each stiff plate.
@@ -1280,7 +1294,7 @@ class DataLogger:
         self.Cells = [] # may be slow for performance but it is meant to be called 1-2 times per main run
         for st_pl in _ship.stiff_plates:
             if st_pl.null : continue
-            self.Cells.append(st_pl.return_data())
+            self.Cells.append(st_pl.get_data())
         self.Cells.sort(key=self.plate_name)
 
     def CreateTabularData(self,_ship:ship,_conds:list[str],dump = False):
