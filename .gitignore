@@ -1,14 +1,16 @@
-/modules/__pycache__/
-/essay/
+*__pycache__/
+essay/
+csr_mods/
+.idea/
+venv/
 DOM*
 out.json
 in*.json
 blyat.json
 blyat1.json
-/csr_mods/
 *.pdf
 *.aux
 settings.json
 test.json
 GUI_notes*
-# /modules/test.py
+test.py
