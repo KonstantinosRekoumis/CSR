@@ -93,7 +93,8 @@ def block_plot(ship:cls.ship, show_w = True, fill = True, fig = None, ax = None)
     # ax.set_aspect()
     return fig, ax
 
-def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 'thickness',path=''):
+def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',
+                key = 'thickness',path='', fig = None, ax = None):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -111,7 +112,8 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
     Tag = []
     Id = []
     PSM_spacing = []
-    fig,ax = plt.subplots(1,1)
+    if fig == None or ax == None: #! gui update passes the fig reference
+        fig,ax = plt.subplots(1,1)
     for i in ship.stiff_plates:
         if i.null and key != 'tag': continue # skip rendering null plates except for locality
         x,y,t,m,tag = i.plate.render_data()

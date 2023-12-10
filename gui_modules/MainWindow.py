@@ -11,7 +11,7 @@ import modules.classes as cls
 import modules.IO as IO
 
 from gui_modules.TableWidget import Table
-from gui_modules.PlotRenderWidget import GraphicsRenderer, RendererS, DiagramPanel
+from gui_modules.PlotRenderWidget import DiagramPanel
 from gui_modules.ToolBarActions import ExitAction, LoadAction, SaveAction, AboutAction
 from modules.utilities import c_info,_TITLE_,_RESET_, c_success, c_error, c_warn
 
