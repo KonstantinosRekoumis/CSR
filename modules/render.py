@@ -33,8 +33,6 @@ def normals2D(geom,flip_n = False,show_norms = False):
             eta[i,1] = -xba/nrm2
     # last point
     # eta[-1,:] = eta[-2,:]
-
-
     if show_norms:# Debug only for standalone call
         fig, ax = plt.subplots()
         ax.plot(geom[0:-2,0],geom[0:-2,1])
@@ -43,8 +41,8 @@ def normals2D(geom,flip_n = False,show_norms = False):
     
     return eta
 
-def lines_plot(ship:cls.ship,show_w=False,color = "black",
-                axis_padding = (3,1),show=True):
+def lines_plot(ship:cls.ship, show_w = False, color = "black",
+                axis_padding = (3,1), fig = None, ax = None):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -55,8 +53,8 @@ def lines_plot(ship:cls.ship,show_w=False,color = "black",
     if show_w :
         marker = '*'
     else:marker = ""
-
-    fig,ax = plt.subplots(1,1)
+    if fig == None or ax == None: #! gui update passes the fig reference
+        fig,ax = plt.subplots(1,1)
     for i in ship.stiff_plates:
         X,Y = i.plate.render_data()[:2]
         ax.plot(X,Y,marker=marker,color = color)
@@ -65,10 +63,9 @@ def lines_plot(ship:cls.ship,show_w=False,color = "black",
     ax.set_ylim([-1,ship.D+axis_padding[0]])
     ax.set_xlim([-1,ship.B/2+axis_padding[1]])
     # ax.set_aspect()
-    if show:plt.show()
-    return fig,ax
+    return fig, ax
 
-def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
+def block_plot(ship:cls.ship, show_w = True, fill = True, fig = None, ax = None):
     if show_w :
         marker = '*'
     else:marker = ""
@@ -82,8 +79,8 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
         'FW':'aqua',
         'VOID':'silver'
     }
-
-    fig,ax = plt.subplots(1,1)
+    if fig == None or ax == None: #! gui update passes the fig reference
+        fig,ax = plt.subplots(1,1)
     for i in ship.blocks:
         X,Y,TAG,pos = i.render_data()
         # if TAG in ('SEA','ATM'): continue
@@ -94,7 +91,7 @@ def block_plot(ship:cls.ship,show_w = True,color = 'black',fill = True):
     ax.set_ylim([-3,ship.D+3])
     ax.set_xlim([-3,ship.B/2+3])
     # ax.set_aspect()
-    plt.show()
+    return fig, ax
 
 def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 'thickness',path=''):
     """
@@ -144,14 +141,14 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',key = 't
         ax.invert_xaxis()
         if path !='':
             plt.savefig(path,bbox_inches='tight',orientation = "landscape")
-        else:
-            plt.show()
+        return fig, ax
     except KeyError:
         c_warn(f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\',\'spacing\'. Thus no plot is produced.')
         pass
 
 
-def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_mode = False,path=''):
+def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, 
+                normals_mode = False,path='', fig = None, ax = None):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
@@ -159,10 +156,10 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_
     Input args:\n
     ship-> A ship class item\n
     pressure_index -> The pressure distribution case key (For example: 'HSM-1' -> HSM - 1 case).\n
-    args -> optional arguments passed to the base lines_plot func call
     """
     # Use the pressure distribution saved in each block
-    fig,ax = lines_plot(ship,show_w=True,show=False,axis_padding=(10,10))
+    fig,ax = lines_plot(ship,show_w=True,show=False,axis_padding=(10,10)
+                        , fig = fig, ax = ax)
     Plot_X = []
     Plot_Y = []
     Data = []
@@ -199,7 +196,7 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_
         Plot_Y = [*Plot_Y,math.nan,Y[0],*[Y[i]+_Py_[i]*2 for i in range(len(X))],Y[-1]]
 
         # ax.plot(Plot_X,Plot_Y)
-    fig,ax=c_contour(Plot_X,Plot_Y,Data,"Pressure [kPa]",fig,ax,'jet',marker='.')
+    fig, ax=c_contour(Plot_X, Plot_Y, Data, "Pressure [kPa]", fig, ax, 'jet', marker='.')
     ax.plot((-3,ship.B/2+3),(ship.T,ship.T))
     ax.set_ylim([-3,ship.D+3])
     ax.set_xlim([-3,ship.B/2+3])
@@ -207,12 +204,10 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, normals_
     plt.title(f"Pressure Distribution for {pressure_index}")
     if path != '':
         plt.savefig(path,bbox_inches='tight',orientation = "landscape")
-    else:
-        plt.show()
-        return fig,ax
+    return fig, ax
 
 
-def c_contour(X,Y,data,data_label,fig,ax,cmap,key="number",marker="+",lines = True):
+def c_contour(X,Y,data,data_label,fig ,ax ,cmap,key="number",marker="+",lines = True):
     _map_ = ScalarMappable(cmap=cmap)
     if key == "number":
         vals = []

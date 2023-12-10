@@ -2,7 +2,7 @@
 # #################################
 '''
 Structural Calculator for Bulk Carriers 
-Courtesy of Navarx0s and his st0los
+Courtesy of Navarx0s, his st0los and the Chillin Chilean!
 
 --- GUI MODE ---
 
@@ -21,7 +21,7 @@ import modules.physics as phzx
 import modules.rules as csr
 import modules.render as rnr
 import modules.IO as IO
-import gui_modules.window as win
+import gui_modules.MainWindow as win
 from modules.utilities import c_info,_TITLE_,_RESET_, c_success
 from PySide6 import QtCore, QtWidgets, QtGui
 TITLE = (
@@ -39,7 +39,7 @@ TITLE = (
         ' under Common Structural Rules 2022 Version.\n'
         )
 
-header = ["id",'Length','spacing','stiffener']
+header = ["id", 'Length', 'spacing', 'stiffener']
 data = [[0,12,2.5,'Tau'],
         [0,13,2.7,'G'],]
 # def main():
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     widget = win.MainWindow(TITLE,Dm)
     # widget = QtWidgets.QFileDialog()
-    widget.resize(800,450)    
+    widget.resize(1280, 720)    
     widget.show()
 
 

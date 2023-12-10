@@ -11,4 +11,5 @@ blyat1.json
 settings.json
 test.json
 GUI_notes*
+**__pycache__
 # /modules/test.py
