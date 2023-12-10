@@ -2,7 +2,7 @@ import sys
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtCore import Qt , Slot
 import modules.IO as io
-from modules.classes import ship 
+from modules.classes import Ship
 
 class ExitAction(QAction):
     def __init__(self,parent):
