@@ -100,3 +100,25 @@ def linespace(start: int, end: int, step: int, skip=0, truncate_end=True):
     else:
         out = [i for i in range(start, end, step)]
     return out
+
+def normals_2d(geom, flip_n=False):
+    eta = []
+    for i in range(len(geom) - 1):
+        _eta = [0, 0]
+        xba = geom[i + 1][0] - geom[i][0]
+        yba = geom[i + 1][1] - geom[i][1]
+        if flip_n:
+            yba = -yba
+            xba = -xba
+        nrm2 = math.sqrt(yba**2 + xba**2)
+        if nrm2 == 0:
+            _eta[0] = yba / nrm2
+            _eta[1] = -xba / nrm2
+            c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
+        else:
+            _eta[0] = yba / nrm2
+            _eta[1] = -xba / nrm2
+        eta.append(_eta)
+    # last point (a somewhat simplistic approach)
+    eta.append(eta[-1])
+    return eta

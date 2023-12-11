@@ -13,8 +13,8 @@ STUDIES HSM and BSP conditions at midships
 # _____ CALLS _______
 import os
 
-import modules.IO as IO
-import modules.physics as phzx
+import modules.datahandling.IO as IO
+import modules.physics.physics as phzx
 import modules.render as rnr
 import modules.rules as csr
 from modules.constants import RHO_S
@@ -41,7 +41,7 @@ def main(filepath, ship_plots, pressure_plots):
     ship = IO.load_ship(filepath)
     c_info(f'# => The ship at location {filepath} has been successfully loaded.')
     if ship_plots:
-        ship.render()
+        rnr.lines_plot(ship)
         for i in ('id', 'tag', 'thickness', 'material'):
             rnr.contour_plot(ship, key=i)
         rnr.block_plot(ship)

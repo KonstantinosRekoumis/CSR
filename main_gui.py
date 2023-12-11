@@ -19,7 +19,8 @@ import sys
 from PySide6 import QtWidgets
 
 import gui_modules.MainWindow as win
-import modules.IO as IO
+import modules.datahandling.IO as IO
+from modules.datahandling.datacell import DataCell
 
 TITLE = r"""
    ____  ____    _      __  __ ____  ____    
@@ -42,8 +43,8 @@ data = [[0, 12, 2.5, 'Tau'],
 
 
 ship = IO.load_ship('structural-out/final.json')
-data, header = ship.stiff_plates[0].get_data().get_data()
-tmp = [i.get_data().get_data(getHeader=False) for i in ship.stiff_plates]
+data, header = DataCell(ship.stiff_plates[0]).get_data()
+tmp = [DataCell(i).get_data(getHeader=False) for i in ship.stiff_plates]
 data = [data, *tmp]
 Dm = win.dataManager(data, header)
 # %%

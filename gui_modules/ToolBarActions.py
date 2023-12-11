@@ -1,9 +1,6 @@
 import sys
 from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtCore import Qt , Slot
-import modules.IO as io
-from modules.classes import Ship
-
+from PySide6.QtCore import Qt 
 class ExitAction(QAction):
     def __init__(self,parent):
         super().__init__(parent)

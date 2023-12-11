@@ -1,17 +1,17 @@
 import json
 
-import modules.classes as cls
+from modules.baseclass import plate, block, ship
 import modules.render as rnr
 from modules.constants import MATERIALS
 from modules.utilities import ERROR, RESET, c_error
 
 
-def plate_save(plate: cls.Plate):
+def plate_save(plate: plate.Plate):
     # Save data to JSON format
     return json.dumps(plate.save_data())
 
 
-def stiff_save(stiff: cls.Stiffener):
+def stiff_save(stiff: plate.Stiffener):
     # Save data to JSON format
     dim = []
     for i in stiff.plates:
@@ -21,7 +21,7 @@ def stiff_save(stiff: cls.Stiffener):
     return json.dumps({'type': stiff.type, 'dimensions': dim, 'material': stiff.plates[0].material})
 
 
-def stiff_pl_save(stiff_plate: cls.StiffPlate):
+def stiff_pl_save(stiff_plate: plate.StiffPlate):
     save = ""
     save += '{\"id\":' + str(stiff_plate.id) + ',\"plate\":' + plate_save(stiff_plate.plate) + ","
     if len(stiff_plate.stiffeners) != 0:
@@ -38,14 +38,14 @@ def stiff_pl_save(stiff_plate: cls.StiffPlate):
     return save + "}"
 
 
-def blocks_save(block: cls.Block):
+def blocks_save(block: block.Block):
     save = ""
     save += "{\"name\":\"" + block.name + "\",\"symmetrical\":" + json.dumps(
         block.symmetrical) + ",\"type\":\"" + block.space_type + "\",\"ids\":" + json.dumps(block.list_plates_id) + "}"
     return save
 
 
-def section_save(ship: cls.Ship):
+def section_save(ship: ship.Ship):
     save = '\"geometry\":[\n'
     for i in ship.stiff_plates[:-1]:
         save += stiff_pl_save(i) + ',\n'
@@ -60,7 +60,7 @@ def section_save(ship: cls.Ship):
     return save
 
 
-def ship_save(ship: cls.Ship, filename: str):
+def ship_save(ship: ship.Ship, filename: str):
     save = "{\"LBP\":" + str(ship.LBP) + ',\n'
     save += "\"Lsc\":" + str(ship.Lsc) + ',\n'
     save += "\"B\":" + str(ship.B) + ',\n'
@@ -113,7 +113,7 @@ def load_ship(filename, file=None):
               RESET)
         quit()
 
-    return cls.Ship(*particulars, stiff_plates, blocks)
+    return ship.Ship(*particulars, stiff_plates, blocks)
 
 
 def geometry_parser(geo_t: list):
@@ -125,15 +125,13 @@ def geometry_parser(geo_t: list):
         try:
             if len(i['plate']) >= 5:
                 if i['plate'][0] == i['plate'][1]:
-                    plate = i['plate']
-                    c_error(f'(IO.py) geometry_parser: Plate :{plate} You cannot enter a plate with no length!')
+                    c_error(f'(IO.py) geometry_parser: Plate :{i["plate"]} You cannot enter a plate with no length!')
                     quit()
                 elif i['plate'][3] not in MATERIALS:
-                    plate = i['plate']
-                    c_error(f'(IO.py) geometry_parser: Plate :{plate} Your plate has a no documented material !')
+                    c_error(f'(IO.py) geometry_parser: Plate :{i["plate"]} Your plate has a no documented material !')
                     quit()
                 t = i['plate'][2] if i['plate'][2] != 0 else 0.1
-                tmp_p = cls.Plate(i['plate'][0], i['plate'][1], t, i['plate'][3], i['plate'][4])
+                tmp_p = plate.Plate(i['plate'][0], i['plate'][1], t, i['plate'][3], i['plate'][4])
                 if i['plate'][4] != 'Bilge' and 'stiffeners' in i and len(i['stiffeners']) != 0:
                     tmp_d = i['stiffeners']["dimensions"]
                     # extra dimensions than the first N required are omitted
@@ -169,7 +167,7 @@ def geometry_parser(geo_t: list):
                     null = i['null']
                 else:
                     null = False
-                tmp = cls.StiffPlate(i['id'], tmp_p, i['spacing'], i['s_pad'], i['e_pad'], tmp_s, i['skip'],
+                tmp = plate.StiffPlate(i['id'], tmp_p, i['spacing'], i['s_pad'], i['e_pad'], tmp_s, i['skip'],
                                      i['PSM_spacing'], null=null)
                 out.append(tmp)
                 temp_id.append(i['id'])
@@ -190,7 +188,7 @@ def blocks_parser(blocks_t: list):
     out = []
     for i in blocks_t:
         try:
-            tmp = cls.Block(i['name'], i['symmetrical'], i['type'], i['ids'])
+            tmp = block.Block(i['name'], i['symmetrical'], i['type'], i['ids'])
             out.append(tmp)
         except KeyError:
             c_error(
@@ -198,12 +196,3 @@ def blocks_parser(blocks_t: list):
                 f"has resulted in an error. Thus the code will ignore its existence."
             )
     return out
-
-
-def latex_output(ship: cls.Ship, conds: list[str], path='./', _standalone=True):
-    out = ship.latex_output(conds, standalone=_standalone, figs=('id_plt.pdf', 'tag_plt.pdf', 'PSM_plt.pdf'))
-    with open(path + 'tabs.tex', 'w') as file:
-        file.write(out)
-    rnr.contour_plot(ship, key="id", path=path + 'id_plt.pdf', cmap='jet')
-    rnr.contour_plot(ship, key="spacing", path=path + 'PSM_plt.pdf', cmap='jet')
-    rnr.contour_plot(ship, key="tag", path=path + 'tag_plt.pdf', cmap='jet')

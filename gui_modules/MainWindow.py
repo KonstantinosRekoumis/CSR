@@ -7,13 +7,12 @@ from PySide6.QtGui import QAction
 from matplotlib.figure import Figure
 
 
-import modules.classes as cls
-import modules.IO as IO
+import modules.datahandling.IO as IO
 
 from gui_modules.TableWidget import Table
 from gui_modules.PlotRenderWidget import DiagramPanel
 from gui_modules.ToolBarActions import ExitAction, LoadAction, SaveAction, AboutAction
-from modules.utilities import c_info,_TITLE_,_RESET_, c_success, c_error, c_warn
+from modules.utilities import c_info,TITLE,RESET, c_success, c_error, c_warn
 
 class dataManager:
     def __init__(self,data,header):

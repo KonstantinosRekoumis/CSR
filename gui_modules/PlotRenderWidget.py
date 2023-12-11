@@ -2,7 +2,7 @@ from functools import partial
 from typing import Optional
 import PySide6.QtCore
 
-import modules.classes as cls
+from modules.baseclass.ship import Ship
 import modules.render as rnr
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox
 from matplotlib.backends.backend_qtagg import FigureCanvas
@@ -34,7 +34,7 @@ class DiagramPanel(QWidget):
     The panel to be imported in the main window that will also handle the
     transition between the different plots 
     '''
-    def __init__(self, ship : cls.ship, parent: QWidget | None = ..., **kwargs) -> None:
+    def __init__(self, ship : Ship, parent: QWidget | None = ..., **kwargs) -> None:
         super().__init__(parent)
         self.ship = ship
         # Instantiate the Dropdown menu
