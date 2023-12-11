@@ -1,11 +1,10 @@
 import math
 
-# import ezdxf # Future Extension
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
-import modules.classes as cls
+from modules.classes import Ship
 from modules.utilities import c_error, c_warn
 
 
@@ -13,10 +12,10 @@ def normalize(a: list):
     maxima = max(map(lambda x: abs(x), a))
     maxima = maxima if maxima != 0 else -1
 
-    return list(map(lambda x: x/maxima, a))
+    return list(map(lambda x: x / maxima, a))
 
 
-def normals2D(geom, flip_n=False, show_norms=False):
+def normals_2d(geom, flip_n=False, show_norms=False):
     eta = np.ndarray((len(geom) - 1, 2))
     for i in range(len(geom) - 1):
         xba = geom[i + 1, 0] - geom[i, 0]
@@ -41,8 +40,8 @@ def normals2D(geom, flip_n=False, show_norms=False):
 
     return eta
 
-def lines_plot(ship:cls.Ship, show_w=False, color="black",
-                axis_padding=(3,1), fig=None, ax=None):
+
+def lines_plot(ship: Ship, show_w=False, color="black", axis_padding=(3, 1), fig=None, ax=None):
     """
     Rendering Function using the Matplotlib library.
     Input args:
@@ -50,12 +49,14 @@ def lines_plot(ship:cls.Ship, show_w=False, color="black",
     show_w : Boolean, If True -> the plates seams are shown
     color : String, describes the color to plot the lines
     """
+    marker = ""
     if show_w:
-        marker = '*'
-    else:
-        marker = ""
-    if fig == None or ax == None: #! gui update passes the fig reference
+        marker = "*"
+
+    # ! gui update passes the fig reference
+    if fig is None or ax is None:
         fig, ax = plt.subplots(1, 1)
+
     for i in ship.stiff_plates:
         X, Y = i.plate.render_data()[:2]
         ax.plot(X, Y, marker=marker, color=color)
@@ -66,96 +67,89 @@ def lines_plot(ship:cls.Ship, show_w=False, color="black",
     # ax.set_aspect()
     return fig, ax
 
-def block_plot(ship: cls.Ship, show_w=True, color='black',
-                fill=True, fig=None, ax=None):
+
+def block_plot(ship: Ship, show_w=True, color="black", fill=True, fig=None, ax=None):
+    marker = ""
     if show_w:
         marker = '*'
-    else:
-        marker = ""
 
     colors = {
-        'SEA': 'blue',
-        'ATM': 'lightcyan',
-        'WB': 'turquoise',
-        'DC': 'tomato',
-        'OIL': 'darkgoldenrod',
-        'FW': 'aqua',
-        'VOID': 'silver'
+        "SEA": "blue",
+        "ATM": "lightcyan",
+        "WB": "turquoise",
+        "DC": "tomato",
+        "OIL": "darkgoldenrod",
+        "FW": "aqua",
+        "VOID": "silver"
     }
-    if fig == None or ax == None: #! gui update passes the fig reference
-        fig,ax = plt.subplots(1,1)
+
+    # ! gui update passes the fig reference
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1)
+
     for i in ship.blocks:
         x, y, tag, pos = i.render_data()
-        # if TAG in ('SEA','ATM'): continue
-        # pos = (X[(len(X)//2)],Y[(len(Y)//2)])
         ax.fill(x, y, color=colors[i.space_type]) if fill else ax.plot(x, y, color=colors[i.space_type], marker=marker)
         ax.annotate(tag, pos, color=colors[i.space_type])
 
     ax.set_ylim([-3, ship.D + 3])
     ax.set_xlim([-3, ship.B / 2 + 3])
-    # ax.set_aspect()
     return fig, ax
 
-def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',
-                key = 'thickness',path='', fig=None, ax=None):
+
+def contour_plot(ship: Ship, cmap='Set2', color='black', key='thickness', path='', fig=None, ax=None):
     """
     Rendering Function using the Matplotlib library.
     Input args:
-    A ship class item,
-    show_w : Boolean, If True -> the plates seams are shown
+    A ship class item
     """
-    if show_w:
-        marker = "."
-    else:
-        marker = ""
 
-    X = []
-    Y = []
-    T = []
-    M = []
-    Tag = []
-    Id = []
-    PSM_spacing = []
-    if fig == None or ax == None: #! gui update passes the fig reference
-        fig,ax = plt.subplots(1,1)
+    x, y, t, m = [], [], [], []
+    tag = []
+    identifier = []
+    psm_spacing = []
+
+    # ! gui update passes the fig reference
+    if fig is None or ax is None:
+        fig, ax = plt.subplots(1, 1)
+
     for i in ship.stiff_plates:
         if i.null and key != 'tag': continue  # skip rendering null plates except for locality
         x, y, t, m, tag = i.plate.render_data()
-        X.append(x)
-        Y.append(y)
-        T.append(t * 1e3)
-        M.append(m)
-        Tag.append(tag)
-        Id.append(f'{i.id}')
-        PSM_spacing.append(i.PSM_spacing)
+        x.append(x)
+        y.append(y)
+        t.append(t * 1e3)
+        m.append(m)
+        tag.append(tag)
+        identifier.append(f'{i.id}')
+        psm_spacing.append(i.PSM_spacing)
 
         for j in i.stiffeners:
             ax.plot(*j.render_data()[:2], color=color)
+
     data = {
-        'thickness': [T, 'number', 'As Built Thickness [mm]'],
-        'spacing': [PSM_spacing, 'string', 'Web Section Spacing [m]'],
-        'material': [M, 'string', 'Material'],
-        'tag': [Tag, 'string', 'Locality Tag'],
-        'id': [Id, 'string', 'Plate\'s Id']
+        'thickness': [t, 'number', 'As Built Thickness [mm]'],
+        'spacing': [psm_spacing, 'string', 'Web Section Spacing [m]'],
+        'material': [m, 'string', 'Material'],
+        'tag': [tag, 'string', 'Locality Tag'],
+        'id': [identifier, 'string', 'Plate\'s Id']
     }
 
     ax.set_ylim([-1, ship.D + 3])
     ax.set_xlim([-1, ship.B / 2 + 1])
     try:
-        fig, ax = c_contour(X, Y, data[key][0], data[key][2], fig, ax, cmap, key=data[key][1])
+        fig, ax = c_contour(x, y, data[key][0], data[key][2], fig, ax, cmap, key=data[key][1])
         plt.title(f'Plating\'s {key} Plot')
         ax.invert_xaxis()
-        if path !='':
+        if path != '':
             plt.savefig(path, bbox_inches='tight', orientation="landscape")
         return fig, ax
     except KeyError:
-        c_warn(
-            f'(render.py) contour_plot(): Key :{key} is not valid. Valid options are \'thickness\',\'material\',\'tag\',\'id\',\'spacing\'. Thus no plot is produced.')
-        pass
+        c_warn(f"(render.py) contour_plot(): Key :{key} is not valid. "
+               f"Valid options are 'thickness', 'material', 'tag', 'id', 'spacing'. Thus no plot is produced.")
 
 
-def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str,
-                normals_mode=False,path='', fig=None, ax=None):
+def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mode=False, path='', fig=None, ax=None):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n
@@ -165,11 +159,11 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str,
     pressure_index -> The pressure distribution case key (For example: 'HSM-1' -> HSM - 1 case).\n
     """
     # Use the pressure distribution saved in each block
-    fig,ax = lines_plot(ship,show_w=True,show=False,axis_padding=(10,10)
-                        , fig=fig, ax=ax)
-    Plot_X = []
-    Plot_Y = []
-    Data = []
+    fig, ax = lines_plot(ship, show_w=True, axis_padding=(10, 10), fig=fig, ax=ax)
+
+    plot_x = []
+    plot_y = []
+    data = []
     for i in ship.blocks:
         _Px_ = []
         _Py_ = []
@@ -182,48 +176,47 @@ def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str,
 
         if not enabled: continue
 
-        X, Y, P = i.pressure_data(pressure_index, graphical=normals_mode)
+        x, y, p = i.pressure_data(pressure_index, graphical=normals_mode)
 
-        if P != None:
-            # print(f'Block: {i.name} P : ',P)
-            Data = [*Data, math.nan, math.nan, *P, math.nan, math.nan]
-            P = normalize(P)
+        if p is not None:
+            data = [*data, math.nan, math.nan, *p, math.nan, math.nan]
+            p = normalize(p)
         else:
             continue
 
-        for j, x in enumerate(X):
+        for j, x in enumerate(x):
             if j == 0:
-                eta = normals2D(np.array([[X[0], Y[0]], [X[1], Y[1]]]), flip_n=True, show_norms=False)
+                eta = normals_2d(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=True, show_norms=False)
 
-                _Px_.append(eta[0, 0] * P[j])
-                _Py_.append(eta[0, 1] * P[j])
+                _Px_.append(eta[0, 0] * p[j])
+                _Py_.append(eta[0, 1] * p[j])
             else:
-                eta = normals2D(np.array([[X[j], Y[j]], [X[j - 1], Y[j - 1]]]), flip_n=False, show_norms=False)
-                _Px_.append(eta[0, 0] * P[j])
-                _Py_.append(eta[0, 1] * P[j])
+                eta = normals_2d(np.array([[x[j], y[j]], [x[j - 1], y[j - 1]]]), flip_n=False, show_norms=False)
+                _Px_.append(eta[0, 0] * p[j])
+                _Py_.append(eta[0, 1] * p[j])
 
-        Plot_X = [*Plot_X, math.nan, X[0], *[X[i] + _Px_[i] * 2 for i in range(len(X))], X[-1]]
-        Plot_Y = [*Plot_Y, math.nan, Y[0], *[Y[i] + _Py_[i] * 2 for i in range(len(X))], Y[-1]]
+        plot_x = [*plot_x, math.nan, x[0], *[x[i] + _Px_[i] * 2 for i in range(len(x))], x[-1]]
+        plot_y = [*plot_y, math.nan, y[0], *[y[i] + _Py_[i] * 2 for i in range(len(x))], y[-1]]
 
-        # ax.plot(Plot_X,Plot_Y)
-    fig, ax = c_contour(Plot_X, Plot_Y, Data, "Pressure [kPa]", fig, ax, 'jet', marker='.')
+    fig, ax = c_contour(plot_x, plot_y, data, "Pressure [kPa]", fig, ax, 'jet', marker='.')
     ax.plot((-3, ship.B / 2 + 3), (ship.T, ship.T))
     ax.set_ylim([-3, ship.D + 3])
     ax.set_xlim([-3, ship.B / 2 + 3])
     ax.invert_xaxis()
     plt.title(f"Pressure Distribution for {pressure_index}")
     if path != '':
-        plt.savefig(path,bbox_inches='tight',orientation = "landscape")
+        plt.savefig(path, bbox_inches='tight', orientation="landscape")
     return fig, ax
 
 
 def c_contour(X, Y, data, data_label, fig, ax, cmap, key="number", marker="+", lines=True):
     d_map = {}
     _map_ = ScalarMappable(cmap=cmap)
+
     if key == "number":
         vals = []
         for i in data:
-            if type(i) == str:
+            if i is str:
                 c_error(
                     "(render.py) c_contour: Detected item of type <str>. Considering changing the key value to string.")
                 quit()
@@ -233,7 +226,8 @@ def c_contour(X, Y, data, data_label, fig, ax, cmap, key="number", marker="+", l
         _map_.set_array(vals)
         cb = fig.colorbar(_map_, cmap=cmap)
         cb.ax.set_title(data_label)
-    elif key == "string":
+
+    if key == "string":
         vals = []
         text = []
         c = 1
@@ -255,14 +249,17 @@ def c_contour(X, Y, data, data_label, fig, ax, cmap, key="number", marker="+", l
 
     for i in range(len(X)):
         breaks = 0  # Int to increment where a break by nan is encountered
+        val = data[i - breaks]
         if key == "string":
             val = d_map[data[i - breaks]]
-        elif key == "number":
-            val = data[i - breaks]
 
-        if type(X[i]) in (list, tuple, np.ndarray):
-            ax.plot(X[i], Y[i], color=_map_.to_rgba(val),
-                    marker=marker)  # passing line coordinates as arguments. NaN is handled internally by plot
+        element_is_list = X[i] is list
+        element_is_tuple = X[i] is tuple
+        element_is_np_array = X[i] is np.ndarray
+
+        if element_is_list or element_is_tuple or element_is_np_array:
+            # passing line coordinates as arguments. NaN is handled internally by plot
+            ax.plot(X[i], Y[i], color=_map_.to_rgba(val), marker=marker)
         else:
             if (X[i] != math.nan) and (Y[i] != math.nan):
                 ax.plot(X[i], Y[i], color=_map_.to_rgba(val), marker=marker)
