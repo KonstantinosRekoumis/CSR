@@ -10,12 +10,10 @@ from modules.utilities import c_error, c_warn
 
 
 def normalize(a: list):
-    max = -1
-    for i in a:
-        if (abs(i) > max) and (abs(i) != 0):
-            max = abs(i)
+    maxima = max(map(lambda x: abs(x), a))
+    maxima = maxima if maxima != 0 else -1
 
-    return [x / max for x in a]
+    return list(map(lambda x: x/maxima, a))
 
 
 def normals2D(geom, flip_n=False, show_norms=False):
@@ -156,7 +154,7 @@ def contour_plot(ship:cls.ship,show_w=False,cmap='Set2',color = 'black',
         pass
 
 
-def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str, 
+def pressure_plot(ship:cls.ship, pressure_index :str, block_types: str,
                 normals_mode=False,path='', fig=None, ax=None):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
