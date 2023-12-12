@@ -66,7 +66,6 @@ class Logger:
         "ERROR": 1,
         "WARNING": 2,
         "DEBUG": 4,
-        "INFO": 8
     }
 
     try:
@@ -90,6 +89,8 @@ class Logger:
 
     @staticmethod
     def debug(*args):
+        if Logger.LEVEL < 4:
+            return
         print(f"{LogLevelColours.DEBUG}{datetime.now()}:DEBUG:{Logger.get_parent()}",
               *args,
               f"{Colours.NOCOLOUR}",
@@ -97,6 +98,8 @@ class Logger:
 
     @staticmethod
     def warning(*args):
+        if Logger.LEVEL < 2:
+            return
         print(f"{LogLevelColours.WARNING}{datetime.now()}:WARNING:{Logger.get_parent()}",
               *args,
               f"{Colours.NOCOLOUR}",
@@ -104,6 +107,8 @@ class Logger:
 
     @staticmethod
     def error(*args):
+        if Logger.LEVEL < 1:
+            return
         print(f"{LogLevelColours.ERROR}{datetime.now()}:ERROR:{Logger.get_parent()}",
               *args,
               f"{Colours.NOCOLOUR}",
