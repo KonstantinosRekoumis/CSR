@@ -15,6 +15,7 @@ class DataCell:
             'g': 'Angled Bar',
             'tb': 'T Bar'
         }
+        self.id = stiff_plate.id
         self.name = f'Plate {stiff_plate.id} '
         self.N_st = len(stiff_plate.stiffeners)
         self.tag = _PLACE_[stiff_plate.tag]

@@ -7,7 +7,7 @@ import modules.render as rnr
 
 
 def generate_latex_rep(data: DataLogger, path='./', _standalone=True):
-    out = latex_output(data.ship, standalone=_standalone, figs=('id_plt.pdf', 'tag_plt.pdf', 'PSM_plt.pdf'))
+    out = latex_output(data, standalone=_standalone, figs=('id_plt.pdf', 'tag_plt.pdf', 'PSM_plt.pdf'))
     with open(path + 'tabs.tex', 'w') as file:
         file.write(out)
     rnr.contour_plot(data.ship, key="id", path=path + 'id_plt.pdf', cmap='jet')

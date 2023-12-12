@@ -1,4 +1,5 @@
 import numpy as np
+from modules.baseclass.plate import StiffPlate
 from modules.baseclass.ship import Ship
 from modules.constants import LOADS, TEX_PREAMBLE
 from modules.datahandling.datacell import DataCell
@@ -6,7 +7,7 @@ from modules.utilities import c_error, c_warn
 
 class DataLogger:
     """
-    Datalogging class that acts as Grabber of the DataCell contained in each stiff plate.
+    Datalogging class that acts as Grabber of the DataCell wrapper on the stiff plate.
     Creates tabular data for export. TO BE USED after the calculations are already done.
     IF NOT won't yield useful results.
 
@@ -40,9 +41,14 @@ class DataLogger:
 
         Args:
             _conds (list[str]): The physics conditions evaluated
-            !!! ONLY INPUT THE CONDITIONS THAT HAVE RUN !!!
         """
         self.conds = _conds
+    
+    def update_stiff_plate(self, stiff_plate: StiffPlate):
+        for cell in self.Cells:
+            if cell.id == stiff_plate.id:
+                cell.update(stiff_plate)
+                break
 
     def CreateTabularData(self, dump=False):
         """
@@ -78,7 +84,7 @@ class DataLogger:
         self.St_Pl_D = []
         self.PrimS_D = []
         # load/update data 
-        self.LoadData(self.ship)
+        self.LoadData()
         _ship = self.ship # ugly solution to an even uglier problem
 
         for i, cell in enumerate(self.Cells):

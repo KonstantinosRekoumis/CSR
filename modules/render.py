@@ -116,12 +116,12 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
         # skip rendering null plates except for locality
         if i.null and key != "tag":
             continue
-        x, y, t, m, tag = i.plate.render_data()
-        x.append(x)
-        y.append(y)
-        t.append(t * 1e3)
-        m.append(m)
-        tag.append(tag)
+        x_, y_, t_, m_, tag_ = i.plate.render_data()
+        x.append(x_)
+        y.append(y_)
+        t.append(t_ * 1e3)
+        m.append(m_)
+        tag.append(tag_)
         identifier.append(f'{i.id}')
         psm_spacing.append(i.PSM_spacing)
 
@@ -142,7 +142,7 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
         fig, ax = c_contour(x, y, data[key][0], data[key][2], fig, ax, cmap, key=data[key][1])
         plt.title(f"Plating's {key} Plot")
         ax.invert_xaxis()
-        if not path:
+        if path:
             plt.savefig(path, bbox_inches='tight', orientation="landscape")
         return fig, ax
     except KeyError:
@@ -181,7 +181,7 @@ def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mod
         data = [*data, math.nan, math.nan, *p, math.nan, math.nan]
         p = normalize(p)
 
-        for j, x in enumerate(x):
+        for j, _ in enumerate(x):
             if j == 0:
                 eta = normals_2d(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=True, show_norms=False)
                 _Px_.append(eta[0, 0] * p[j])
@@ -202,7 +202,7 @@ def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mod
     ax.invert_xaxis()
     plt.title(f"Pressure Distribution for {pressure_index}")
 
-    if not path:
+    if path:
         plt.savefig(path, bbox_inches="tight", orientation="landscape")
 
     return fig, ax

@@ -4,9 +4,11 @@
 
 # Materials Constant Array see. CSR ... to be filled
 import math
-
-from modules.physics import PhysicsData, block_to_plate_per_case
-from modules.classes import Block, Ship, StiffPlate
+from modules.baseclass.plate import StiffPlate
+from modules.baseclass.block import Block
+from modules.baseclass.ship import Ship
+from modules.datahandling.datalogger import DataLogger
+from modules.physics.physics import PhysicsData, block_to_plate_per_case
 from modules.constants import MATERIALS
 from modules.utilities import c_error, c_info, c_success, c_warn
 
@@ -300,13 +302,11 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Physics
         if dynamic:  # AC-S
             if sigma >= 0:
                 return 0.75
-            else:
-                return 0.85 - abs(sigma) / reh
-        else:  # AC-SD
-            if sigma >= 0:
-                return 0.9
-            else:
-                return 1.0 - abs(sigma) / reh
+            return 0.85 - abs(sigma) / reh
+        # AC-SD
+        if sigma >= 0:
+            return 0.9
+        return 1.0 - abs(sigma) / reh
 
     # hardcoded that phiw = 90 deg This is a critical assumption
     dshr = (plate.plate.length + plate.stiffeners[0].plates[0].net_thickness + 0.5 * plate.plate.cor_thickness - 0.5 *
@@ -338,8 +338,8 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Physics
     if plate.stiffeners[0].plates[0].net_thickness_calc < max_t:
         for stiff in plate.stiffeners:
             if len(stiff.plates) > 1:
-                for p in stiff.plates:
-                    p.net_thickness_calc = max_t
+                for st_pl in stiff.plates:
+                    st_pl.net_thickness_calc = max_t
             stiff.plates[0].net_thickness_calc = max_t
 
     minimum_stiff_net_thickness(plate, min(300, case.Lsc), debug=debug)
@@ -437,7 +437,7 @@ def buckling_evaluator(ship: Ship, debug=False):
 
 
 # ----------------  Loading cases manager function  ----------------------------
-def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict):
+def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict, logger: DataLogger):
     """
     condition = {
         'Dynamics':'SD',
@@ -466,14 +466,13 @@ def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict):
         max_eval = False
         for block in ship.blocks:
 
-            plate_id_is_block_id = plate.id in block.list_plates_id
-            inverse_plate_is_block_id = -plate.id in block.list_plates_id
-            plate_id_is_block = plate_id_is_block_id or inverse_plate_is_block_id
-            block_is_skippable = block.space_type in condition['skip value']
-            if plate_id_is_block and not block_is_skippable:
+            plate_id_is_in_block_ids = plate.id in block.list_plates_id
+            inverse_plate_is_in_block_ids = -plate.id in block.list_plates_id
+            if not (plate_id_is_in_block_ids or inverse_plate_is_in_block_ids): 
+                continue
+            if block.space_type not in condition['skip value']:
                 blocks.append(block)
                 continue
-
             # use a zero pressure pseudo block as the plate is well-defined
             #  and raising an exception is unwanted behavior
             zero = Block("zero", False, "VOID", [plate.id])
@@ -503,7 +502,7 @@ def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict):
         else:
             # let the function handle the proper aggregation
             block_to_plate_per_case(plate, blocks, case, condition['Dynamics'])
-        plate.datacell.update(plate)  # save pressure maximum pressure data
+        logger.update_stiff_plate(plate) # save pressure maximum pressure data
 
 
 def ship_scantlings(ship: Ship):
@@ -723,7 +722,7 @@ def corrosion_assign(ship: Ship, offload: bool):
             stiff_plate.plate.net_thickness = stiff_plate.plate.thickness - stiff_plate.plate.cor_thickness
 
             # maybe redundant but a good sanity check
-            assert stiff_plate.plate.net_thickness < 0
+            assert stiff_plate.plate.net_thickness > 0
 
             for stiffener in stiff_plate.stiffeners:
                 for plate in stiffener.plates:

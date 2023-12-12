@@ -25,7 +25,7 @@ def c_warn(*text, default=True):
 
 
 def c_error(*text, default=True):
-    print(ERROR, *text, RESET) if default else print(ERROR, *text, RESET)
+    print(ERROR, "-- !! ERROR !! --\n",*text, RESET) if default else print(ERROR, *text, RESET)
 
 
 def c_success(*text, default=True):
@@ -51,11 +51,11 @@ def lin_int_dict(vli_dict: dict, key: float, *f_args, suppress=False) -> float:
     # checks whether the function is presented to proper data
     try:
         for i in vli_dict:
-            if not (i is float or i is int):
+            if not (isinstance(i, float) or isinstance(i, int)):
                 c_warn(i, vli_dict[i])
                 raise KeyError
             else:
-                if not (vli_dict[i] is float or vli_dict[i] is int):
+                if not (isinstance(vli_dict[i], float) or isinstance(vli_dict[i], int)):
                     if callable(vli_dict[i]):
                         if not suppress:
                             c_warn("Detected a function. May result in error...")

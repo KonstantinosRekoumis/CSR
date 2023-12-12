@@ -14,6 +14,8 @@ STUDIES HSM and BSP conditions at midships
 import os
 
 import modules.datahandling.IO as IO
+from modules.datahandling.datalogger import DataLogger
+from modules.datahandling.latex import generate_latex_rep
 import modules.physics.physics as phzx
 import modules.render as rnr
 import modules.rules as csr
@@ -39,6 +41,8 @@ def main(filepath, ship_plots, pressure_plots):
     print(title)
     # import geometry data
     ship = IO.load_ship(filepath)
+    logger = DataLogger(ship)
+    logger.LoadData()
     c_info(f'# => The ship at location {filepath} has been successfully loaded.')
     if ship_plots:
         rnr.lines_plot(ship)
@@ -52,7 +56,7 @@ def main(filepath, ship_plots, pressure_plots):
     phzx.static_total_eval(ship, 16, RHO_S, False)
     hsm1, hsm2 = phzx.dynamic_total_eval(ship, 16, 'HSM', False)
     bsp1, bsp2 = phzx.dynamic_total_eval(ship, 16, 'BSP', False)
-
+    logger.LoadConds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
         rnr.pressure_plot(ship, 'HSM-1', 'SEA,ATM', path='./essay/HSM1_Shell.pdf')
         rnr.pressure_plot(ship, 'STATIC', 'SEA,ATM', path='./essay/STATIC_Shell.pdf')
@@ -79,7 +83,7 @@ def main(filepath, ship_plots, pressure_plots):
 
     c_info(f'#=> Evaluating Full Load Condition...')
     for case in (hsm1, hsm2, bsp1, bsp2):
-        csr.loading_cases_eval(ship, case, flc)
+        csr.loading_cases_eval(ship, case, flc, logger)
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...', default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...', default=False)
     for case in (hsm1, hsm2, bsp1, bsp2):
@@ -87,7 +91,7 @@ def main(filepath, ship_plots, pressure_plots):
 
     c_info(f'#=> Evaluating Water Ballast Condition...')
     for case in (hsm1, hsm2, bsp1, bsp2):
-        csr.loading_cases_eval(ship, case, wb)
+        csr.loading_cases_eval(ship, case, wb, logger)
     c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...', default=False)
     c_info('# => Evaluating Local Scantlings of stiffened plates...', default=False)
     for case in (hsm1, hsm2, bsp1, bsp2):
@@ -105,7 +109,7 @@ def main(filepath, ship_plots, pressure_plots):
     c_info('# => Outputing Data to /out.json file...', default=False)
     IO.ship_save(ship, 'out.json')
     c_info('# => Generating LaTeX Report Data to /out.json file...', default=False)
-    IO.latex_output(ship, [x.cond for x in (hsm1, hsm2, bsp1, bsp2)], path='./essay/', _standalone=False)
+    generate_latex_rep(logger, path='./essay/', _standalone=False)
     c_success('Program terminated succesfully!')
 
 
@@ -117,7 +121,5 @@ if __name__ == "__main__":
         main('./out.json', False, False)
     # Single Step Manual Design evaluation
     else:
-        main('./initial.json', True, True)
-        c_info('# => Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
-        os.remove('./inter.json')
-        os.rename('./out.json', './inter.json')
+        # main('./structural-out/final.json', True, True)
+        main('./structural-out/final.json', False, False)

@@ -4,7 +4,7 @@ This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
 
-import modules.classes as cls
+from modules.baseclass.ship  import Ship, StiffPlate, Block
 from modules.constants import RHO_S, G
 from modules.utilities import c_error, c_success, c_warn, lin_int_dict, d2r
 
@@ -20,7 +20,7 @@ class PhysicsData:
     -------------------------------------------------------------------------------------------------------------------
     """
 
-    def __init__(self, tlc: float, ship: cls.Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
+    def __init__(self, tlc: float, ship: Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
         # Ship Data and General Data
         # The dynamic condition we are interested in
         self.cond = cond
@@ -293,7 +293,7 @@ def hydrostatic_pressure(z: float, Zmax: float, rho: float):
 
 
 # ------------- Environmental Forces Calculation -----------------------------
-def block_hydrostatic_pressure(block: cls.Block, Tlc: float, rho: float):
+def block_hydrostatic_pressure(block: Block, Tlc: float, rho: float):
     '''
     Evaluation of hydrostatic pressure for SEA block
     '''
@@ -309,7 +309,7 @@ def block_hydrostatic_pressure(block: cls.Block, Tlc: float, rho: float):
     return P
 
 
-def hsm_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block):
+def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
     '''
     Calculates the wave pressure in kPa over a plate according to Part 1 Chapter 4 Section 5.
     _1_ -> indicates whether we are interested in the HSM-1 or HSM-2, taking the values True and False respectively
@@ -412,7 +412,7 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block):
     return Pw
 
 
-def bsp_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block, Port=True):
+def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     """
     Calculates the wave pressure over a plate according to Part 1 Chapter 4, Section 5.
     _1_ -> indicates whether we are interested in the BSP-1 or BSP-2, taking the values True and False respectively
@@ -495,7 +495,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block, Port=True
 
 # ------------------------------------------------------------------------------
 # --------------- Internal Forces Calculation ----------------------------------
-def static_liquid_pressure(block: cls.Block):
+def static_liquid_pressure(block: Block, debug=False):
     """
     Static Liquid Pressure : Normal Operations at sea and Harbour/Sheltered water operations\n
     To access the Normal Operations at sea component use the key 'S-NOS' and the key 'S-HSWO' for the \n
@@ -505,18 +505,14 @@ def static_liquid_pressure(block: cls.Block):
     # Ppv : Design vapour Pressure not to be taken less than 25 kPa
     # When the Code is made universal for Dry and Tankers it shall be taken to consideration
     # For the time is left as it is. IF AN LC BLOCK IS CREATED THE RESULT WILL BE USELESS
-    if block.space_type == "LC":
-        liquid_cargo = True
-    elif block.space_type == 'DC':
+    if block.space_type == 'DC':
         return [None, None]
-    else:
-        liquid_cargo = False
 
     P_nos = [None] * len(block.pressure_coords)
     P_hswo = [None] * len(block.pressure_coords)
     Ztop = max(block.coords, key=lambda x: x[1])[1]
 
-    if liquid_cargo:
+    if block.space_type == "LC":
         F_nos = lambda z: hydrostatic_pressure(z, Ztop, max(block.payload['rho'], 1.025)) + block.payload['Ppv']
     else:
         F_nos = lambda z: hydrostatic_pressure(z, (Ztop + block.payload['hair'] / 2), max(block.payload['rho'], 1.025))
@@ -528,7 +524,7 @@ def static_liquid_pressure(block: cls.Block):
     return P_nos
 
 
-def StaticDryCargo_Pressure(block: cls.Block, debug=False):
+def StaticDryCargo_Pressure(block: Block, debug=False):
     '''
     Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -554,13 +550,13 @@ def StaticDryCargo_Pressure(block: cls.Block, debug=False):
     return P
 
 
-def dynamic_liquid_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def dynamic_liquid_pressure(block: Block, case: PhysicsData, debug=False):
     """
     Dynamic Liquid Pressure: Evaluates the pressure distribution due to the dynamic motion of a fluid inside\n
     a tank.
     """
 
-    def ref_eval(block: cls.Block, a: tuple):
+    def ref_eval(block: Block, a: tuple):
         """
         V j = aX ( xj – x G ) + aY ( y j – y G ) + ( aZ + g ) ( zj – zG )
         """
@@ -599,7 +595,7 @@ def dynamic_liquid_pressure(block: cls.Block, case: PhysicsData, debug=False):
     return P
 
 
-def dynamic_dry_cargo_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def dynamic_dry_cargo_pressure(block: Block, case: PhysicsData, debug=False):
     """
     Dynamic Dry Cargo Pressure: Evaluates the pressure distribution due to the dynamic movements of the ship.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -626,7 +622,7 @@ def dynamic_dry_cargo_pressure(block: cls.Block, case: PhysicsData, debug=False)
     return P
 
 
-def void_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def void_pressure(block: Block, case: PhysicsData, debug=False):
     P = [0] * len(block.pressure_coords)
     block.Pressure[case.cond] = P
     block.Pressure['STATIC'] = P
@@ -636,7 +632,7 @@ def void_pressure(block: cls.Block, case: PhysicsData, debug=False):
 # ------------------------------------------------------------------------------
 # ------- Total Evaluation of Pressure Distribution ----------------------------
 
-def dynamic_total_eval(ship: cls.Ship, Tlc: float, case: str, LOG=True):
+def dynamic_total_eval(ship: Ship, Tlc: float, case: str, LOG=True):
     if case in ('BSR', 'BSP', 'OSA', 'OST'):
         _1, _2 = '-1P', '-2P'
     elif case in ('HSM', 'HSA', 'FSM'):
@@ -681,7 +677,7 @@ def dynamic_total_eval(ship: cls.Ship, Tlc: float, case: str, LOG=True):
     return case_1, case_2
 
 
-def static_total_eval(ship: cls.Ship, Tlc: float, rho: float, LOG=True):
+def static_total_eval(ship: Ship, Tlc: float, rho: float, LOG=True):
     for i in ship.blocks:
         if i.space_type == 'SEA':
             F = block_hydrostatic_pressure
@@ -707,7 +703,7 @@ def static_total_eval(ship: cls.Ship, Tlc: float, rho: float, LOG=True):
 
 # -------- Passing Pressure to Plates -------------------------------------------
 
-def block_to_plate_per_case(plate: cls.StiffPlate, blocks: list[cls.Block], case: PhysicsData, Load: str,
+def block_to_plate_per_case(plate: StiffPlate, blocks: list[Block], case: PhysicsData, Load: str,
                             return_=False):
     """
     ---------------------------------------------------------------------------
