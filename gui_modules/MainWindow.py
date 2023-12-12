@@ -1,18 +1,15 @@
-import sys
 from functools import partial
-from PySide6.QtWidgets import (QLabel, QPushButton, QVBoxLayout, QStackedLayout,QMainWindow)
-from PySide6.QtWidgets import (QWidget,QFileDialog)
-from PySide6.QtCore import Qt , Slot
-from PySide6.QtGui import QAction
-from matplotlib.figure import Figure
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QLabel, QPushButton, QVBoxLayout, QStackedLayout, QMainWindow)
+from PySide6.QtWidgets import (QWidget, QFileDialog)
 
 import modules.datahandling.IO as IO
-
-from gui_modules.TableWidget import Table
 from gui_modules.PlotRenderWidget import DiagramPanel
+from gui_modules.TableWidget import Table
 from gui_modules.ToolBarActions import ExitAction, LoadAction, SaveAction, AboutAction
-from modules.utilities import c_info,TITLE,RESET, c_success, c_error, c_warn
+from modules.utilities import Logger
+
 
 class dataManager:
     def __init__(self,data,header):
@@ -93,7 +90,7 @@ class MainWindow(QMainWindow):
         # self._ax = self.canvas.figure.add_subplot()
         # self._ax = ax
     def say_hello(self):
-        c_success("hmmm....")
+        Logger.success("hmmm....")
         if self.displayLayout.currentIndex() == 1:
             self.displayLayout.setCurrentIndex(2)
         elif self.displayLayout.currentIndex() == 0:
@@ -113,7 +110,7 @@ class MainWindow(QMainWindow):
                     self.ship = IO.load_ship(data[0])
                     print(self.ship.LBP)
                 else:
-                    c_warn('Ship data files are .json files')
+                    Logger.warning('Ship data files are .json files')
         elif mode == 1:
             data = LoadFileDialog(mode=mode).getOpenFileName(self,"Save",'.',"Project Files (*.json)")
             if data[0] != '':

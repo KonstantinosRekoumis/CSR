@@ -4,9 +4,11 @@ This is done only for Strength Assessment! Not Fatigue Assessment!
 """
 import math
 
-import modules.classes as cls
+from modules.baseclass.ship import Ship
+from modules.baseclass.block import Block
+from modules.baseclass.plate import StiffPlate
 from modules.constants import RHO_S, G
-from modules.utilities import c_error, c_success, c_warn, lin_int_dict, d2r
+from modules.utilities import lin_int_dict, d2r, Logger
 
 
 class PhysicsData:
@@ -20,7 +22,7 @@ class PhysicsData:
     -------------------------------------------------------------------------------------------------------------------
     """
 
-    def __init__(self, tlc: float, ship: cls.Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
+    def __init__(self, tlc: float, ship: Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
         # Ship Data and General Data
         # The dynamic condition we are interested in
         self.cond = cond
@@ -44,7 +46,7 @@ class PhysicsData:
         if self.Tlc <= ship.Tsc:  # pp. 180
             self.ft = self.Tlc / ship.Tsc
         else:
-            c_error("Your current Draught must not exceed the Scantling Draught.\n The program Terminates....")
+            Logger.error("Your current Draught must not exceed the Scantling Draught.\n The program Terminates....")
             quit()
         if self.ft <= 0.5: self.ft = 0.5
         self.fbeta = {
@@ -59,13 +61,13 @@ class PhysicsData:
         try:
             self.fb = self.fbeta[self.cond]
         except KeyError:
-            c_error(f'PhysicsData/__init__(): {self.cond} is not a valid Dynamic Condition abbreviation.')
-            c_error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
-            [c_error(f"{i}", default=False) for i in self.fbeta]
-            c_error(
+            Logger.error(f'PhysicsData/__init__(): {self.cond} is not a valid Dynamic Condition abbreviation.')
+            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
+            [Logger.error(f"{i}", default=False) for i in self.fbeta]
+            Logger.error(
                 'Currently supported conditions are : HSM and BSP.\n The other conditions will result in invalid results',
                 default=False)
-            c_error('The Program Terminates...', default=False)
+            Logger.error('The Program Terminates...', default=False)
             quit()
 
         self.flp = 1.0 if (self.fxL >= 0.5) else -1.0
@@ -166,13 +168,13 @@ class PhysicsData:
                 RES = [-1 * i for i in RES]
             return RES
         except KeyError:
-            c_error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
-            c_error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
-            [c_error(f"{i}", default=False) for i in self.fbeta]
-            c_error(
+            Logger.error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
+            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
+            [Logger.error(f"{i}", default=False) for i in self.fbeta]
+            Logger.error(
                 'Currently supported conditions are : HSM and BSP.\n The other conditions will result in invalid results',
                 default=False)
-            c_error('The Program Terminates...', default=False)
+            Logger.error('The Program Terminates...', default=False)
             quit()
 
     def accel_eval(self, point, debug=False):
@@ -200,7 +202,7 @@ class PhysicsData:
             else:
                 self.wave_pressure = functions[self.cond[:-2]]
         except KeyError:
-            c_error(
+            Logger.error(
                 f'(physics.py) PhysicsData/wave_pressure_functions: \'{self.cond[:-2]}\' is not yet supported. Program terminates to avoid unpredictable behavior...')
             quit()
 
@@ -287,13 +289,13 @@ def hydrostatic_pressure(z: float, Zmax: float, rho: float):
     # elif 0<z and z>Zmax:
     #     return 0
     else:
-        c_warn(f"physics.hydrostatic_pressure : Your input was invalid. The function returns by default 0\n \
+        Logger.warning(f"physics.hydrostatic_pressure : Your input was invalid. The function returns by default 0\n \
             your input was ({z},{Zmax},{rho}) ")
         return 0
 
 
 # ------------- Environmental Forces Calculation -----------------------------
-def block_hydrostatic_pressure(block: cls.Block, Tlc: float, rho: float):
+def block_hydrostatic_pressure(block: Block, Tlc: float, rho: float):
     '''
     Evaluation of hydrostatic pressure for SEA block
     '''
@@ -304,12 +306,12 @@ def block_hydrostatic_pressure(block: cls.Block, Tlc: float, rho: float):
                 P[i] = hydrostatic_pressure(point[1], Tlc, rho)
         block.Pressure['STATIC'] = P
     else:
-        c_warn(f'physics.py/block_HydroStatic_pressure: Does not support block of type {block.space_type}')
+        Logger.warning(f'physics.py/block_HydroStatic_pressure: Does not support block of type {block.space_type}')
         pass
     return P
 
 
-def hsm_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block):
+def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
     '''
     Calculates the wave pressure in kPa over a plate according to Part 1 Chapter 4 Section 5.
     _1_ -> indicates whether we are interested in the HSM-1 or HSM-2, taking the values True and False respectively
@@ -406,13 +408,13 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block):
                 Pw[i] *= x
 
     else:
-        c_warn('Cannot evaluate External pressures for an internal block.')
+        Logger.warning('Cannot evaluate External pressures for an internal block.')
     key = 'HSM-1' if _1_ else 'HSM-2'
     block.Pressure[key] = Pw
     return Pw
 
 
-def bsp_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block, Port=True):
+def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     """
     Calculates the wave pressure over a plate according to Part 1 Chapter 4, Section 5.
     _1_ -> indicates whether we are interested in the BSP-1 or BSP-2, taking the values True and False respectively
@@ -429,7 +431,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block, Port=True
     if Port:
         fyz = lambda y, z: 2 * z / Tlc + 2.5 * fyB(y) + 0.5  # worst case scenario
     else:
-        c_error('(physics.py) BSP_wave_pressure: Dont mess with the Port Setting. For the time being...')
+        Logger.error('(physics.py) BSP_wave_pressure: Dont mess with the Port Setting. For the time being...')
         quit()
 
     Pbsp = lambda y, z: 4.5 * fbeta * fps * fnl * fyz(y, z) * Cw * math.sqrt((l + Lsc - 125) / LBP)
@@ -495,7 +497,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: cls.Block, Port=True
 
 # ------------------------------------------------------------------------------
 # --------------- Internal Forces Calculation ----------------------------------
-def static_liquid_pressure(block: cls.Block):
+def static_liquid_pressure(block: Block):
     """
     Static Liquid Pressure : Normal Operations at sea and Harbour/Sheltered water operations\n
     To access the Normal Operations at sea component use the key 'S-NOS' and the key 'S-HSWO' for the \n
@@ -528,7 +530,7 @@ def static_liquid_pressure(block: cls.Block):
     return P_nos
 
 
-def StaticDryCargo_Pressure(block: cls.Block, debug=False):
+def StaticDryCargo_Pressure(block: Block, debug=False):
     '''
     Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -554,13 +556,13 @@ def StaticDryCargo_Pressure(block: cls.Block, debug=False):
     return P
 
 
-def dynamic_liquid_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def dynamic_liquid_pressure(block: Block, case: PhysicsData, debug=False):
     """
     Dynamic Liquid Pressure: Evaluates the pressure distribution due to the dynamic motion of a fluid inside\n
     a tank.
     """
 
-    def ref_eval(block: cls.Block, a: tuple):
+    def ref_eval(block: Block, a: tuple):
         """
         V j = aX ( xj – x G ) + aY ( y j – y G ) + ( aZ + g ) ( zj – zG )
         """
@@ -599,7 +601,7 @@ def dynamic_liquid_pressure(block: cls.Block, case: PhysicsData, debug=False):
     return P
 
 
-def dynamic_dry_cargo_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def dynamic_dry_cargo_pressure(block: Block, case: PhysicsData, debug=False):
     """
     Dynamic Dry Cargo Pressure: Evaluates the pressure distribution due to the dynamic movements of the ship.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -626,7 +628,7 @@ def dynamic_dry_cargo_pressure(block: cls.Block, case: PhysicsData, debug=False)
     return P
 
 
-def void_pressure(block: cls.Block, case: PhysicsData, debug=False):
+def void_pressure(block: Block, case: PhysicsData, debug=False):
     P = [0] * len(block.pressure_coords)
     block.Pressure[case.cond] = P
     block.Pressure['STATIC'] = P
@@ -636,13 +638,13 @@ def void_pressure(block: cls.Block, case: PhysicsData, debug=False):
 # ------------------------------------------------------------------------------
 # ------- Total Evaluation of Pressure Distribution ----------------------------
 
-def dynamic_total_eval(ship: cls.Ship, Tlc: float, case: str, LOG=True):
+def dynamic_total_eval(ship: Ship, Tlc: float, case: str, LOG=True):
     if case in ('BSR', 'BSP', 'OSA', 'OST'):
         _1, _2 = '-1P', '-2P'
     elif case in ('HSM', 'HSA', 'FSM'):
         _1, _2 = '-1', '-2'
     else:
-        c_error(
+        Logger.error(
             f'(physics.py) Dynamic_total_eval: {case} is not a valid Dynamic condition. The available conditions are ; HSM, HSA, FSM, BSR, BSP,OST,OSA.')
         quit()
 
@@ -673,15 +675,15 @@ def dynamic_total_eval(ship: cls.Ship, Tlc: float, case: str, LOG=True):
 
             Pd = F(*args(c))
             if (None not in Pd) and LOG:
-                c_success(f'{c.cond} CASE STUDY:\nCalculated block: ', i)
-                c_success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
-                [c_success(
+                Logger.success(f'{c.cond} CASE STUDY:\nCalculated block: ', i)
+                Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
+                [Logger.success(
                     f'{round(i.pressure_coords[j][0], 4): =11f}  {round(i.pressure_coords[j][1], 4): =11f} {round(Pd[j], 4): =11f}',
                     default=False) for j in range(len(Pd))]
     return case_1, case_2
 
 
-def static_total_eval(ship: cls.Ship, Tlc: float, rho: float, LOG=True):
+def static_total_eval(ship: Ship, Tlc: float, rho: float, LOG=True):
     for i in ship.blocks:
         if i.space_type == 'SEA':
             F = block_hydrostatic_pressure
@@ -697,9 +699,9 @@ def static_total_eval(ship: cls.Ship, Tlc: float, rho: float, LOG=True):
 
         Pd = F(*args)
         if (None not in Pd) and LOG:
-            c_success(f'STATIC CASE STUDY:\nCalculated block: ', i)
-            c_success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
-            [c_success(
+            Logger.success(f'STATIC CASE STUDY:\nCalculated block: ', i)
+            Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
+            [Logger.success(
                 f'{round(i.pressure_coords[j][0], 4): =11f}  '
                 f'{round(i.pressure_coords[j][1], 4): =11f} {round(Pd[j], 4): =11f}',
                 default=False) for j in range(len(Pd))]
@@ -707,7 +709,7 @@ def static_total_eval(ship: cls.Ship, Tlc: float, rho: float, LOG=True):
 
 # -------- Passing Pressure to Plates -------------------------------------------
 
-def block_to_plate_per_case(plate: cls.StiffPlate, blocks: list[cls.Block], case: PhysicsData, Load: str,
+def block_to_plate_per_case(plate: StiffPlate, blocks: list[Block], case: PhysicsData, Load: str,
                             return_=False):
     """
     ---------------------------------------------------------------------------
@@ -730,7 +732,7 @@ def block_to_plate_per_case(plate: cls.StiffPlate, blocks: list[cls.Block], case
                     raise ValueError()
             return a[0] * b[0] + a[1] * b[1]
         except ValueError:
-            c_error(f'(physics.py) block_to_plate_perCase/mul: Plate {plate} Vector {i} is not of proper type.')
+            Logger.error(f'(physics.py) block_to_plate_perCase/mul: Plate {plate} Vector {i} is not of proper type.')
             quit()
 
     def add_proj(a, b, proj_v, intermediate=False):
@@ -739,11 +741,11 @@ def block_to_plate_per_case(plate: cls.StiffPlate, blocks: list[cls.Block], case
         """
         P = []
         if len(a) != len(b):
-            c_error(
+            Logger.error(
                 f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Vector b has length {len(b)} !')
             quit()
         elif len(a) != len(proj_v):
-            c_error(
+            Logger.error(
                 f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Projection Vector  has length {len(proj_v)} !')
             # quit()
         for i in range(len(a)):
@@ -763,7 +765,7 @@ def block_to_plate_per_case(plate: cls.StiffPlate, blocks: list[cls.Block], case
     P = []
     out_P = []
     if 'S' not in Load or 'D' not in Load:
-        c_error(f'(physics.py) block_to_plate_perCase: Load parameter is not of correct type. '
+        Logger.error(f'(physics.py) block_to_plate_perCase: Load parameter is not of correct type. '
                 f'Expected \'S\' or \'D\' or \'S+D\' etc. got {Load}.')
         quit()
     for i, block in enumerate(blocks):

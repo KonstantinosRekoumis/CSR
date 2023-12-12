@@ -1,7 +1,10 @@
 
 import math
+
 from modules.baseclass.plate import StiffPlate
-from modules.utilities import c_error, c_warn, d2r, normals_2d, linespace
+from modules.utilities import d2r, normals_2d, linespace, Logger
+
+
 class Block:
     """
     ------------------------------------------\n
@@ -47,7 +50,7 @@ class Block:
         if space_type in TAGS:
             self.space_type = space_type
         else:
-            c_error("(classes.py) block :The block type is not currently supported or non-existent.")
+            Logger.error("(classes.py) block :The block type is not currently supported or non-existent.")
         self.list_plates_id = list_plates_id
 
         # containing the various coefficients to calculate internal pressures
@@ -77,7 +80,7 @@ class Block:
             try:
                 kc = lambda a: math.cos(a) ** 2 + (1 - math.sin(d2r(self.payload['psi']))) * math.sin(a) ** 2
             except KeyError:
-                c_error(
+                Logger.error(
                     f'(classes.py) Class block/Kc_eval: '
                     f'The required \'psi\' value is missing in the payload declaration.'
                 )
@@ -211,7 +214,7 @@ class Block:
         try:
             P = self.Pressure[pressure_index] if not graphical else [1 for i in self.pressure_coords]
         except KeyError:
-            c_warn(
+            Logger.warning(
                 f'(classes.py) block/pressure_data: A pressure distribution for block: '
                 f'{self} is not calculated for Dynamic Condition {pressure_index} !!! Treat this appropriately !'
             )
@@ -237,12 +240,12 @@ class Block:
             except KeyError:
                 # known and expected scenario, thus no need for warning spam
                 if self.space_type != 'ATM' and pressure_index != 'STATIC':
-                    c_warn(
+                    Logger.warning(
                         f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated '
                         f'for block {self}.\n !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i], *self.eta[i], 0) for i in range(x0, x1 + 1, 1)]
 
-        c_warn(
+        Logger.warning(
             f'(classes.py) blocks/pressure_over_plate : Requesting pressure over plate {stiff_plate} '
             f'that does not belong in the block {self}. Returning None'
         )
@@ -258,7 +261,7 @@ class SeaSur(Block):
         super().get_coords(stiff_plates)
         # add a buffer zone for sea of 2 m
         if len(self.coords) == 0:
-            c_error("SEA Boundary plates are missing!. The program terminates...")
+            Logger.error("SEA Boundary plates are missing!. The program terminates...")
             quit()
         end = self.coords[-1]
         self.coords.append((end[0] + 2, end[1]))
@@ -275,7 +278,7 @@ class AtmSur(Block):
         super().get_coords(stiff_plates)
         # add a buffer zone for atmosphere of 2 m
         if len(self.coords) == 0:
-            c_error("WEATHER DECK Boundary plates are missing!. The program terminates...")
+            Logger.error("WEATHER DECK Boundary plates are missing!. The program terminates...")
             quit()
         end = self.coords[-1]
         self.coords.append((end[0], end[1] + 2))

@@ -1,39 +1,101 @@
 import math
-import colorama
+import os
+import sys
+from enum import StrEnum
 
-"""
-UTILITIES Module
-Utilities module contains various convenience functions
-"""
 
-# FIXME move all of this in an enum
-WARNING = colorama.Back.YELLOW + colorama.Fore.RED
-SUCCESS = colorama.Back.GREEN + colorama.Fore.BLACK
-INFO = colorama.Back.YELLOW + colorama.Fore.BLUE
-ERROR = colorama.Back.RED + colorama.Fore.WHITE
-RESET = colorama.Style.RESET_ALL
+class ColourCodes(StrEnum):
+    BLACK = "0m"
+    WHITE = "15m"
+    BLUE = "27m"
+    TURQUOISE = "30m"
+    GREEN = "34m"
+    CYAN = "36m"
+    LIGHT_BLUE = "39m"
+    PALE_GREEN = "42m"
+    STEEL_BLUE = "39m"
+    PURPLE = "93m"
+    RED = "124m"
+    MAGENTA = "127m"
+    BROWN = "138m"
+    LIGHT_MAGENTA = "163m"
+    DARK_ORANGE = "166m"
+    ORANGE = "172m"
+    YELLOW = "178m"
+    LIGHT_RED = "196m"
 
-TITLE = colorama.Fore.RED
+
+class EscapeCodes(StrEnum):
+    PREFIX = "\033["
+    FOREGROUND = "38;"
+    BACKGROUND = "48;"
+    INFIX = "5;"
+    PFI = f"{PREFIX}{FOREGROUND}{INFIX}"
+    PBI = f"{PREFIX}{BACKGROUND}{INFIX}"
+
+
+class Colours(StrEnum):
+    NOCOLOUR = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    BLINK = "\033[5m"
+    BYELLOW = f"{EscapeCodes.PBI}{ColourCodes.YELLOW}"
+    BGREEN = f"{EscapeCodes.PBI}{ColourCodes.GREEN}"
+    BRED = f"{EscapeCodes.PBI}{ColourCodes.RED}"
+    FRED = f"{EscapeCodes.PFI}{ColourCodes.RED}"
+    FBLACK = f"{EscapeCodes.PFI}{ColourCodes.BLACK}"
+    FBLUE = f"{EscapeCodes.PFI}{ColourCodes.BLUE}"
+    FWHITE = f"{EscapeCodes.PFI}{ColourCodes.WHITE}"
+
+
+class LogLevelColours(StrEnum):
+    DEBUG = f"{Colours.BYELLOW}{Colours.FBLACK}"
+    INFO = f"{Colours.BYELLOW}{Colours.FBLUE}"
+    WARNING = f"{Colours.BYELLOW}{Colours.FRED}"
+    ERROR = f"{Colours.BRED}{Colours.FWHITE}"
+
+
+class Logger:
+    LEVEL = 1
+    OUT = sys.stderr
+
+    LOG_LEVELS = {
+        "NONE": 0,
+        "ERROR": 1,
+        "WARNING": 2,
+        "DEBUG": 4,
+        "INFO": 8
+    }
+
+    try:
+        LEVEL = LOG_LEVELS[os.environ["CSR_LOG_LEVEL"]]
+    except KeyError:
+        print(f"Couldn't set LOG_LEVEL from CSR_LOG_LEVEL environment! Continuing with LOG_LEVEL: {LEVEL}", file=OUT)
+
+    def __init__(self):
+        raise NotImplementedError
+
+    @staticmethod
+    def success(*args):
+        print(f"{LogLevelColours.INFO}", *args, file=Logger.OUT)
+
+    @staticmethod
+    def debug(*args):
+        print(f"{LogLevelColours.DEBUG}", *args, file=Logger.OUT)
+
+    @staticmethod
+    def warning(*args):
+        print(f"{LogLevelColours.WARNING}", *args, file=Logger.OUT)
+
+    @staticmethod
+    def error(*args):
+        print(f"{LogLevelColours.ERROR}", *args, file=Logger.OUT)
+        # noinspection PyExceptionInherit
+        raise BaseException(*args)
 
 
 def d2r(x):
     return x / 180 * math.pi
-
-
-def c_warn(*text, default=True):
-    print(WARNING, "-- !! WARNING !! --\n", *text, RESET) if default else print(WARNING, *text, RESET)
-
-
-def c_error(*text, default=True):
-    print(ERROR, *text, RESET) if default else print(ERROR, *text, RESET)
-
-
-def c_success(*text, default=True):
-    print(SUCCESS, "-- !! SUCCESS !! --\n", *text, RESET) if default else print(SUCCESS, *text, RESET)
-
-
-def c_info(*text, default=True):
-    print(INFO, "-- ! INFO ! --\n", *text, RESET) if default else print(INFO, *text, RESET)
 
 
 def linear_inter(start, end, target_x) -> float:
@@ -52,19 +114,19 @@ def lin_int_dict(vli_dict: dict, key: float, *f_args, suppress=False) -> float:
     try:
         for i in vli_dict:
             if not (i is float or i is int):
-                c_warn(i, vli_dict[i])
+                Logger.warning(i, vli_dict[i])
                 raise KeyError
             else:
                 if not (vli_dict[i] is float or vli_dict[i] is int):
                     if callable(vli_dict[i]):
                         if not suppress:
-                            c_warn("Detected a function. May result in error...")
-                            c_warn(vli_dict[i])
+                            Logger.warning("Detected a function. May result in error...")
+                            Logger.warning(vli_dict[i])
                     else:
-                        c_warn(i, vli_dict[i])
+                        Logger.warning(i, vli_dict[i])
                         raise KeyError
     except KeyError:
-        c_error(
+        Logger.warning(
             "Input dictionary expects both the keys and their values "
             "to be of type float or int.\nThus the program terminates..."
         )
@@ -101,6 +163,7 @@ def linespace(start: int, end: int, step: int, skip=0, truncate_end=True):
         out = [i for i in range(start, end, step)]
     return out
 
+
 def normals_2d(geom, flip_n=False):
     eta = []
     for i in range(len(geom) - 1):
@@ -110,11 +173,11 @@ def normals_2d(geom, flip_n=False):
         if flip_n:
             yba = -yba
             xba = -xba
-        nrm2 = math.sqrt(yba**2 + xba**2)
+        nrm2 = math.sqrt(yba ** 2 + xba ** 2)
         if nrm2 == 0:
             _eta[0] = yba / nrm2
             _eta[1] = -xba / nrm2
-            c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
+            Logger.warning(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
         else:
             _eta[0] = yba / nrm2
             _eta[1] = -xba / nrm2

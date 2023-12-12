@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
-from modules.utilities import c_error, c_warn
+from modules.utilities import Logger
 from modules.baseclass.ship import Ship
 
 
@@ -25,7 +25,7 @@ def normals_2d(geom, flip_n=False, show_norms=False):
             xba = - xba
         nrm2 = np.sqrt(yba ** 2 + xba ** 2)
         if nrm2 == 0:
-            c_warn(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
+            Logger.warning(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
             assert nrm2 != 0
         eta[i, 0] = yba / nrm2
         eta[i, 1] = -xba / nrm2
@@ -146,7 +146,7 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
             plt.savefig(path, bbox_inches='tight', orientation="landscape")
         return fig, ax
     except KeyError:
-        c_warn(f"(render.py) contour_plot(): Key :{key} is not valid. "
+        Logger.warning(f"(render.py) contour_plot(): Key :{key} is not valid. "
                f"Valid options are 'thickness', 'material', 'tag', 'id', 'spacing'. Thus no plot is produced.")
 
 
@@ -216,7 +216,7 @@ def c_contour(x, y, data, data_label, fig, ax, cmap, key="number", marker="+", l
         vals = []
         for i in data:
             if i is str:
-                c_error(
+                Logger.error(
                     "(render.py) c_contour: Detected item of type <str>. Considering changing the key value to string."
                 )
                 quit()
