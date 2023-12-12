@@ -1,7 +1,9 @@
 import math
 import os
 import sys
+import inspect
 from enum import StrEnum
+from datetime import datetime
 
 
 class ColourCodes(StrEnum):
@@ -76,20 +78,36 @@ class Logger:
         raise NotImplementedError
 
     @staticmethod
+    def get_parent() -> str:
+        return inspect.stack()[3][3]
+
+    @staticmethod
     def success(*args):
-        print(f"{LogLevelColours.INFO}", *args, file=Logger.OUT)
+        print(f"{LogLevelColours.INFO}{datetime.now()}:SUCCESS:{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def debug(*args):
-        print(f"{LogLevelColours.DEBUG}", *args, file=Logger.OUT)
+        print(f"{LogLevelColours.DEBUG}{datetime.now()}:DEBUG:{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def warning(*args):
-        print(f"{LogLevelColours.WARNING}", *args, file=Logger.OUT)
+        print(f"{LogLevelColours.WARNING}{datetime.now()}:WARNING:{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def error(*args):
-        print(f"{LogLevelColours.ERROR}", *args, file=Logger.OUT)
+        print(f"{LogLevelColours.ERROR}{datetime.now()}:ERROR:{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
         # noinspection PyExceptionInherit
         raise BaseException(*args)
 
