@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (QTableWidget,QTableWidgetItem,QItemDelegate)
 from PySide6.QtCore import Qt
-from modules.utilities import c_error
+from modules.utilities import Logger
+
 
 class AlignDelegate(QItemDelegate):
     # https://stackoverflow.com/questions/46772790/pyside-align-text-in-a-table-cells
@@ -23,7 +24,7 @@ class Table(QTableWidget):
             if len(cell) == self.columnCount():
                 [self.setItem(i,j,QTableWidgetItem(str(item))) for j, item in enumerate(cell)]
             else:
-                c_error("The data provided are trash retard")
+                Logger.warning("The data provided are trash retard")
                 print(data)
                 print(self.columnCount())
                 break

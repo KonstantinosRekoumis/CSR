@@ -20,13 +20,13 @@ import modules.physics.physics as phzx
 import modules.render as rnr
 import modules.rules as csr
 from modules.constants import RHO_S
-from modules.utilities import c_info, c_success
+from modules.utilities import Logger
 
 
 def main(filepath, ship_plots, pressure_plots):
     title = r"""
        ____  ____    _      __  __ ____  ____    
-      / ___||  _ \  / \    |  \/  / ___||  _ \\  
+      / ___||  _ \  / \    |  \/  / ___||  _ \  
       \___ \| | | |/ _ \   | |\/| \___ \| | | |  
        ___) | |_| / ___ \  | |  | |___) | |_| |  
       |____/|____/_/   \_\ |_|  |_|____/|____/   
@@ -43,16 +43,16 @@ def main(filepath, ship_plots, pressure_plots):
     ship = IO.load_ship(filepath)
     logger = DataLogger(ship)
     logger.LoadData()
-    c_info(f'# => The ship at location {filepath} has been successfully loaded.')
+    Logger.success(f' The ship at location {filepath} has been successfully loaded.')
     if ship_plots:
         rnr.lines_plot(ship)
         for i in ('id', 'tag', 'thickness', 'material'):
             rnr.contour_plot(ship, key=i)
         rnr.block_plot(ship)
     # calculate pressure distribution
-    c_info('# => Evaluating Corrosion Reduction for stiffened plates...', default=False)
+    Logger.info(' Evaluating Corrosion Reduction for stiffened plates...')
     csr.corrosion_assign(ship, offload=True)
-    c_info('# => Proceeding to calculating the Specified Static and Dynamic Cases..', default=False)
+    Logger.info(' Proceeding to calculating the Specified Static and Dynamic Cases..')
     phzx.static_total_eval(ship, 16, RHO_S, False)
     hsm1, hsm2 = phzx.dynamic_total_eval(ship, 16, 'HSM', False)
     bsp1, bsp2 = phzx.dynamic_total_eval(ship, 16, 'BSP', False)
@@ -65,10 +65,10 @@ def main(filepath, ship_plots, pressure_plots):
         rnr.pressure_plot(ship, 'BSP-1P', 'SEA,ATM', path='./essay/BSP1_Shell.pdf')
         rnr.pressure_plot(ship, 'BSP-2P', 'SEA,ATM', path='./essay/BSP2_Shell.pdf')
 
-    c_info('# => Evaluating Stiffened Plates Slenderness Requirements...')
+    Logger.info(' Evaluating Stiffened Plates Slenderness Requirements...')
     ship.evaluate_beff()
     csr.buckling_evaluator(ship, debug=False)
-    c_info('# => Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..', default=False)
+    Logger.info(' Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..')
     # calculation Recipes
     flc = {
         'Dynamics': 'S+D',
@@ -81,36 +81,36 @@ def main(filepath, ship_plots, pressure_plots):
         'skip value': 'DC,LC,OIL,FW,VOID'
     }
 
-    c_info(f'#=> Evaluating Full Load Condition...')
+    Logger.info(f' Evaluating Full Load Condition...')
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.loading_cases_eval(ship, case, flc, logger)
-    c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...', default=False)
-    c_info('# => Evaluating Local Scantlings of stiffened plates...', default=False)
+    Logger.info(' Pressure offloading to plates concluded. Evaluating plating thickness...')
+    Logger.info(' Evaluating Local Scantlings of stiffened plates...')
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.net_scantling(ship, case, flc['Dynamics'], debug=False)
 
-    c_info(f'#=> Evaluating Water Ballast Condition...')
+    Logger.info(f' Evaluating Water Ballast Condition...')
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.loading_cases_eval(ship, case, wb, logger)
-    c_info('# => Pressure offloading to plates concluded. Evaluating plating thickness...', default=False)
-    c_info('# => Evaluating Local Scantlings of stiffened plates...', default=False)
+    Logger.info(' Pressure offloading to plates concluded. Evaluating plating thickness...')
+    Logger.info(' Evaluating Local Scantlings of stiffened plates...')
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.net_scantling(ship, case, wb['Dynamics'], debug=False)
 
-    c_info('# => Evaluating the Sections Moments and Checking with the Rules...')
+    Logger.info(' Evaluating the Sections Moments and Checking with the Rules...')
     csr.ship_scantlings(ship)
-    c_info('# => Evaluating Corrosion Addition for stiffened plates...', default=False)
+    Logger.info(' Evaluating Corrosion Addition for stiffened plates...')
     csr.corrosion_assign(ship, offload=False)
 
     if ship_plots:
         for i in ('tag', 'thickness'):
             rnr.contour_plot(ship, key=i)
 
-    c_info('# => Outputing Data to /out.json file...', default=False)
+    Logger.info(' Outputing Data to /out.json file...')
     IO.ship_save(ship, 'out.json')
-    c_info('# => Generating LaTeX Report Data to /out.json file...', default=False)
+    Logger.info(' Generating LaTeX Report Data to /out.json file...')
     generate_latex_rep(logger, path='./essay/', _standalone=False)
-    c_success('Program terminated succesfully!')
+    Logger.success('Program terminated succesfully!')
 
 
 if __name__ == "__main__":
@@ -121,5 +121,5 @@ if __name__ == "__main__":
         main('./out.json', False, False)
     # Single Step Manual Design evaluation
     else:
-        # main('./structural-out/final.json', True, True)
-        main('./structural-out/final.json', False, False)
+        main('./structural-out/final.json', True, True)
+        Logger.info(' Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')

@@ -3,7 +3,7 @@ import json
 from modules.baseclass import plate, block, ship
 import modules.render as rnr
 from modules.constants import MATERIALS
-from modules.utilities import ERROR, RESET, c_error
+from modules.utilities import Logger
 
 
 def plate_save(plate: plate.Plate):
@@ -87,17 +87,17 @@ def load_ship(filename, file=None):
         try:
             particulars.append(data[i])
         except KeyError:
-            c_error(
+            Logger.error(
                 f"The input file is not appropriately formatted, "
                 f"and it is missing crucial data.\n Value: \'{i}\' is missing.")
             quit()
     try:
         stiff_plates = geometry_parser(data['geometry'])
         if len(stiff_plates) == 0:
-            c_error("Check your input file")
+            Logger.error("Check your input file")
             quit()
     except KeyError:
-        c_error(
+        Logger.error(
             "The input file is not appropriately formatted, and "
             "it is missing crucial data.\n Value: 'geometry' is missing.")
         quit()
@@ -125,10 +125,10 @@ def geometry_parser(geo_t: list):
         try:
             if len(i['plate']) >= 5:
                 if i['plate'][0] == i['plate'][1]:
-                    c_error(f'(IO.py) geometry_parser: Plate :{i["plate"]} You cannot enter a plate with no length!')
+                    Logger.error(f'(IO.py) geometry_parser: Plate :{i["plate"]} You cannot enter a plate with no length!')
                     quit()
                 elif i['plate'][3] not in MATERIALS:
-                    c_error(f'(IO.py) geometry_parser: Plate :{i["plate"]} Your plate has a no documented material !')
+                    Logger.error(f'(IO.py) geometry_parser: Plate :{i["plate"]} Your plate has a no documented material !')
                     quit()
                 t = i['plate'][2] if i['plate'][2] != 0 else 0.1
                 tmp_p = plate.Plate(i['plate'][0], i['plate'][1], t, i['plate'][3], i['plate'][4])
@@ -141,7 +141,7 @@ def geometry_parser(geo_t: list):
                     elif len(tmp_d) >= 4 and i['stiffeners']["type"] in ('g', 'tb'):
                         dims = {'lw': tmp_d[0], 'bw': tmp_d[1], 'lf': tmp_d[2], 'bf': tmp_d[3]}
                     else:
-                        c_error(
+                        Logger.error(
                             "(IO.py) You input a stiffener type that has less dims than needed",
                             i['stiffeners']
                         )
@@ -153,13 +153,13 @@ def geometry_parser(geo_t: list):
                 elif i['plate'][4] == 'Bilge' or len(i['stiffeners']) == 0:
                     tmp_s = {}
                 else:
-                    c_error('(IO.py) geometry_parser: Error loading stiffeners.')
+                    Logger.error('(IO.py) geometry_parser: Error loading stiffeners.')
                     raise KeyError()
                 if i['id'] is int:
-                    c_error(f'(IO.py) geometry_parser: Id is not an integer')
+                    Logger.error(f'(IO.py) geometry_parser: Id is not an integer')
                     raise KeyError()  # Duplicate check
                 if i['id'] in temp_id:
-                    c_error(
+                    Logger.error(
                         f'(IO.py) geometry_parser: There was an overlap between the '
                         f'ids of two stiffened plates. \nCONFLICTING ID : ' + str(i['id']))
                     raise KeyError()
@@ -172,10 +172,10 @@ def geometry_parser(geo_t: list):
                 out.append(tmp)
                 temp_id.append(i['id'])
             else:
-                c_error(f'(IO.py) geometry_parser: Plate has no correct format.')
+                Logger.error(f'(IO.py) geometry_parser: Plate has no correct format.')
                 raise KeyError()
         except KeyError:
-            c_error(
+            Logger.error(
                 f"(IO.py) geometry_parser: KeyError: Loading stiffened plate {i} "
                 f"has resulted in an error. The program terminates."
             )
@@ -191,7 +191,7 @@ def blocks_parser(blocks_t: list):
             tmp = block.Block(i['name'], i['symmetrical'], i['type'], i['ids'])
             out.append(tmp)
         except KeyError:
-            c_error(
+            Logger.error(
                 f"(IO.py) blocks_parser: KeyError: Loading block {i} "
                 f"has resulted in an error. Thus the code will ignore its existence."
             )

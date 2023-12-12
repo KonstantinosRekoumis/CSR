@@ -3,7 +3,8 @@ from modules.baseclass.plate import StiffPlate
 from modules.baseclass.ship import Ship
 from modules.constants import LOADS, TEX_PREAMBLE
 from modules.datahandling.datacell import DataCell
-from modules.utilities import c_error, c_warn
+from modules.utilities import Logger
+
 
 class DataLogger:
     """
@@ -157,7 +158,7 @@ class DataLogger:
             elif type(a) == str:
                 return a
             else:
-                c_warn(
+                Logger.warning(
                     f'(classes.py) DataLogger/LaTeX_output/f: Variable {a} of {type(a)} is not supported. Thus f() will return value None.')
 
         def tabular(data, clmns, header):
@@ -210,7 +211,7 @@ class DataLogger:
         # Sanity Check 
         for i in (self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D):
             if len(i) == 0:
-                c_error(('(classes.py) DataLogger.LaTeX_output(): Tabular data are not initialized.'
+                Logger.error(('(classes.py) DataLogger.LaTeX_output(): Tabular data are not initialized.'
                          ' Consider using DataLogger.CreateTabularData First. Returning Nothing.'))
                 return ''
         # Pressure Table

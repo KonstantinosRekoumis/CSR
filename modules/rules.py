@@ -10,7 +10,7 @@ from modules.baseclass.ship import Ship
 from modules.datahandling.datalogger import DataLogger
 from modules.physics.physics import PhysicsData, block_to_plate_per_case
 from modules.constants import MATERIALS
-from modules.utilities import c_error, c_info, c_success, c_warn
+from modules.utilities import Logger
 
 
 # page 378 the application table
@@ -46,70 +46,70 @@ def minimum_plate_net_thickness(plate: StiffPlate, l2: float, debug=False):
             out += f"Keel -> {keel * 1e3} mm\n"
             out += f"Else -> {else_ * 1e3} mm\n"
 
-        c_info(out)
+        Logger.debug(out)
     if plate.tag in (0, 4):
         if plate.plate.start[0] == 0:  # keel plate
             if plate.plate.net_thickness_empi < _CHECK_["Shell"]["Keel"]:
                 if debug:
-                    c_info((f"Stiffened plate's : {plate} net plate "
+                    Logger.debug((f"Stiffened plate's : {plate} net plate "
                             f"thickness {plate.plate.net_thickness_empi} was lower than",
                             _CHECK_["Shell"]["Keel"], ". Thus it was changed to the appropriate value"))
                 plate.plate.net_thickness_empi = _CHECK_["Shell"]["Keel"]
             else:
                 if debug:
-                    c_info((f"Stiffened plate's : {plate} net plate "
+                    Logger.debug((f"Stiffened plate's : {plate} net plate "
                             f"thickness {plate.plate.net_thickness_empi} was greater than",
                             _CHECK_["Shell"]["Keel"]))
         else:
             if plate.plate.net_thickness_empi < _CHECK_["Shell"]["Else"]:
                 if debug:
-                    c_info((f"Stiffened plate's : {plate} net plate "
+                    Logger.debug((f"Stiffened plate's : {plate} net plate "
                             f"thickness {plate.plate.net_thickness_empi} was lower than",
                             _CHECK_["Shell"]["Else"], ". Thus it was changed to the appropriate value"))
                 plate.plate.net_thickness_empi = _CHECK_["Shell"]["Else"]
             else:
                 if debug:
-                    c_info((f"Stiffened plate's : {plate} net plate "
+                    Logger.debug((f"Stiffened plate's : {plate} net plate "
                             f"thickness {plate.plate.net_thickness_empi} was greater than",
                             _CHECK_["Shell"]["Else"]))
     elif plate.tag == 1:
         if plate.plate.net_thickness_empi < _CHECK_["InnerBottom"]:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was lower than",
                         _CHECK_["InnerBottom"], ". Thus it was changed to the appropriate value"))
             plate.plate.net_thickness_empi = _CHECK_["InnerBottom"]
         else:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was greater than",
                         _CHECK_["InnerBottom"]))
     elif plate.tag in (2, 3):  # and ship.type == 'BulkCarrier': #(later implement)
         if plate.plate.net_thickness_empi < _CHECK_["Hopper/Wing-BC"]:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was lower than",
                         _CHECK_["Hopper/Wing-BC"], ". Thus it was changed to the appropriate value"))
             plate.plate.net_thickness_empi = _CHECK_["Hopper/Wing-BC"]
         else:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was greater than",
                         _CHECK_["OtherPlates"]))
     elif plate.tag == 5:
         if plate.plate.net_thickness_empi < _CHECK_['Deck']:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was lower than",
                         _CHECK_["Deck"], ". Thus it was changed to the appropriate value"))
             plate.plate.net_thickness_empi = _CHECK_['Deck']
         else:
             if debug:
-                c_info((f"Stiffened plate's : {plate} net plate "
+                Logger.debug((f"Stiffened plate's : {plate} net plate "
                         f"thickness {plate.plate.net_thickness_empi} was greater than",
                         _CHECK_["Deck"]))
     else:
-        c_error(f"(rules.py) minimum_plate_net_thickness: Plate {plate}. You are not supposed to enter here.")
+        Logger.error(f"(rules.py) minimum_plate_net_thickness: Plate {plate}. You are not supposed to enter here.")
 
 
 def minimum_stiff_net_thickness(plate: StiffPlate, l2: float, debug=False):
@@ -137,7 +137,7 @@ def minimum_stiff_net_thickness(plate: StiffPlate, l2: float, debug=False):
         if (stiff.plates[0].net_thickness_empi < base) and (stiff.plates[0].net_thickness_empi < sup):
             # For the time being every Longitudinal is on a watertight plate
             if debug:
-                c_info((f"Stiffened plate's : {plate} Stiffener Web plate thickness was lower than", base,
+                Logger.debug((f"Stiffened plate's : {plate} Stiffener Web plate thickness was lower than", base,
                         ". Thus it was changed to the appropriate value"))
             stiff.plates[0].net_thickness_empi = base
             update = True
@@ -145,33 +145,33 @@ def minimum_stiff_net_thickness(plate: StiffPlate, l2: float, debug=False):
                                                                   0].net_thickness_empi > sup):
             # For the time being every Longitudinal is on a watertight plate
             if debug:
-                c_info((f"Stiffened plate's : {plate} Stiffener Web plate thickness was greater than", sup,
+                Logger.debug((f"Stiffened plate's : {plate} Stiffener Web plate thickness was greater than", sup,
                         ". Thus it was changed to the appropriate value"))
             stiff.plates[0].net_thickness_empi = sup
             update = True
         else:
             if debug:
-                c_info(f'Stiffened plate\'s : {plate}  Stiffener Web plate thickness was within limits')
+                Logger.debug(f'Stiffened plate\'s : {plate}  Stiffener Web plate thickness was within limits')
         if (stiff.plates[1].net_thickness_empi < base) and (stiff.plates[1].net_thickness_empi < sup):
             # For the time being every Longitudinal is on a watertight plate
             if debug:
-                c_info((f"Stiffened plate's : {plate} Stiffener  Flange plate thickness was lower than", base,
+                Logger.debug((f"Stiffened plate's : {plate} Stiffener  Flange plate thickness was lower than", base,
                         ". Thus it was changed to the appropriate value"))
             stiff.plates[1].net_thickness_empi = base
             update = True
         elif (stiff.plates[1].net_thickness_empi > base) and (stiff.plates[1].net_thickness_empi > sup):
             # For the time being every Longitudinal is on a watertight plate
             if debug:
-                c_info((f"Stiffened plate's : {plate} Stiffener  Flange plate thickness was greater than", sup,
+                Logger.debug((f"Stiffened plate's : {plate} Stiffener  Flange plate thickness was greater than", sup,
                         ". Thus it was changed to the appropriate value"))
             stiff.plates[1].net_thickness_empi = sup
             update = True
         else:
             if debug:
-                c_info(f"Stiffened plate's : {plate}  Stiffener Flange plate thickness was within limits")
+                Logger.debug(f"Stiffened plate's : {plate}  Stiffener Flange plate thickness was within limits")
 
     else:
-        c_error(f"(rules.py) minimum_stiff_net_thickness: Plate {plate}. You are not supposed to enter here.")
+        Logger.error(f"(rules.py) minimum_stiff_net_thickness: Plate {plate}. You are not supposed to enter here.")
     if update:
         if plate.stiffeners[0].type == 'fb':
             for stiff in plate.stiffeners[1:]:
@@ -200,7 +200,7 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Physi
     try:
         reh, rem, teh = MATERIALS[plate.plate.material]
     except KeyError:
-        c_warn(f"(rules.py) plating_thickness_calculation: "
+        Logger.warning(f"(rules.py) plating_thickness_calculation: "
                f"Stiffened plate's plate {plate} has material {plate.plate.material} "
                f"that is not documented in this program. "
                f"Either consider changing it or modify constants.py MATERIALS dict. "
@@ -213,7 +213,7 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Physi
 
         if ca_ < 0:
             if debug:
-                c_warn(f"(rules.py) plating_thickness_calculation/Ca: Ca coefficient has been found negative! "
+                Logger.warning(f"(rules.py) plating_thickness_calculation/Ca: Ca coefficient has been found negative! "
                        f"This is due to having an extremely low Area Moment of Inertia.\n "
                        f"I assume that this is the first design circle and therefore Ca_max will be used!")
             if dynamic:
@@ -226,24 +226,24 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Physi
 
     try:
         if debug:
-            c_info(f'net_plating plate:{plate}')
+            Logger.debug(f'net_plating plate:{plate}')
         for i, data in enumerate(plate.Pressure[case.cond]):
             point = (data[0], data[1])
             p = data[-1]
             if debug:
-                c_info(f"Press: {p}, "
+                Logger.debug(f"Press: {p}, "
                        f"Point: {point}, "
                        f"sigma {abs(case.sigma(*point))}, "
                        f"Ca {ca(point)}",
                        default=False)
             t_temp = t(point, p)
             if debug:
-                c_info(f"t_temp:{t_temp}", default=False)
+                Logger.debug(f"t_temp:{t_temp}", default=False)
             max_t = t_temp if max_t < t_temp else max_t
         if debug:
-            c_info(f", max_t:{max_t}", default=False)
+            Logger.debug(f", max_t:{max_t}", default=False)
     except KeyError:
-        c_warn(f"(rules.py) plating_thickness_calculation: The {case.cond} "
+        Logger.warning(f"(rules.py) plating_thickness_calculation: The {case.cond} "
                f"condition has not been calculated for  plate {plate}. "
                f"Checking only the empirical thickness value...")
         minimum_plate_net_thickness(plate, l2=min(300, case.Lsc), debug=debug)
@@ -254,14 +254,14 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Physi
                              or (ship.Tmin < plate.plate.end[1] < 1.25 * ship.Tsc)):
         t = 26 * (plate.spacing + 0.7) * (ship.B * ship.Tsc / reh ** 2) ** 0.25 * 1e-3  # m
         if debug:
-            c_info(f"(rules.py) plating_thickness_calculation: Plate {plate} "
+            Logger.debug(f"(rules.py) plating_thickness_calculation: Plate {plate} "
                    f"Contact Fender Zone special t {t * 1e3} while local scantlings t {max_t * 1e3} [mm]")
     elif plate.tag == 4:
         p = plate.Pressure[case.cond][0][-1]
         r = abs(plate.plate.start[1] - plate.plate.end[1]) + 0.5 * (plate.s_pad + plate.e_pad)
         t = 6.45 * (p * plate.PSM_spacing * 1e3) ** 0.4 * (r * 1e3) ** 0.6 * 1e-7  # m
         if debug:
-            c_info(f"(rules.py) plating_thickness_calculation: Plate {plate} "
+            Logger.debug(f"(rules.py) plating_thickness_calculation: Plate {plate} "
                    f"Bilge Zone special t {t * 1e3} while local scantlings t {max_t * 1e3} [mm]")
     else:
         t = 0
@@ -280,7 +280,7 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Physics
     try:
         reh, rem, teh = MATERIALS[plate.stiffeners[0].plates[0].material]
     except KeyError:
-        c_warn(f"(rules.py) plating_thickness_calculation: "
+        Logger.warning(f"(rules.py) plating_thickness_calculation: "
                f"Stiffened plate's plate {plate} has material {plate.plate.material} that is not documented "
                f"in this program. Either consider changing it or modify constants.py MATERIALS dict. "
                f"Defaulting to A grade steel (Rm = 255)...")
@@ -328,7 +328,7 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Physics
         try:
             p = plate.local_P(case.cond, stiff.plates[0].start)
         except KeyError:
-            c_warn(f"(rules.py) stiffener_plating_thickness_calculation: "
+            Logger.warning(f"(rules.py) stiffener_plating_thickness_calculation: "
                    f"The {case.cond} condition has not been calculated for this plate. "
                    f"Checking only the empirical thickness value...")
             break
@@ -354,9 +354,9 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Physics
             i.Z_rule = max_z
 
     if max_z > z_local:
-        c_warn(f"(rules.py) stiffener_plating_net_thickness_calculation: "
+        Logger.warning(f"(rules.py) stiffener_plating_net_thickness_calculation: "
                f"Plate {plate} Z is less than Z calculated by regulations ({z_local * 1e6} < {max_z * 1e6})")
-        c_warn(f"Consider fixing it manually, as an automatic solution is not currently possible.")
+        Logger.warning(f"Consider fixing it manually, as an automatic solution is not currently possible.")
 
 
 def buckling_evaluator(ship: Ship, debug=False):
@@ -396,7 +396,7 @@ def buckling_evaluator(ship: Ship, debug=False):
 
         if st_plate.plate.net_thickness_calc < tp:
             if st_plate.plate.net_thickness < tp:
-                c_warn(f"(rules.py) buckling_evaluator: "
+                Logger.warning(f"(rules.py) buckling_evaluator: "
                        f"Available tp: {st_plate.plate.net_thickness * 1e3} mm is less than minimum "
                        f"tp: {tp * 1e3} mm by the rules for plate {st_plate} ")
             st_plate.plate.net_thickness_calc = tp
@@ -405,7 +405,7 @@ def buckling_evaluator(ship: Ship, debug=False):
             print("tw: ", tw)
         if st_plate.stiffeners[0].plates[0].net_thickness_buck < tw:
             if st_plate.stiffeners[0].plates[0].net_thickness < tw:
-                c_warn(f"(rules.py) buckling_evaluator: "
+                Logger.warning(f"(rules.py) buckling_evaluator: "
                        f"Available tw: {st_plate.stiffeners[0].plates[0].net_thickness * 1e3} mm is less than minimum "
                        f"tw: {tw * 1e3} mm by the rules for plate {st_plate} ")
             st_plate.stiffeners[0].plates[0].net_thickness_buck = tw
@@ -418,7 +418,7 @@ def buckling_evaluator(ship: Ship, debug=False):
                 print('tf: ', tf)
             if st_plate.stiffeners[0].plates[1].net_thickness_buck < tf:
                 if st_plate.stiffeners[0].plates[1].net_thickness < tf:
-                    c_warn(f"(rules.py) buckling_evaluator: "
+                    Logger.warning(f"(rules.py) buckling_evaluator: "
                            f"Available tf: {st_plate.stiffeners[0].plates[1].net_thickness * 1e3} "
                            f"mm is less than minimum "
                            f"tf: {tf * 1e3} mm by the rules for plate {st_plate} ")
@@ -430,7 +430,7 @@ def buckling_evaluator(ship: Ship, debug=False):
             print("Ist: ", ist, "Ieff: ", st_plate.Ixx_c)
 
         if st_plate.Ixx_c < ist:
-            c_warn(f"(rules.py) buckling_evaluator: "
+            Logger.warning(f"(rules.py) buckling_evaluator: "
                    f"Available Ieff: {st_plate.Ixx_c} is less than minimum "
                    f"Ieff: {ist} by the rules for plate {st_plate}")
         ship.update()
@@ -481,10 +481,10 @@ def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict, logger: D
             blocks.append(zero)
 
         if len(blocks) > 2 or len(blocks) == 0:
-            c_error(
+            Logger.error(
                 f"(rules.py) Loading_cases: Detected a plate: {plate} which is contained in multiple blocks. "
                 f"A stiffened plate can be boundary of only 2 Blocks at most at a time!")
-            c_error(f"Involved Blocks:\n {blocks}")
+            Logger.error(f"Involved Blocks:\n {blocks}")
             quit()
 
         for block in blocks:
@@ -513,34 +513,34 @@ def ship_scantlings(ship: Ship):
     zn50d_ship = ship.n50_Ixx / abs(ship.yo - ship.D)
 
     # FIXME this is borderline beyond saving, we need better checks or at least a better format for them
-    c_info(f"(rules.py) ship_scantlings: The ship's neutral axis is at {ship.yo:0.5g} meters from Keel")
+    Logger.debug(f"(rules.py) ship_scantlings: The ship's neutral axis is at {ship.yo:0.5g} meters from Keel")
     if ship.n50_Ixx < in50:
-        c_warn(
+        Logger.warning(
             f"(rules.py) ship_scantlings: "
             f"The Area Inertia Moment of the ship In50 : {ship.n50_Ixx:0.5g} is less than "
             f"In50: {in50:0.5g} calculated by the rules")
     else:
-        c_success(
+        Logger.success(
             f"(rules.py) ship_scantlings: "
             f"The Area Inertia Moment of the ship In50 : {ship.n50_Ixx:0.5g} is adequate compared to "
             f"In50: {in50:0.5g} calculated by the rules")
     if zn50k_ship < zrn50:
-        c_warn(
+        Logger.warning(
             f"(rules.py) ship_scantlings: "
             f"The Section Modulus at Keel of the ship Zn50,keel : {zn50k_ship:0.5g} is less than "
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
     else:
-        c_success(
+        Logger.success(
             f"(rules.py) ship_scantlings: "
             f"The Section Modulus at Keel of the ship Zn50,keel : {zn50k_ship:0.5g} is adequate compared to "
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
     if zn50d_ship < zrn50:
-        c_warn(
+        Logger.warning(
             f"(rules.py) ship_scantlings: "
             f"The Section Modulus at Depth of the ship Zn50,Depth : {zn50d_ship:0.5g} is less than "
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
     else:
-        c_success(
+        Logger.success(
             f"(rules.py) ship_scantlings: "
             f"The Section Modulus at Depth of the ship Zn50,Depth : {zn50d_ship:0.5g} is adequate compared to "
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
@@ -556,10 +556,10 @@ def net_scantling(ship: Ship, case: PhysicsData, dynamics: str, debug=True):
         if stiff_plate.null or stiff_plate.tag == 6:
             continue
         if debug:
-            c_info(f"(rules.py) net_scantling: Evaluating plate's :{stiff_plate} PLATES NET SCANTLING")
+            Logger.debug(f"(rules.py) net_scantling: Evaluating plate's :{stiff_plate} PLATES NET SCANTLING")
         plating_net_thickness_calculation(ship, stiff_plate, case, dynamic=_Dynamic, debug=debug)
         if debug:
-            c_info(f"(rules.py) net_scantling: Evaluated plate's :{stiff_plate} PLATES NET SCANTLING")
+            Logger.debug(f"(rules.py) net_scantling: Evaluated plate's :{stiff_plate} PLATES NET SCANTLING")
     ship.update()
 
     for stiff_plate in ship.stiff_plates:
@@ -567,7 +567,7 @@ def net_scantling(ship: Ship, case: PhysicsData, dynamics: str, debug=True):
         if stiff_plate.null or stiff_plate.tag == 6:
             continue
         if debug:
-            c_info(f"(rules.py) net_scantling: Evaluating plate's {stiff_plate} STIFFENERS NET SCANTLING")
+            Logger.debug(f"(rules.py) net_scantling: Evaluating plate's {stiff_plate} STIFFENERS NET SCANTLING")
         # Bilge plate and other loose plates
         if len(stiff_plate.stiffeners) != 0:
             stiffener_plating_net_thickness_calculation(stiff_plate, case, dynamic=_Dynamic, debug=debug)
@@ -613,7 +613,7 @@ def corrosion_addition(stiff_plate: StiffPlate, blocks: list[Block], tmin, tmax)
         "out": 0,
     }
     if len(tags) == 0:
-        c_warn((f"(rules.py) corrosion_addition:/ Stiffened plate's {stiff_plate} locality data are not present."
+        Logger.warning((f"(rules.py) corrosion_addition:/ Stiffened plate's {stiff_plate} locality data are not present."
                 "Resetting to the Hopper case for both sides"))
         plate_t_corr["in"] = corr["CHP"]["Hopper/InBot"]
         plate_t_corr["out"] = corr["CHP"]["Hopper/InBot"]
@@ -651,7 +651,7 @@ def corrosion_addition(stiff_plate: StiffPlate, blocks: list[Block], tmin, tmax)
         ind = 0
         c = 0
         if len(tags) == 1:
-            c_warn((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are inadequate.'
+            Logger.warning((f'(rules.py) corrosion_addition:/ Stiffened plate\'s {stiff_plate} locality data are inadequate.'
                     'Using the data of the one side for both sides ...'))
             tags.append(tags[0])
 
@@ -737,7 +737,7 @@ def corrosion_assign(ship: Ship, offload: bool):
         if stiff_plate.null or stiff_plate.tag == 6:
             continue
         if stiff_plate.plate.cor_thickness < 0:
-            c_error(f"(rules.py) corrosion_assign: "
+            Logger.error(f"(rules.py) corrosion_assign: "
                     f"Stiffened plate {stiff_plate} has not been evaluated for corrosion addition !!!"
                     )
             quit()
@@ -745,7 +745,7 @@ def corrosion_assign(ship: Ship, offload: bool):
         for stiffener in stiff_plate.stiffeners:
             for plate in stiffener.plates:
                 if plate.cor_thickness < 0:
-                    c_error(f"(rules.py) corrosion_assign: "
+                    Logger.error(f"(rules.py) corrosion_assign: "
                             f"Stiffened plate {stiff_plate} has not been evaluated for corrosion addition !!!"
                             )
                     quit()

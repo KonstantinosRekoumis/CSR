@@ -4,7 +4,7 @@ import math
 from modules.baseclass.block import AtmSur, Block, SeaSur
 from modules.baseclass.plate import StiffPlate
 from modules.constants import LOADS
-from modules.utilities import c_error, c_warn
+from modules.utilities import Logger
 
 
 class Ship:
@@ -98,7 +98,7 @@ class Ship:
         for i in blocks:
             for j in i.list_plates_id:
                 if (abs(j) not in ids):
-                    c_error(
+                    Logger.error(
                         f"ship.validate_blocks: The block: {repr(i)} has as boundaries non-existent plates.Program Terminates")
                     quit()
             self.block_properties(i)
@@ -130,7 +130,7 @@ class Ship:
         elif block.space_type in ["SEA", "ATM"]:
             pass
         else:
-            c_warn(
+            Logger.warning(
                 '(classes.py) ship/block_properties: The Current block space type does not correspond to a specified '
                 f'load.\n Check your input. Defaulting to type of VOID cargo for block : {str(block)}'
             )
@@ -144,7 +144,7 @@ class Ship:
         elif 500 >= self.Lsc >= 350:
             self.Cw = 10.75 - ((self.Lsc - 350) / 150) ** 1.5
         else:
-            c_error("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
+            Logger.error("ship.Cw_Calc: The Ship's LBP is less than 90 m or greater than 500 m. The CSR rules do not apply.")
             quit()
 
     def moments_wave(self):

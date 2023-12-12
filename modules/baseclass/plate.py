@@ -8,7 +8,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from modules.utilities import c_error, c_warn, normals_2d, linespace
+from modules.utilities import normals_2d, linespace, Logger
 
 # Global Parameters
 _PLACE_ = {
@@ -46,9 +46,9 @@ class Plate:
                 self.__str__
                 + "\nThe plate's original tag is non existent. The existing tags are:"
             )
-            c_warn(warn)
+            Logger.warning(warn)
             [print(_PLACE_[i], ") ->", i) for i in _PLACE_ if type(i) == str]
-            c_warn("The program defaults to Inner Bottom Plate")
+            Logger.warning("The program defaults to Inner Bottom Plate")
         self.start = start
         self.end = end
         if thickness == 0:
@@ -95,7 +95,7 @@ class Plate:
             if abs(dx) == abs(dy):
                 l = math.pi * abs(dx) / 2
             else:
-                c_error(
+                Logger.error(
                     "-- ERROR --\n"
                     + "Edit your design. As the only bilge type supported is quarter circle."
                 )
@@ -565,7 +565,7 @@ class StiffPlate:
                 N = math.floor(net_l / self.spacing)
                 _range = linespace(1, N, 1, skip=skip, truncate_end=False)
             except ZeroDivisionError:
-                c_error(
+                Logger.error(
                     f"(classes.py) stiff_plate: Plate {self} has no valid dimensions."
                 )
                 quit()
@@ -674,7 +674,7 @@ class StiffPlate:
         PLZ use only the roots of the stiffeners
         """
         if self.tag == 6:
-            c_error(
+            Logger.error(
                 "(classes.py) stiff_plate/local_P: Pressures are not currently calculated for girders and bulkheads..."
             )
             quit()
