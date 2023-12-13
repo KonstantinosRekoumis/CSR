@@ -280,25 +280,6 @@ class Plate:
         self.n50_area = self.length * self.n50_thickness
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
 
-    def debug(self):
-        print("start : ", self.start)
-        print("end : ", self.end)
-        print("thickness : ", self.thickness)
-        print("net_thickness : ", self.net_thickness)
-        print("cor_thickness : ", self.cor_thickness)
-        print("material : ", self.material)
-
-        print("self.angle : ", self.angle)
-        print("self.length : ", self.length)
-        print("self.area : ", self.area)
-        print("self.Ixx_c : ", self.Ixx_c)
-        print("self.Iyy_c : ", self.Iyy_c)
-        print("self.CoA : ", self.CoA)
-        print("self.eta : ", self.eta)
-        print("self.n50_thickness : ", self.n50_thickness)
-        print("self.n50_area : ", self.n50_area)
-        print("self.n50_Ixx_c : ", self.n50_Ixx_c)
-
 
 @auto_str
 class Stiffener:
@@ -437,7 +418,7 @@ class Stiffener:
         elif axis == "y":
             Iyy = Iyy_c + self.CoA[0] ** 2 * self.area
             return Iyy
-        elif type(axis) == dict:
+        elif isinstance(axis, dict):
             try:
                 if axis["axis"] == "x":
                     Ixx = Ixx_c + (self.CoA[1] - axis["offset"]) ** 2 * self.area
