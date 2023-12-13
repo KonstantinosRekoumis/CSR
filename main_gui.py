@@ -46,7 +46,7 @@ ship = IO.load_ship('structural-out/final.json')
 data, header = DataCell(ship.stiff_plates[0]).get_data()
 tmp = [DataCell(i).get_data(getHeader=False) for i in ship.stiff_plates]
 data = [data, *tmp]
-Dm = win.dataManager(data, header)
+Dm = win.DataManager(data, header)
 # %%
 if __name__ == '__main__':
     app = QtWidgets.QApplication([])

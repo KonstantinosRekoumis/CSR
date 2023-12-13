@@ -8,7 +8,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from modules.utilities import normals_2d, linespace, Logger
+from modules.utilities import normals_2d, linespace, Logger, auto_str
 
 # Global Parameters
 _PLACE_ = {
@@ -28,6 +28,8 @@ _PLACE_ = {
     6: "Girder",
 }
 
+
+@auto_str
 class Plate:
     """
     The plate class is the bottom plate (no pun intended) class that is responsible for all geometry elements.
@@ -36,15 +38,15 @@ class Plate:
     """
 
     def __init__(
-        self, start: tuple, end: tuple, thickness: float, material: str, tag: str
+            self, start: tuple, end: tuple, thickness: float, material: str, tag: str
     ):
         try:
             self.tag = _PLACE_[tag]
         except KeyError:
             self.tag = _PLACE_["InnerBottom"]  # Worst Case Scenario
             warn = (
-                self.__str__
-                + "\nThe plate's original tag is non existent. The existing tags are:"
+                    self.__str__
+                    + "\nThe plate's original tag is non existent. The existing tags are:"
             )
             Logger.warning(warn)
             [print(_PLACE_[i], ") ->", i) for i in _PLACE_ if type(i) == str]
@@ -90,7 +92,7 @@ class Plate:
             elif dy <= 0:
                 a = -math.pi / 2
         if self.tag != 4:
-            l = math.sqrt(dy**2 + dx**2)
+            l = math.sqrt(dy ** 2 + dx ** 2)
         else:
             if abs(dx) == abs(dy):
                 l = math.pi * abs(dx) / 2
@@ -110,13 +112,13 @@ class Plate:
         a = self.angle
         if self.tag != 4:
             Ixx = b * l / 12 * ((b * math.cos(a)) ** 2 + (l * math.sin(a)) ** 2)
-            Iyy = b * l / 12 * ((b * math.cos(a + math.pi / 2)) ** 2 
+            Iyy = b * l / 12 * ((b * math.cos(a + math.pi / 2)) ** 2
                                 + (l * math.sin(a + math.pi / 2)) ** 2
                                 )
         else:
             r = l / math.pi * 2
-            Ixx = 1 / 16 * math.pi * (r**4 - (r - self.thickness) ** 4)
-            Iyy = 1 / 16 * math.pi * (r**4 - (r - self.thickness) ** 4)
+            Ixx = 1 / 16 * math.pi * (r ** 4 - (r - self.thickness) ** 4)
+            Iyy = 1 / 16 * math.pi * (r ** 4 - (r - self.thickness) ** 4)
             pass
         return Ixx, Iyy
 
@@ -124,7 +126,7 @@ class Plate:
         # calculates Center of Area relative to the Global (0,0)
         if self.tag != 4:
             return (self.start[0] + self.length / 2 * math.cos(self.angle)), (
-                self.start[1] + self.length / 2 * math.sin(self.angle)
+                    self.start[1] + self.length / 2 * math.sin(self.angle)
             )
         else:
             r = self.length / math.pi * 2
@@ -261,7 +263,7 @@ class Plate:
 
     def update(self):
         if self.net_thickness < max(
-            self.net_thickness_calc, self.net_thickness_empi, self.net_thickness_buck
+                self.net_thickness_calc, self.net_thickness_empi, self.net_thickness_buck
         ):
             self.net_thickness = max(
                 self.net_thickness_calc,
@@ -298,23 +300,24 @@ class Plate:
         print("self.n50_Ixx_c : ", self.n50_Ixx_c)
 
 
+@auto_str
 class Stiffener:
     """
     The stiffener class is a class derived from the plate class. Stiffener is consisted of or more plates.
     To create a stiffener insert its form as \'fb\' -> Flat Bars, \'g\' -> for angular beams, \'t\' for t beams and \'bb\' for bulbous bars.
-    Dimensions are entered as a dictionary of keys \'lx\', \'bx\' x referring to web and\or flange length and thickness respectively.
+    Dimensions are entered as a dictionary of keys \'lx\', \'bx\' x referring to web and/or flange length and thickness respectively.
     Material is to be inserted like in the plate class, while only the root coordinates are required.
     Angle is used to make the stiffener perpendicular relative to the supported plate's angle.
     """
 
     def __init__(
-        self,
-        form: str,
-        dimensions: dict,
-        angle: float,
-        root: tuple[float],
-        material: str,
-        tag: str,
+            self,
+            form: str,
+            dimensions: dict,
+            angle: float,
+            root: tuple[float],
+            material: str,
+            tag: str,
     ):
         # Support for only flat bars, T bars and angled bars
         # dimensions lw -> length, bw -> thickness
@@ -475,10 +478,10 @@ class Stiffener:
             )
 
             Ixx = (
-                self.plates[0].net_thickness * self.plates[0].length ** 3 / 12
-                + self.plates[1].net_thickness ** 3 * self.plates[1].length / 12
-                + self.plates[0].area * (ylc_web - ylc_st) ** 2  # Parallel Axis Theorem
-                + self.plates[1].area * (ylc_flg - ylc_st) ** 2  # Parallel Axis Theorem
+                    self.plates[0].net_thickness * self.plates[0].length ** 3 / 12
+                    + self.plates[1].net_thickness ** 3 * self.plates[1].length / 12
+                    + self.plates[0].area * (ylc_web - ylc_st) ** 2  # Parallel Axis Theorem
+                    + self.plates[1].area * (ylc_flg - ylc_st) ** 2  # Parallel Axis Theorem
             )
             return Ixx / (ylc_flg - ylc_st)
         elif self.type in ("fb"):
@@ -509,6 +512,7 @@ class Stiffener:
         self.calc_I()
 
 
+@auto_str
 class StiffPlate:
     """
     The stiff_plate class is the Union of the plate and the stiffener(s).
@@ -520,17 +524,18 @@ class StiffPlate:
     stiffener_dict -> A dict containing data to create stiffeners : {type : str, dims : [float (in mm)],mat:str}
     PSM_spacing is in m.
     """
+
     def __init__(
-        self,
-        id: int,
-        plate: Plate,
-        spacing: float,
-        s_pad: float,
-        e_pad: float,
-        stiffener_: dict,
-        skip: int,
-        PSM_spacing: float,
-        null: bool = False,
+            self,
+            id: int,
+            plate: Plate,
+            spacing: float,
+            s_pad: float,
+            e_pad: float,
+            stiffener_: dict,
+            skip: int,
+            PSM_spacing: float,
+            null: bool = False,
     ):
         """`StiffPlate` class
 

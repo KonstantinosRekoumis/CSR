@@ -8,9 +8,10 @@ from modules.baseclass.ship import Ship
 from modules.baseclass.block import Block
 from modules.baseclass.plate import StiffPlate
 from modules.constants import RHO_S, G
-from modules.utilities import lin_int_dict, d2r, Logger
+from modules.utilities import lin_int_dict, d2r, Logger, auto_str
 
 
+@auto_str
 class PhysicsData:
     """
     -------------------------------------------------------------------------------------------------------------------

@@ -1,4 +1,6 @@
 from modules.baseclass.plate import _PLACE_, StiffPlate
+from modules.utilities import auto_str
+
 
 def _round(tp: tuple, dig: int):
     out = []
@@ -6,6 +8,8 @@ def _round(tp: tuple, dig: int):
         out.append(round(i, dig))
     return tuple(out)
 
+
+@auto_str
 class DataCell:
     """Wrapper for data export out of a StiffPlate
     """

@@ -4,9 +4,10 @@ import math
 from modules.baseclass.block import AtmSur, Block, SeaSur
 from modules.baseclass.plate import StiffPlate
 from modules.constants import LOADS
-from modules.utilities import Logger
+from modules.utilities import Logger, auto_str
 
 
+@auto_str
 class Ship:
     """`Ship` The class-envelope of the entire design procedure.
     All the available data input to the programme are stored here.
