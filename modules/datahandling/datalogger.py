@@ -143,7 +143,7 @@ class DataLogger:
         if dump:
             return self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D
 
-    def latex_output(self, Debug=False):
+    def latex_output(self):
         endl = '\\tabularnewline\\hline\n'
 
         def bold(a):
@@ -228,7 +228,7 @@ class DataLogger:
         press_head += ' Max Pressure [kN/$m^2$] ' + endl + '\\endfirsthead\n'
         press_tab = tabular(self.Press_D, clm_pres, press_head)
         press_tab += '\\end{longtable}\n\n'
-        if Debug: print(press_tab)
+        Logger.debug(press_tab)
 
         # Plating Table
         plate_head = ('\\begin{longtable}{*{4}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{2cm}}}\n'
@@ -245,7 +245,8 @@ class DataLogger:
                     '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endhead\n')
         plate_tab = tabular(self.Plate_D,12,plate_head)
         plate_tab += '\\end{longtable}\n\n'
-        if Debug: print(plate_tab)
+
+        Logger.debug(plate_tab)
 
         # Stiffeners Table
         stiff_head =('\\begin{longtable}{*{6}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{1.75cm}}}\n'
@@ -264,7 +265,8 @@ class DataLogger:
                     '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endhead\n')
         stiff_tab = tabular(self.Stiff_D,14,stiff_head)
         stiff_tab += '\\end{longtable}\n\n'
-        if Debug: print(stiff_tab)
+
+        Logger.debug(stiff_tab)
 
         # Stiffened Plate Table
         st_pl_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
@@ -281,7 +283,8 @@ class DataLogger:
                     '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endhead\n')
         st_pl_tab = tabular(self.St_Pl_D,8,st_pl_head)
         st_pl_tab += '\\end{longtable}\n\n'
-        if Debug: print(st_pl_tab)
+
+        Logger.debug(st_pl_tab)
 
         # Ordinary Section Data
         or_se_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
@@ -298,7 +301,8 @@ class DataLogger:
                     '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endhead\n')
         or_se_tab = tabular(self.PrimS_D,8,or_se_head)
         or_se_tab += '\\end{longtable}\n\n'
-        if Debug: print(or_se_tab)
+
+        Logger.debug(or_se_tab)
 
         return press_tab, plate_tab, stiff_tab, st_pl_tab, or_se_tab
 # end of file
