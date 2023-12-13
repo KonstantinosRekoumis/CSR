@@ -107,27 +107,6 @@ class PhysicsData:
         self.sigma = lambda y, z: 1e-3 * (
                 (self.Mwv_lc + self.Mws) / self.Ixx * (z - self.yn) - self.Mwh_lc / self.Iyy * y)
 
-    def debug(self, what2print: str):
-        print('condition :', self.cond)
-        if 'angles' in what2print:
-            print(f'theta:{self.theta}')
-            print(f'phi:{self.phi}')
-        if 'accels' in what2print:
-            print('a0:', self.a0)
-            print('a_surge : ', self.a_surge)
-            print('a_sway  : ', self.a_sway)
-            print('a_heave : ', self.a_heave)
-            print('a_pitch : ', self.a_pitch)
-            print('a_roll  : ', self.a_roll)
-        if 'particulars' in what2print:
-            print('Tlc : ', self.Tlc)
-            print('rho : ', self.rho)
-            print('LBP : ', self.LBP)
-            print('B : ', self.B)
-            print('Cw : ', self.Cw)
-            print('Lsc : ', self.Lsc)
-            print('D : ', self.D)
-
     def external_loadsC(self):
         '''
         -------------------------------------------------------------------------------------------------------------------
@@ -169,22 +148,28 @@ class PhysicsData:
                 RES = [-1 * i for i in RES]
             return RES
         except KeyError:
-            Logger.error(f'PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.')
-            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
-            [Logger.error(f"{i}", default=False) for i in self.fbeta]
             Logger.error(
-                'Currently supported conditions are : HSM and BSP.\n The other conditions will result in invalid results',
-                default=False)
-            Logger.error('The Program Terminates...', default=False)
-            quit()
+                f"PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.",
+                die=False
+            )
+            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", die=False)
+            [Logger.error(f"{i}", die=False) for i in self.fbeta]
+            Logger.error(
+                "Currently supported conditions are : HSM and BSP. "
+                "The other conditions will result in invalid results",
+                die=False
+            )
+            Logger.error("The Program Terminates...")
 
-    def accel_eval(self, point, debug=False):
+    def accel_eval(self, point):
         R = min((self.D / 4 + self.Tlc / 2, self.D / 2))
         x, y, z = point
-        if debug:
-            print('Point [x,y,z] : ', point)
-            print('Cxs', self.Cxs, ' Cxp', self.Cxp, ' Cxg', self.Cxg, ' Cys', self.Cys, ' Cyr', self.Cyr, ' Cyg',
-                  self.Cyg, ' Czh', self.Czh, ' Czr', self.Czr, ' Czp', self.Czp)
+
+        Logger.debug(
+            f"Point [x,y,z] : {point}",
+            f"'Cxs', {self.Cxs}, Cxp, {self.Cxp}, Cxg, {self.Cxg}, Cys, {self.Cys}, Cyr, {self.Cyr}, Cyg,"
+            f" {self.Cyg}, Czh, {self.Czh}, Czr, {self.Czr}, Czp, {self.Czp}"
+        )
         ax = -self.Cxg * G * math.sin(d2r(self.phi)) + self.Cxs * self.a_surge + self.Cxp * self.a_pitch * (z - R)
         ay = self.Cyg * G * math.sin(d2r(self.theta)) + self.Cys * self.a_sway - self.Cyr * self.a_roll * (z - R)
         az = self.Czh * self.a_heave + self.Czr * self.a_roll * y - self.Czp * self.a_pitch * (x - 0.45 * self.Lsc)
@@ -498,7 +483,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
 
 # ------------------------------------------------------------------------------
 # --------------- Internal Forces Calculation ----------------------------------
-def static_liquid_pressure(block: Block, debug=False):
+def static_liquid_pressure(block: Block):
     """
     Static Liquid Pressure : Normal Operations at sea and Harbour/Sheltered water operations\n
     To access the Normal Operations at sea component use the key 'S-NOS' and the key 'S-HSWO' for the \n
@@ -527,7 +512,7 @@ def static_liquid_pressure(block: Block, debug=False):
     return P_nos
 
 
-def StaticDryCargo_Pressure(block: Block, debug=False):
+def StaticDryCargo_Pressure(block: Block):
     '''
     Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -553,7 +538,7 @@ def StaticDryCargo_Pressure(block: Block, debug=False):
     return P
 
 
-def dynamic_liquid_pressure(block: Block, case: PhysicsData, debug=False):
+def dynamic_liquid_pressure(block: Block, case: PhysicsData):
     """
     Dynamic Liquid Pressure: Evaluates the pressure distribution due to the dynamic motion of a fluid inside\n
     a tank.
@@ -575,9 +560,8 @@ def dynamic_liquid_pressure(block: Block, case: PhysicsData, debug=False):
 
     ax, ay, az = case.accel_eval(block.CG)  # 221
     x0, y0, z0 = ref_eval(block, (ax, ay, az))
-    if debug:
-        print('ax : ', ax, ' ay : ', ay, ' az : ', az)
-        print('x0 : ', x0, ' y0 : ', y0, ' z0 : ', z0)
+
+    Logger.debug('ax : ', ax, ' ay : ', ay, ' az : ', az, 'x0 : ', x0, ' y0 : ', y0, ' z0 : ', z0)
 
     # strength assessment only
     if block.space_type == "LC":
@@ -598,7 +582,7 @@ def dynamic_liquid_pressure(block: Block, case: PhysicsData, debug=False):
     return P
 
 
-def dynamic_dry_cargo_pressure(block: Block, case: PhysicsData, debug=False):
+def dynamic_dry_cargo_pressure(block: Block, case: PhysicsData):
     """
     Dynamic Dry Cargo Pressure: Evaluates the pressure distribution due to the dynamic movements of the ship.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
@@ -625,7 +609,7 @@ def dynamic_dry_cargo_pressure(block: Block, case: PhysicsData, debug=False):
     return P
 
 
-def void_pressure(block: Block, case: PhysicsData, debug=False):
+def void_pressure(block: Block, case: PhysicsData):
     P = [0] * len(block.pressure_coords)
     block.Pressure[case.cond] = P
     block.Pressure['STATIC'] = P
