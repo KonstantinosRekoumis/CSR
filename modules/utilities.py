@@ -87,51 +87,56 @@ class Logger:
 
     @staticmethod
     def success(*args):
-        print(
-            f"{LogLevelColours.SUCCESS}{datetime.now().strftime('%H:%M:%S')}|SUCCESS|{Logger.get_file()}|{Logger.get_parent()}",
-            *args,
-            f"{Colours.NOCOLOUR}",
-            file=Logger.OUT)
+        print(f"{LogLevelColours.SUCCESS}{datetime.now().strftime('%H:%M:%S')}|SUCCESS|{Logger.get_file()}|{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def info(*args):
-        print(
-            f"{LogLevelColours.INFO}{datetime.now().strftime('%H:%M:%S')}|INFO|{Logger.get_file()}|{Logger.get_parent()}",
-            *args,
-            f"{Colours.NOCOLOUR}",
-            file=Logger.OUT)
+        print(f"{LogLevelColours.INFO}{datetime.now().strftime('%H:%M:%S')}|INFO|{Logger.get_file()}|{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def debug(*args):
         if Logger.LEVEL < 4:
             return
-        print(
-            f"{LogLevelColours.DEBUG}{datetime.now().strftime('%H:%M:%S')}|DEBUG|{Logger.get_file()}|{Logger.get_parent()}",
-            *args,
-            f"{Colours.NOCOLOUR}",
-            file=Logger.OUT)
+        print(f"{LogLevelColours.DEBUG}{datetime.now().strftime('%H:%M:%S')}|DEBUG|{Logger.get_file()}|{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
     def warning(*args):
+        """
+        Second-highest priority logging function.
+        """
         if Logger.LEVEL < 2:
             return
-        print(
-            f"{LogLevelColours.WARNING}{datetime.now().strftime('%H:%M:%S')}|WARNING|{Logger.get_file()}|{Logger.get_parent()}",
-            *args,
-            f"{Colours.NOCOLOUR}",
-            file=Logger.OUT)
+        print(f"{LogLevelColours.WARNING}{datetime.now().strftime('%H:%M:%S')}|WARNING|{Logger.get_file()}|{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
 
     @staticmethod
-    def error(*args):
+    def error(*args, die=True):
+        """
+        Highest-priority logging function.
+        :param die: Whether to die or not upon calling this function. Defaults to True.
+        :raises RuntimeError: This is raised if die is set to True.
+        """
+
         if Logger.LEVEL < 1:
             return
-        print(
-            f"{LogLevelColours.ERROR}{datetime.now().strftime('%H:%M:%S')}|ERROR|{Logger.get_file()}|{Logger.get_parent()}",
-            *args,
-            f"{Colours.NOCOLOUR}",
-            file=Logger.OUT)
-        # noinspection PyExceptionInherit
-        raise RuntimeError(*args)
+        print(f"{LogLevelColours.ERROR}{datetime.now().strftime('%H:%M:%S')}|ERROR|{Logger.get_file()}|{Logger.get_parent()}",
+              *args,
+              f"{Colours.NOCOLOUR}",
+              file=Logger.OUT)
+
+        if die:
+            raise RuntimeError(*args)
 
 
 # Writing boilerplate code to avoid writing boilerplate code!
