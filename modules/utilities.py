@@ -80,7 +80,7 @@ class Logger:
     @staticmethod
     def get_parent() -> str:
         return inspect.stack()[2][3]
-    
+
     @staticmethod
     def get_file() -> str:
         return inspect.stack()[2][1].split(os.sep)[-1]
@@ -91,7 +91,7 @@ class Logger:
               *args,
               f"{Colours.NOCOLOUR}",
               file=Logger.OUT)
-        
+
     @staticmethod
     def info(*args):
         print(f"{LogLevelColours.INFO}{datetime.now().strftime('%H:%M:%S')}|INFO|{Logger.get_file()}|{Logger.get_parent()}",
@@ -118,7 +118,7 @@ class Logger:
               file=Logger.OUT)
 
     @staticmethod
-    def error(*args):
+    def error(*args, rethrow: Exception = None):
         if Logger.LEVEL < 1:
             return
         print(f"{LogLevelColours.ERROR}{datetime.now().strftime('%H:%M:%S')}|ERROR|{Logger.get_file()}|{Logger.get_parent()}",
@@ -126,6 +126,9 @@ class Logger:
               f"{Colours.NOCOLOUR}",
               file=Logger.OUT)
         # noinspection PyExceptionInherit
+        if rethrow is not None:
+            raise rethrow
+
         raise RuntimeError(*args)
 
 # Writing boilerplate code to avoid writing boilerplate code!

@@ -228,7 +228,7 @@ class Plate:
         elif axis == "y":
             Iyy = Iyy_c + self.CoA[0] ** 2 * self.area
             return Iyy
-        elif type(axis) is dict:
+        elif isinstance(axis, dict):
             try:
                 if axis["axis"] == "x":
                     Ixx = Ixx_c + (self.CoA[1] - axis["offset"]) ** 2 * self.area
@@ -236,20 +236,11 @@ class Plate:
                 elif axis["axis"] == "y":
                     Iyy = Iyy_c + (self.CoA[0] - axis["offset"]) ** 2 * self.area
                     return Iyy
-            except KeyError:
-                print("The axis dictionary is not properly structured")
-                return 0
-            except TypeError:
-                print(
-                    "The axis dictionary has no proper values.\n",
-                    "axis :",
-                    axis["axis"],
-                    type(axis["axis"]),
-                    "\noffset :",
-                    axis["offset"],
-                    type(axis["offset"]),
-                )
-                return 0
+            except KeyError | TypeError as e:
+                if isinstance(e, KeyError):
+                    Logger.error("The axis dictionary is not properly structured", rethrow=e)
+
+                Logger.error(f"Improper axis values {axis}", rethrow=e)
 
     def eta_eval(self):
         """
@@ -434,7 +425,7 @@ class Stiffener:
         elif axis == "y":
             Iyy = Iyy_c + self.CoA[0] ** 2 * self.area
             return Iyy
-        elif type(axis) == dict:
+        elif isinstance(axis, dict):
             try:
                 if axis["axis"] == "x":
                     Ixx = Ixx_c + (self.CoA[1] - axis["offset"]) ** 2 * self.area
@@ -442,20 +433,11 @@ class Stiffener:
                 elif axis["axis"] == "y":
                     Iyy = Iyy_c + (self.CoA[0] - axis["offset"]) ** 2 * self.area
                     return Iyy
-            except KeyError:
-                print("The axis dictionary is not properly structured")
-                return None
-            except TypeError:
-                print(
-                    "The axis dictionary has no proper values.\n",
-                    "axis :",
-                    axis["axis"],
-                    type(axis["axis"]),
-                    "\noffset :",
-                    axis["offset"],
-                    type(axis["offset"]),
-                )
-                return None
+            except KeyError | TypeError as e:
+                if isinstance(e, KeyError):
+                    Logger.error("The axis dictionary is not properly structured", rethrow=e)
+
+                Logger.error(f"Improper axis values {axis}", rethrow=e)
 
     def calc_Z(self):
         if self.type in ("tb", "g"):
