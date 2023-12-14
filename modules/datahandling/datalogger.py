@@ -15,9 +15,6 @@ class DataLogger:
     TODO : Utilize the Datalogger for the Data Tables in the GUI as a Singleton
     """
 
-    def plate_name(self, cell: DataCell):
-        return int(cell.name[6:])
-
     def __init__(self, ship: Ship):
         self.conds = []  # EDWs that were documented
         self.Cells = []
@@ -27,31 +24,33 @@ class DataLogger:
         self.St_Pl_D = []
         self.PrimS_D = []
         self.ship = ship
-        self.LoadData()
+        self.load_data()
 
+    def load_data(self):
+        def plate_name(cell: DataCell):
+            return int(cell.name[6:])
 
-    def LoadData(self):
         self.Cells = []  # may be slow for performance but it is meant to be called 1-2 times per main run
         for st_pl in self.ship.stiff_plates:
             if st_pl.null: continue
             self.Cells.append(DataCell(st_pl))
-        self.Cells.sort(key=self.plate_name)
-    
-    def LoadConds(self, _conds: list[str]):
+        self.Cells.sort(key=plate_name)
+
+    def load_conds(self, _conds: list[str]):
         """Load the physics conditions evaluated
 
         Args:
             _conds (list[str]): The physics conditions evaluated
         """
         self.conds = _conds
-    
+
     def update_stiff_plate(self, stiff_plate: StiffPlate):
         for cell in self.Cells:
             if cell.id == stiff_plate.id:
                 cell.update(stiff_plate)
                 break
 
-    def CreateTabularData(self, dump=False):
+    def create_tabular_data(self, dump=False):
         """
         It updates the DataLogger as well
         Press_D : Name & Breadth [m] & CoA [m] (y,z) & HSM-1 & ... & EDW-last & Max Pressure
@@ -75,7 +74,8 @@ class DataLogger:
                     if abs(max_) < abs(i): max_ = i
                 except TypeError:
                     continue
-            if max_ == -1e8: return 'Not Evaluated'
+            if max_ == -1e8:
+                return 'Not Evaluated'
             return max_
 
         # reset tables
@@ -85,7 +85,7 @@ class DataLogger:
         self.St_Pl_D = []
         self.PrimS_D = []
         # load/update data 
-        self.LoadData()
+        self.load_data()
         _ship = self.ship # ugly solution to an even uglier problem
 
         for i, cell in enumerate(self.Cells):
@@ -142,78 +142,81 @@ class DataLogger:
         if dump:
             return self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D
 
-    def latex_output(self, Debug=False):
+    @staticmethod
+    def tabular(data, clmns, header):
         endl = '\\tabularnewline\\hline\n'
-
-        def bold(a):
-            return '\\textbf{' + a + '}'
-
-        def f(a):
-            if type(a) in (int, float, np.float64, np.float32):
-                return f'{a:0.4g}'
-            elif type(a) in (list, tuple) and len(a) <= 2:
-                out = '('
-                for i in a: out += f(i) + ', '
-                return out[:-2] + ')'
-            elif type(a) == str:
-                return a
-            else:
-                Logger.warning(
-                    f'(classes.py) DataLogger/LaTeX_output/f: Variable {a} of {type(a)} is not supported. Thus f() will return value None.')
-
-        def tabular(data, clmns, header):
-            out = header
-            for line in data:
-                _bold = False
-                if type(line) == list:
-                    if type(line[-1]) == list and len(line[-1]) > 2:  # Stiffeners Data
-                        s = -1  # slice
-                        if type(line[-2]) == list and len(line[-2]) > 2:
-                            s = -2
-                        c = 0
-                        if s == -2:
-                            for elem in line[:s]:
-                                elem = f(elem)
-                                c += 1
-                                out += '\\multirow{' + str(abs(s)) + '}{*}{' + str(elem) + ' } & '
-                            out += ' Web & '
-                            for elem in line[-2]:
-                                elem = f(elem)
-                                out += f' {elem} &'
-                            out = out[:-1] + '\\tabularnewline\\cline{6-14}\n' + ' &' * c + ' Flange & '
-                            for elem in line[-1]:
-                                elem = f(elem)
-                                out += f' {elem} &'
-                        elif s == -1:
-                            for elem in line[:s]:
-                                elem = f(elem)
-                                c += 1
-                                out += elem + ' & '
-                            out += ' Web & '
-                            for elem in line[-1]:
-                                elem = f(elem)
-                                out += f' {elem} &'
-                    else:
-                        if (type(line[1]) == str and 'Total' in line[1]) or (
-                                type(line[0]) == str and 'Total' in line[0]):  # Stiffened Plate Data
-                            _bold = True
-                            out += '\\hline\n'
-                        for elem in line:
-                            elem = bold(f(elem)) if _bold else f(elem)
+        out = header
+        for line in data:
+            _bold = False
+            if isinstance(line, list):
+                # Stiffeners Data
+                if isinstance(line[-1], list) and len(line[-1]) > 2:
+                    s = -1  # slice
+                    if isinstance(line[-2], list) and len(line[-2]) > 2:
+                        s = -2
+                    c = 0
+                    if s == -2:
+                        for elem in line[:s]:
+                            elem = DataLogger.f(elem)
+                            c += 1
+                            out += '\\multirow{' + str(abs(s)) + '}{*}{' + str(elem) + ' } & '
+                        out += ' Web & '
+                        for elem in line[-2]:
+                            elem = DataLogger.f(elem)
                             out += f' {elem} &'
-                    out = out[:-1] + endl
-                    if line[1] == 'Total St. Plate':  # Stiffened Plate Data
-                        out = out[:-1] + '\\hline\n'
-                elif type(line) == str:
-                    out += '\\multicolumn{' + str(clmns) + '}{l}{' + line + '}' + endl
-            return out
+                        out = out[:-1] + '\\tabularnewline\\cline{6-14}\n' + ' &' * c + ' Flange & '
+                        for elem in line[-1]:
+                            elem = DataLogger.f(elem)
+                            out += f' {elem} &'
+                    elif s == -1:
+                        for elem in line[:s]:
+                            elem = DataLogger.f(elem)
+                            c += 1
+                            out += elem + ' & '
+                        out += ' Web & '
+                        for elem in line[-1]:
+                            elem = DataLogger.f(elem)
+                            out += f' {elem} &'
+                else:
+                    # Stiffened Plate Data
+                    total_in_col0 = isinstance(line[0], str) and 'Total' in line[0]
+                    total_in_col1 = isinstance(line[1], str) and 'Total' in line[1]
+                    if total_in_col0 or total_in_col1:
+                        _bold = True
+                        out += '\\hline\n'
 
-        # Sanity Check 
-        for i in (self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D):
-            if len(i) == 0:
-                Logger.error(('(classes.py) DataLogger.LaTeX_output(): Tabular data are not initialized.'
-                         ' Consider using DataLogger.CreateTabularData First. Returning Nothing.'))
-                return ''
+                    for elem in line:
+                        elem = DataLogger.bold(DataLogger.f(elem)) if _bold else DataLogger.f(elem)
+                        out += f' {elem} &'
+                out = out[:-1] + endl
+                if line[1] == 'Total St. Plate':  # Stiffened Plate Data
+                    out = out[:-1] + '\\hline\n'
+            elif isinstance(line, str):
+                out += '\\multicolumn{' + str(clmns) + '}{l}{' + line + '}' + endl
+        return out
+
+    @staticmethod
+    def bold(a):
+        return '\\textbf{' + a + '}'
+
+    @staticmethod
+    def f(a):
+        if type(a) in (int, float, np.float64, np.float32):
+            return f'{a:0.4g}'
+        elif type(a) in (list, tuple) and len(a) <= 2:
+            out = '('
+            for i in a:
+                out += DataLogger.f(i) + ', '
+            return out[:-2] + ')'
+        elif type(a) == str:
+            return a
+        else:
+            Logger.warning(f'Variable {a} of {type(a)} is not supported. Thus f() will return value None.')
+
+    def get_tabular_pressure_data(self) -> str:
+        # sanity check inherited from latex_output
+        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
+        endl = '\\tabularnewline\\hline\n'
         # Pressure Table
         clm_pres = 4 + len(self.conds)
         press_head = (
@@ -225,10 +228,15 @@ class DataLogger:
         press_head += 'Name & Breadth [m] & CoA [m] (y,z) &'
         for i in self.conds: press_head += f' {i} [kN/$m^2$] &'
         press_head += ' Max Pressure [kN/$m^2$] ' + endl + '\\endfirsthead\n'
-        press_tab = tabular(self.Press_D, clm_pres, press_head)
+        press_tab = DataLogger.tabular(self.Press_D, clm_pres, press_head)
         press_tab += '\\end{longtable}\n\n'
-        if Debug: print(press_tab)
+        Logger.debug(press_tab)
+        return press_tab
 
+    def get_tabular_plating_data(self) -> str:
+        # sanity check inherited from latex_output
+        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
+        endl = '\\tabularnewline\\hline\n'
         # Plating Table
         plate_head = ('\\begin{longtable}{*{4}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{2cm}}}\n'
                     '\\caption{Plating Data}\n'
@@ -242,10 +250,15 @@ class DataLogger:
                     'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] (y,z) & Design Pressure [kN/$m^2$]'
                     '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
                     '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endhead\n')
-        plate_tab = tabular(self.Plate_D,12,plate_head)
+        plate_tab = DataLogger.tabular(self.Plate_D,12,plate_head)
         plate_tab += '\\end{longtable}\n\n'
-        if Debug: print(plate_tab)
+        Logger.debug(plate_tab)
+        return plate_tab
 
+    def get_tabular_stiffeners_data(self) -> str:
+        # sanity check inherited from latex_output
+        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
+        endl = '\\tabularnewline\\hline\n'
         # Stiffeners Table
         stiff_head =('\\begin{longtable}{*{6}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{1.75cm}}}\n'
                     '\\caption{Stiffener Data}\n'
@@ -261,10 +274,15 @@ class DataLogger:
                     'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] &'
                     'Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] '
                     '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endhead\n')
-        stiff_tab = tabular(self.Stiff_D,14,stiff_head)
+        stiff_tab = DataLogger.tabular(self.Stiff_D,14,stiff_head)
         stiff_tab += '\\end{longtable}\n\n'
-        if Debug: print(stiff_tab)
+        Logger.debug(stiff_tab)
+        return stiff_tab
 
+    def get_tabular_stiffened_plates_data(self) -> str:
+        # sanity check inherited from latex_output
+        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
+        endl = '\\tabularnewline\\hline\n'
         # Stiffened Plate Table
         st_pl_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
                     '\\caption{Stiffened Plate Data}\n'
@@ -278,10 +296,15 @@ class DataLogger:
                     'Name &  & Area n-50 [$mm^2$] '
                     '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endhead\n')
-        st_pl_tab = tabular(self.St_Pl_D,8,st_pl_head)
+        st_pl_tab = DataLogger.tabular(self.St_Pl_D,8,st_pl_head)
         st_pl_tab += '\\end{longtable}\n\n'
-        if Debug: print(st_pl_tab)
+        Logger.debug(st_pl_tab)
+        return st_pl_tab
 
+    def get_tabular_ordinary_stiffeners_data(self) -> str:
+        # sanity check inherited from latex_output
+        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
+        endl = '\\tabularnewline\\hline\n'
         # Ordinary Section Data
         or_se_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
                     '\\caption{Stiffened Plate Data}\n'
@@ -295,9 +318,8 @@ class DataLogger:
                     'Name & Area n-50 [$mm^2$] '
                     '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
                     '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endhead\n')
-        or_se_tab = tabular(self.PrimS_D,8,or_se_head)
+        or_se_tab = DataLogger.tabular(self.PrimS_D,8,or_se_head)
         or_se_tab += '\\end{longtable}\n\n'
-        if Debug: print(or_se_tab)
+        Logger.debug(or_se_tab)
+        return or_se_tab
 
-        return press_tab, plate_tab, stiff_tab, st_pl_tab, or_se_tab
-# end of file

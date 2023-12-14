@@ -1,9 +1,7 @@
-
-
-from modules.baseclass.ship import Ship
+import modules.render as rnr
 from modules.constants import TEX_PREAMBLE
 from modules.datahandling.datalogger import DataLogger
-import modules.render as rnr
+from modules.utilities import Logger
 
 
 def generate_latex_rep(data: DataLogger, path='./', _standalone=True):
@@ -14,13 +12,13 @@ def generate_latex_rep(data: DataLogger, path='./', _standalone=True):
     rnr.contour_plot(data.ship, key="spacing", path=path + 'PSM_plt.pdf', cmap='jet')
     rnr.contour_plot(data.ship, key="tag", path=path + 'tag_plt.pdf', cmap='jet')
 
-def latex_output(data : DataLogger, Debug=False, standalone=False, figs=()):
+
+def latex_output(data_logger : DataLogger, standalone=False, figs=()):
     """
     Output Function that generates a .tex file for use in LaTeX
     """
-    data.CreateTabularData()
-    ship = data.ship
-    text = data.latex_output()
+    data_logger.create_tabular_data()
+    ship = data_logger.ship
     mid = ''
     GeneralPart = (
         '\\chapter{General Input Data Particulars}\n'
@@ -61,11 +59,14 @@ def latex_output(data : DataLogger, Debug=False, standalone=False, figs=()):
                 '\\centering\n'
                 '\\includegraphics[width=\linewidth]{'
                 f'{i}'
-                '}\n\\end{figure}\n')
+                '}\n\\end{figure}\n'
+            )
     pressure = (
         '\\newgeometry{margin=1.5cm}\n'
         '\\chapter{Pressure Data}\n'
-        '\\label{sec:Pressure_Data}\n'+text[0])
+        '\\label{sec:Pressure_Data}\n'
+        + data_logger.get_tabular_pressure_data()
+    )
     plates = (
         '\\chapter{Plating Data}\n'
         '\\label{sec:Plating_Data}\n'
@@ -73,10 +74,11 @@ def latex_output(data : DataLogger, Debug=False, standalone=False, figs=()):
         '\\thispagestyle{lscape}\n'
         '\\pagestyle{lscape}\n'
         '\\begin{landscape}\n'
-        +text[1]+
+        + data_logger.get_tabular_plating_data() +
         '\\end{landscape}\n'
         '\\thispagestyle{normal}\n'
-        '\\pagestyle{normal}\n')
+        '\\pagestyle{normal}\n'
+    )
     stiffeners = (
         '\\chapter{Stiffeners Data}\n'
         '\\label{sec:Stiffeners_Data}\n'
@@ -84,19 +86,31 @@ def latex_output(data : DataLogger, Debug=False, standalone=False, figs=()):
         '\\thispagestyle{lscape}\n'
         '\\pagestyle{lscape}\n'
         '\\begin{landscape}\n'
-        +text[2]+
+        + data_logger.get_tabular_stiffeners_data() +
         '\\end{landscape}\n'
         '\\thispagestyle{normal}\n'
-        '\\pagestyle{normal}\n')
+        '\\pagestyle{normal}\n'
+    )
     stiff_plates = (
         '\\clearpage'
         '\\chapter{Stiffened Plates Data}\n'
-        '\\label{sec:Stiffened_Plates_Data}\n'+text[3])
+        '\\label{sec:Stiffened_Plates_Data}\n'
+        + data_logger.get_tabular_stiffened_plates_data()
+    )
+
+    disclaimer = ""
+    if ship.symmetrical:
+        disclaimer = (
+            "Due to the vessel having a symmetrical cross section, "
+            "Area and Area Inertia Moments are double the stiffened plates sums.\n"
+        )
+
     ordinary_section = (
         '\\chapter{Ordinary Section\'s Stiffened Plates Data}\n'
         '\\label{sec:Stiffeners Data}\n'
-        'Due to the vessel having a symmetrical cross section, Area and Area Inertia Moments are double the stiffened plates sums.\n'+text[4] if ship.symmetrical else ''+text[4]
-        )
+        + disclaimer + data_logger.get_tabular_ordinary_stiffeners_data()
+    )
+
     mid += GeneralPart + figures + pressure + plates + stiffeners + stiff_plates + ordinary_section + '\\clearpage\\restoregeometry'
 
     if standalone:
@@ -104,6 +118,6 @@ def latex_output(data : DataLogger, Debug=False, standalone=False, figs=()):
     else:
         out = mid
 
-    if Debug:
-        print(out)
+    Logger.debug(out)
+
     return out

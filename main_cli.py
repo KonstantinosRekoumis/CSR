@@ -42,7 +42,7 @@ def main(filepath, ship_plots, pressure_plots):
     # import geometry data
     ship = IO.load_ship(filepath)
     logger = DataLogger(ship)
-    logger.LoadData()
+    logger.load_data()
     Logger.success(f' The ship at location {filepath} has been successfully loaded.')
     if ship_plots:
         rnr.lines_plot(ship)
@@ -56,7 +56,7 @@ def main(filepath, ship_plots, pressure_plots):
     phzx.static_total_eval(ship, 16, RHO_S, False)
     hsm1, hsm2 = phzx.dynamic_total_eval(ship, 16, 'HSM', False)
     bsp1, bsp2 = phzx.dynamic_total_eval(ship, 16, 'BSP', False)
-    logger.LoadConds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
+    logger.load_conds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
         rnr.pressure_plot(ship, 'HSM-1', 'SEA,ATM', path='./essay/HSM1_Shell.pdf')
         rnr.pressure_plot(ship, 'STATIC', 'SEA,ATM', path='./essay/STATIC_Shell.pdf')
