@@ -4,9 +4,10 @@ import math
 from modules.baseclass.block import AtmSur, Block, SeaSur
 from modules.baseclass.plate import StiffPlate
 from modules.constants import LOADS
-from modules.utilities import Logger
+from modules.utilities import Logger, auto_str
 
 
+@auto_str
 class Ship:
     """`Ship` The class-envelope of the entire design procedure.
     All the available data input to the programme are stored here.
@@ -216,35 +217,7 @@ class Ship:
         self.Ixx, self.Iyy = self.Calculate_I(n50=False)
         self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
 
-    def Debug(self):
-        print('symmetrical : ', self.symmetrical)
-        print('LBP : ', self.LBP)
-        print('Lsc : ', self.Lsc)
-        print('B : ', self.B)
-        print('T : ', self.T)
-        print('Tmin : ', self.Tmin)
-        print('Tsc : ', self.Tsc)
-        print('D : ', self.D)
-        print('Cb : ', self.Cb)
-        print('Cp : ', self.Cp)
-        print('Cm : ', self.Cm)
-        print('DWT : ', self.DWT)
-        print('PSM_spacing : ', self.PSM_spacing)
-        print('Mwh : ', self.Mwh)
-        print('Mws : ', self.Mws)
-        print('Msw_h_mid : ', self.Msw_h_mid)
-        print('Msw_s_mid : ', self.Msw_s_mid)
-        print('Cw : ', self.Cw)
-        print('STIFF PLATES')
-        [print(i) for i in self.stiff_plates]
-        print('BLOCKS')
-        [print(i, 2) for i in self.blocks]
-        print('yo : ', self.yo)
-        print('Ixx : ', self.Ixx)
-        print('n50_Ixx : ', self.n50_Ixx)
-        print('a0 : ', self.a0)
-
     def data_input(self, text):
-        # Do stuff with text
+        if "data" not in self.__dict__:
+            self.data = text
         self.data += text
-

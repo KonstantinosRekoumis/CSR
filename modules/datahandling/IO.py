@@ -103,15 +103,13 @@ def load_ship(filename, file=None):
         quit()
     try:
         blocks = blocks_parser(data['blocks'])
-        if len(blocks) == 0:
-            print(ERROR, "Check your input file", RESET)
-            quit()
+        if not blocks:
+            Logger.error("Check your input file")
     except KeyError:
-        print(ERROR,
-              "The input file is not appropriately formatted, "
-              "and it is missing crucial data.\n Value: 'geometry' is missing.",
-              RESET)
-        quit()
+        Logger.error(
+            "The input file is not appropriately formatted, "
+            "and it is missing crucial data.\n Value: 'geometry' is missing.",
+        )
 
     return ship.Ship(*particulars, stiff_plates, blocks)
 

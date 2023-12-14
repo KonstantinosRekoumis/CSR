@@ -21,40 +21,40 @@ def latex_output(data_logger : DataLogger, standalone=False, figs=()):
     ship = data_logger.ship
     mid = ''
     GeneralPart = (
-        '\\chapter{General Input Data Particulars}\n'
-        '\\label{sec:General Particulars}\n'
-        '\\begin{table}[h]\n'
-        '\\caption{Ship\'s General Input Data Particulars}\n'
-        '\\label{tab:Gen_Part}\n'
-        '\\begin{tabular}{{>{\centering}m{6cm}}*{2}{>{\centering}m{4cm}}}\n'
-        '\\hline\n'
-        '$L_{BP}$ '+f'&{ship.LBP}&'+' [m]\\tabularnewline \\hline\n'
-        '$L_{sc} = L$ '+f'&{ship.Lsc}&'+' [m]\\tabularnewline \\hline\n'
-        '$B$ '+f'&{ship.B}&'+' [m]\\tabularnewline \\hline\n'
-        '$T$ '+f'&{ship.T}&'+' [m]\\tabularnewline \\hline\n'
-        '$T_{min}$ '+f'&{ship.Tmin}&'+' [m]\\tabularnewline \\hline\n'
-        '$T_{sc}$ '+f'&{ship.Tsc}&'+' [m]\\tabularnewline \\hline\n'
-        '$D$ '+f'&{ship.D}&'+' [m]\\tabularnewline \\hline\n'
-        '$C_b$ '+f'&{ship.Cb}&'+' \\tabularnewline \\hline\n'
-        '$C_p$ '+f'&{ship.Cp}&'+' \\tabularnewline \\hline\n'
-        '$C_m$ '+f'&{ship.Cm}&'+' \\tabularnewline \\hline\n'
-        '$DWT$ '+f'&{ship.DWT}&'+' \\tabularnewline \\hline\n'
-        'k (material factor) '+f'&{ship.kappa : 0.3g}&'+' [m]\\tabularnewline \\hline\n'
-        '$M_{wh}$ '+f'&{round(ship.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
-        '$M_{ws}$ '+f'&{round(ship.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
-        '$M_{sw,h-mid}$ '+f'&{round(ship.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
-        '$M_{sw,s-mid}$ '+f'&{round(ship.Msw_s_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
-        '$C_w$ '+f'&{round(ship.Cw,3)}&'+' \\tabularnewline \\hline\n'
-        '$y_{neutral}$ '+f'&{round(ship.yo,3)}&'+' [m]\\tabularnewline \\hline\n'
-        '$I_{net,\, v}$ '+f'&{round(ship.Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
-        '$I_{n-50,\, v}$ '+f'&{round(ship.n50_Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
-        '$a_0$   '+f'&{round(ship.a0,5)}&'+' \\tabularnewline \\hline\n'
-        '\\end{tabular}\n'
-        '\\end{table}\n\n')
+    '\\chapter{General Input Data Particulars}\n'
+    '\\label{sec:General Particulars}\n'
+    '\\begin{table}[h]\n'
+    '\\caption{Ship\'s General Input Data Particulars}\n'
+    '\\label{tab:Gen_Part}\n'
+    '\\begin{tabular}{{>{\centering}m{6cm}}*{2}{>{\centering}m{4cm}}}\n'
+    '\\hline\n'
+    '$L_{BP}$ '+f'&{ship.LBP}&'+' [m]\\tabularnewline \\hline\n'
+    '$L_{sc} = L$ '+f'&{ship.Lsc}&'+' [m]\\tabularnewline \\hline\n'
+    '$B$ '+f'&{ship.B}&'+' [m]\\tabularnewline \\hline\n'
+    '$T$ '+f'&{ship.T}&'+' [m]\\tabularnewline \\hline\n'
+    '$T_{min}$ '+f'&{ship.Tmin}&'+' [m]\\tabularnewline \\hline\n'
+    '$T_{sc}$ '+f'&{ship.Tsc}&'+' [m]\\tabularnewline \\hline\n'
+    '$D$ '+f'&{ship.D}&'+' [m]\\tabularnewline \\hline\n'
+    '$C_b$ '+f'&{ship.Cb}&'+' \\tabularnewline \\hline\n'
+    '$C_p$ '+f'&{ship.Cp}&'+' \\tabularnewline \\hline\n'
+    '$C_m$ '+f'&{ship.Cm}&'+' \\tabularnewline \\hline\n'
+    '$DWT$ '+f'&{ship.DWT}&'+' \\tabularnewline \\hline\n'
+    'k (material factor) '+f'&{ship.kappa : 0.3g}&'+' [m]\\tabularnewline \\hline\n'
+    '$M_{wh}$ '+f'&{round(ship.Mwh,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+    '$M_{ws}$ '+f'&{round(ship.Mws,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+    '$M_{sw,h-mid}$ '+f'&{round(ship.Msw_h_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+    '$M_{sw,s-mid}$ '+f'&{round(ship.Msw_s_mid,2)}&'+' [kNm]\\tabularnewline \\hline\n'
+    '$C_w$ '+f'&{round(ship.Cw,3)}&'+' \\tabularnewline \\hline\n'
+    '$y_{neutral}$ '+f'&{round(ship.yo,3)}&'+' [m]\\tabularnewline \\hline\n'
+    '$I_{net,\, v}$ '+f'&{round(ship.Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
+    '$I_{n-50,\, v}$ '+f'&{round(ship.n50_Ixx,2)}&'+' [$m^4$]\\tabularnewline \\hline\n'
+    '$a_0$   '+f'&{round(ship.a0,5)}&'+' \\tabularnewline \\hline\n'
+    '\\end{tabular}\n'
+    '\\end{table}\n\n')
     figures = ''
     if len(figs) != 0:
         for i in figs:
-            figures+=(
+            figures +=(
                 '\\begin{figure}[h]\n'
                 '\\centering\n'
                 '\\includegraphics[width=\linewidth]{'
@@ -117,6 +117,8 @@ def latex_output(data_logger : DataLogger, standalone=False, figs=()):
         out = TEX_PREAMBLE + '\\begin{document}' + mid + '\\end{document}'
     else:
         out = mid
+
+    Logger.debug(out)
 
     Logger.debug(out)
 

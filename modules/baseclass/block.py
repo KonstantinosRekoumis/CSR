@@ -2,9 +2,10 @@
 import math
 
 from modules.baseclass.plate import StiffPlate
-from modules.utilities import d2r, normals_2d, linespace, Logger
+from modules.utilities import d2r, normals_2d, linespace, Logger, auto_str
 
 
+@auto_str
 class Block:
     """
     ------------------------------------------\n
@@ -76,7 +77,7 @@ class Block:
         return f"BLOCK : {self.name} of type {self.space_type}"
 
     def Kc_eval(self, start, end, stiff_plate_type):
-        if self.Kc != None:
+        if self.Kc is not None:
             try:
                 kc = lambda a: math.cos(a) ** 2 + (1 - math.sin(d2r(self.payload['psi']))) * math.sin(a) ** 2
             except KeyError:
@@ -252,6 +253,7 @@ class Block:
         return None
 
 
+@auto_str
 class SeaSur(Block):
     def __init__(self, list_plates_id: list[int]):
         super().__init__("SEA", True, 'VOID', list_plates_id)
@@ -269,6 +271,7 @@ class SeaSur(Block):
         self.coords.append((self.coords[0][0], self.coords[0][1] - 2))
 
 
+@auto_str
 class AtmSur(Block):
     def __init__(self, list_plates_id: list[int]):
         super().__init__("ATM", True, 'VOID', list_plates_id)

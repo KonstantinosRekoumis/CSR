@@ -110,6 +110,9 @@ class Logger:
 
     @staticmethod
     def warning(*args):
+        """
+        Second-highest priority logging function.
+        """
         if Logger.LEVEL < 2:
             return
         print(f"{LogLevelColours.WARNING}{datetime.now().strftime('%H:%M:%S')}|WARNING|{Logger.get_file()}|{Logger.get_parent()}",
@@ -118,7 +121,13 @@ class Logger:
               file=Logger.OUT)
 
     @staticmethod
-    def error(*args, rethrow: Exception = None):
+    def error(*args, die=True, rethrow: Exception = None):
+        """
+        Highest-priority logging function.
+        :param die: Whether to die or not upon calling this function. Defaults to True.
+        :raises RuntimeError: This is raised if die is set to True.
+        """
+
         if Logger.LEVEL < 1:
             return
         print(f"{LogLevelColours.ERROR}{datetime.now().strftime('%H:%M:%S')}|ERROR|{Logger.get_file()}|{Logger.get_parent()}",
@@ -130,6 +139,7 @@ class Logger:
             raise rethrow
 
         raise RuntimeError(*args)
+
 
 # Writing boilerplate code to avoid writing boilerplate code!
 # https://stackoverflow.com/questions/32910096/is-there-a-way-to-auto-generate-a-str-implementation-in-python
