@@ -55,18 +55,16 @@ class Data:
             'BSP-1P': 0.80, 'BSP-2P': 0.80,
             'OST-1P': 1.00, 'OST-2P': 1.00,
             'OSA-1P': 1.00, 'OSA-2P': 1.00,
-        }  # pp. 186 Part 1 Chapter 4 Section 4
+        }  # pp. 186 Part 1 Chapter 4, Section 4
         try:
             self.fb = self.fbeta[self.cond]
-        except KeyError:
-            Logger.error(f'PhysicsData/__init__(): {self.cond} is not a valid Dynamic Condition abbreviation.')
-            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", default=False)
-            [Logger.error(f"{i}", default=False) for i in self.fbeta]
-            Logger.error(
-                'Currently supported conditions are : HSM and BSP.\n The other conditions will result in invalid results',
-                default=False)
-            Logger.error('The Program Terminates...', default=False)
-            quit()
+        except KeyError as e:
+            Logger.error(f'PhysicsData/__init__(): {self.cond} is not a valid Dynamic Condition abbreviation.', die=False)
+            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", die=False)
+            [Logger.error(f"{i}", die=False) for i in self.fbeta]
+            Logger.error('Currently supported conditions are : HSM and BSP.', die=False)
+            Logger.error('The other conditions will result in invalid results', die=False)
+            Logger.error('The Program Terminates...', rethrow=e)
 
         self.flp = 1.0 if (self.fxL >= 0.5) else -1.0
 
@@ -184,10 +182,9 @@ class Data:
                 self.wave_pressure = functions[self.cond[:-3]]
             else:
                 self.wave_pressure = functions[self.cond[:-2]]
-        except KeyError:
-            Logger.error(
-                f'(physics.py) PhysicsData/wave_pressure_functions: \'{self.cond[:-2]}\' is not yet supported. Program terminates to avoid unpredictable behavior...')
-            quit()
+        except KeyError as e:
+            Logger.error(f"(physics.py) PhysicsData/wave_pressure_functions: '{self.cond[:-2]}' is not yet supported. "
+                         f"Program terminates to avoid unpredictable behavior...", rethrow=e)
 
     def moments_eval(self):
         '''

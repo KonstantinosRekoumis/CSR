@@ -132,6 +132,10 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     _1_ -> indicates whether we are interested in the BSP-1 or BSP-2, taking the values True and False respectively
     Port -> indicates whether we are working on the Port or Starboard side, taking the values True and False respectively
     """
+    # for the time being it can be left like this as a symmetrical case focused on Port
+    if not Port:
+        Logger.error('Dont mess with the Port Setting for the time being...')
+
     fnl = 0.8  # @50% Lbp pp 202
 
     fxL, fps, fbeta, ft, rho, LBP, B, Cw, Lsc, Tlc, D = cons_
@@ -139,12 +143,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     l = 0.2 * (1 + 2 * ft) * LBP
 
     fyB = lambda y: 2 * y / B
-    # for the time being it can be left like this as a symmetrical case focused on Port
-    if Port:
-        fyz = lambda y, z: 2 * z / Tlc + 2.5 * fyB(y) + 0.5  # worst case scenario
-    else:
-        Logger.error('Dont mess with the Port Setting. For the time being...')
-        quit()
+    fyz = lambda y, z: 2 * z / Tlc + 2.5 * fyB(y) + 0.5  # worst case scenario
 
     Pbsp = lambda y, z: 4.5 * fbeta * fps * fnl * fyz(y, z) * Cw * math.sqrt((l + Lsc - 125) / LBP)
 

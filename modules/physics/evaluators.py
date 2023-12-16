@@ -6,7 +6,7 @@ from modules.physics.internal import dynamic_dry_cargo_pressure, dynamic_liquid_
 from modules.utils.logger import Logger
 
 
-def dynamic_total_eval(ship: Ship, Tlc: float, case: str, LOG=True):
+def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
     if case in ('BSR', 'BSP', 'OSA', 'OST'):
         _1, _2 = '-1P', '-2P'
     elif case in ('HSM', 'HSA', 'FSM'):
@@ -35,7 +35,7 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str, LOG=True):
                 F = void_pressure
 
             Pd = F(*args(c))
-            if (None not in Pd) and LOG:
+            if None not in Pd:
                 Logger.success(f'{c.cond} CASE STUDY:\nCalculated block: ', i)
                 Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
                 [Logger.success(
@@ -44,7 +44,7 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str, LOG=True):
     return case_1, case_2
 
 
-def static_total_eval(ship: Ship, Tlc: float, rho: float, LOG=True):
+def static_total_eval(ship: Ship, Tlc: float, rho: float):
     for i in ship.blocks:
         if i.space_type == 'SEA':
             F = block_hydrostatic_pressure
@@ -59,7 +59,7 @@ def static_total_eval(ship: Ship, Tlc: float, rho: float, LOG=True):
             args = (i, False)
 
         Pd = F(*args)
-        if (None not in Pd) and LOG:
+        if None not in Pd:
             Logger.success(f'STATIC CASE STUDY:\nCalculated block: ', i)
             Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
             [Logger.success(
