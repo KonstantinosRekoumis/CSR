@@ -128,7 +128,8 @@ class Logger:
     def error(*args, die=True, rethrow: Exception = None):
         """
         Highest-priority logging function.
-        :param die: Whether to die or not upon calling this function. Defaults to True.
+        :param die: Whether to die or not upon calling this function. Useful for unexpected errors. Defaults to True.
+        :param rethrow: Whether to rethrow the specified exception. Useful for error messages. Defaults to None.
         :raises RuntimeError: This is raised if die is set to True.
         """
 
@@ -142,8 +143,8 @@ class Logger:
         if rethrow is not None:
             raise rethrow
 
-        # FIXME if die:
-        raise RuntimeError(*args)
+        if die:
+            raise RuntimeError(*args)
 
 
 class FileNotOpenError(Exception):
