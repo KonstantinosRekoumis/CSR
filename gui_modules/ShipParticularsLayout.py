@@ -1,5 +1,7 @@
-from PySide6.QtWidgets import (QLabel, QPushButton, QVBoxLayout, QStackedLayout)
-import modules.classes as cls
+from PySide6.QtWidgets import QStackedLayout
+
+from modules.baseclass.ship import Ship
+
 
 class ShipParticLayout(QStackedLayout):
     """
@@ -13,6 +15,7 @@ class ShipParticLayout(QStackedLayout):
         - Figure of the defined Volumes\\blocks
         - Figure of the MidShip Section
     """
-    def __init__(self,ship :cls.ship,parent=None):
-        super(ShipParticLayout,self).__init__(parent)
+
+    def __init__(self, ship: Ship, parent=None):
+        super(ShipParticLayout, self).__init__(parent)
         self.ship = ship

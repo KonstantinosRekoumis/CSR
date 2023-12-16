@@ -4,13 +4,13 @@
 
 # Materials Constant Array see. CSR ... to be filled
 import math
-from modules.baseclass.plate import StiffPlate
+from modules.baseclass.stiff_plate import StiffPlate
 from modules.baseclass.block import Block
 from modules.baseclass.ship import Ship
-from modules.datahandling.datalogger import DataLogger
-from modules.physics.physics import PhysicsData, block_to_plate_per_case
-from modules.constants import MATERIALS
-from modules.utilities import Logger
+from modules.io.datalogger import DataLogger
+from modules.physics.data import Data
+from modules.utils.constants import MATERIALS
+from modules.utils.logger import Logger
 
 
 # page 378 the application table
@@ -170,7 +170,7 @@ def minimum_stiff_net_thickness(plate: StiffPlate, l2: float):
                 stiff.plates[1].net_thickness_empi = plate.stiffeners[0].plates[1].net_thickness_empi
 
 
-def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: PhysicsData, dynamic=False, debug=False):
+def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Data, dynamic=False, debug=False):
     """
     IACS Part 1 Chapter 6, Section 4
     """
@@ -254,7 +254,7 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Physi
     plate.update()
 
 
-def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: PhysicsData, dynamic=False):
+def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, dynamic=False):
     """
     IACS Part 1 Chapter 6, Section 4
     """
@@ -417,7 +417,7 @@ def buckling_evaluator(ship: Ship):
 
 
 # ----------------  Loading cases manager function  ----------------------------
-def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict, logger: DataLogger):
+def loading_cases_eval(ship: Ship, case: Data, condition: dict, logger: DataLogger):
     """
     condition = {
         'Dynamics':'SD',
@@ -476,12 +476,12 @@ def loading_cases_eval(ship: Ship, case: PhysicsData, condition: dict, logger: D
             p = []
             for block in blocks:
                 # force the singular evaluation of each pressure distribution
-                p.append(block_to_plate_per_case(plate, [block], case, condition['Dynamics'], return_=True))
+                p.append(plate_pressure_assigner(plate, [block], case, condition['Dynamics'], return_=True))
             p_max = maximum_p(p)
             plate.Pressure[case.cond] = p[p_max]
         else:
             # let the function handle the proper aggregation
-            block_to_plate_per_case(plate, blocks, case, condition['Dynamics'])
+            plate_pressure_assigner(plate, blocks, case, condition['Dynamics'])
         logger.update_stiff_plate(plate)  # save pressure maximum pressure data
 
 
@@ -526,7 +526,7 @@ def ship_scantlings(ship: Ship):
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
 
 
-def net_scantling(ship: Ship, case: PhysicsData, dynamics: str, debug=True):
+def net_scantling(ship: Ship, case: Data, dynamics: str, debug=True):
     _Dynamic = False
     if "d" in dynamics or "D" in dynamics:
         _Dynamic = True
@@ -729,3 +729,78 @@ def corrosion_assign(ship: Ship, offload: bool):
                                  )
                     quit()
                 plate.thickness = plate.net_thickness + plate.cor_thickness
+
+
+def plate_pressure_assigner(blocks: list[Block], plate: StiffPlate, case: Data, load: str):
+    """
+    ---------------------------------------------------------------------------
+    Populate the pressure data of each plate\n
+    Based on which plate is on top of whom (z = 0 @ keel, positives extend to the Main Deck )\n
+    Transverse plates are not implemented yet.
+    return_ parameter switches the data flow from immediate population of the Pressure Dictionary
+     to return the Pressure Data in a variable
+    ---------------------------------------------------------------------------
+    """
+
+    def mul(a, b):
+        """
+        Consider 2 vectors 2-D vectors
+        """
+
+        try:
+            for i in (a, b):
+                if len(i) != 2:
+                    raise ValueError()
+            return a[0] * b[0] + a[1] * b[1]
+        except ValueError:
+            Logger.error(f'(physics.py) block_to_plate_perCase/mul: Plate {plate} Vector {i} is not of proper type.')
+            quit()
+
+    def add_proj(a, b, proj_v, intermediate=False):
+        """
+        Input arguments are two Pressure data lists obtained from a block and a projection vector (the normals of a plate or a block)
+        """
+        P = []
+        if len(a) != len(b):
+            Logger.error(
+                f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Vector b has length {len(b)} !')
+        elif len(a) != len(proj_v):
+            Logger.error(
+                f'(physics.py) block_to_plate_perCase/add_proj: Plate {plate} Vector a has length {len(a)} while Projection Vector  has length {len(proj_v)} !')
+        for i in range(len(a)):
+            P0 = (a[i][2] * a[i][4], a[i][3] * a[i][4])  # (etax*P,etay*P)
+            P1 = (b[i][2] * b[i][4], b[i][3] * b[i][4])  # (etax*P,etay*P)
+            # Pressures are applied plate side!
+            if not intermediate:
+                P.append((a[i][0], a[i][1], mul(proj_v[i], (
+                    P0[0] + P1[0],
+                    P0[1] + P1[1]))))  # Vector Addition for the pressures and then projection on the plate
+            else:
+                P.append((a[i][0], a[i][1], proj_v[i][0], proj_v[i][1], mul(proj_v[i], (
+                    P0[0] + P1[0],
+                    P0[1] + P1[1]))))  # Vector Addition for the pressures and then projection on the plate
+        return P
+
+    P = []
+    out_P = []
+    if 'S' not in load or 'D' not in load:
+        Logger.error(f"Load parameter is not of correct type. "
+                     f"Expected 'S' or 'D' or 'S+D' etc. got {load}.")
+    for i, block in enumerate(blocks):
+        tmp = []
+        if "D" in load:
+            tmp.append(block.pressure_over_plate(plate, case.cond))
+        if "S" in load:
+            tmp.append(block.pressure_over_plate(plate, "STATIC"))
+        if len(tmp) == 2:
+            normals = [(i[2], i[3]) for i in tmp[0]]
+            P.append(add_proj(tmp[0], tmp[1], normals, intermediate=True))
+        elif len(tmp) == 1:
+            P.append(tmp[0])
+
+    if len(P) == 2:
+        out_P = add_proj(P[0], P[1], [plate.plate.eta[0] for _ in P[0]])
+    elif len(P) == 1:
+        out_P = P[0]
+
+    return out_P

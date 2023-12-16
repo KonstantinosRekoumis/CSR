@@ -4,40 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
-from modules.utilities import Logger
+from modules.utils.logger import Logger
 from modules.baseclass.ship import Ship
-
-
-def normalize(a: list):
-    maxima = max(map(lambda x: abs(x), a))
-    maxima = maxima if maxima != 0 else -1
-
-    return list(map(lambda x: x / maxima, a))
-
-
-def normals_2d(geom, flip_n=False, show_norms=False):
-    eta = np.ndarray((len(geom) - 1, 2))
-    for i in range(len(geom) - 1):
-        xba = geom[i + 1, 0] - geom[i, 0]
-        yba = geom[i + 1, 1] - geom[i, 1]
-        if flip_n:
-            yba = - yba
-            xba = - xba
-        nrm2 = np.sqrt(yba ** 2 + xba ** 2)
-        if nrm2 == 0:
-            Logger.warning(f"eta = {eta}, norm = {nrm2}, geom = {geom}")
-            assert nrm2 != 0
-        eta[i, 0] = yba / nrm2
-        eta[i, 1] = -xba / nrm2
-
-    # Debug only for standalone call
-    if show_norms:
-        fig, ax = plt.subplots()
-        ax.plot(geom[0:-2, 0], geom[0:-2, 1])
-        ax.quiver(geom[0:-2, 0], geom[0:-2, 1], eta[:, 0], eta[:, 1])
-        plt.show()
-
-    return eta
+from modules.utils.operations import normals_2d_np, normalize
 
 
 def lines_plot(ship: Ship, show_w=False, color="black", axis_padding=(3, 1), fig=None, ax=None):
@@ -183,12 +152,12 @@ def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mod
 
         for j, _ in enumerate(x):
             if j == 0:
-                eta = normals_2d(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=True, show_norms=False)
+                eta = normals_2d_np(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=True, show_norms=False)
                 _Px_.append(eta[0, 0] * p[j])
                 _Py_.append(eta[0, 1] * p[j])
                 continue
 
-            eta = normals_2d(np.array([[x[j], y[j]], [x[j - 1], y[j - 1]]]), flip_n=False, show_norms=False)
+            eta = normals_2d_np(np.array([[x[j], y[j]], [x[j - 1], y[j - 1]]]), flip_n=False, show_norms=False)
             _Px_.append(eta[0, 0] * p[j])
             _Py_.append(eta[0, 1] * p[j])
 

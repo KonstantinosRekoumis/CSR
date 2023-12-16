@@ -1,36 +1,37 @@
-
 import math
 
-from modules.baseclass.plate import StiffPlate
-from modules.utilities import d2r, normals_2d, linespace, Logger, auto_str
+from modules.baseclass.stiff_plate import StiffPlate
+from modules.utils.decorators import auto_str
+from modules.utils.operations import d2r, linespace, normals_2d
+from modules.utils.logger import Logger
 
 
 @auto_str
 class Block:
     """
-    ------------------------------------------\n
+    ------------------------------------------
     Block class can be useful to evaluate the plates that consist a part of the Midship 
-    Section, ie. a Water Ballast tank, or Cargo Space.\n
-    This is done to further enhance the clarity of what substances are in contact with certain plates.\n
-    Currently are supported 5 Volume Categories :\n
-    1) Water Ballast -> type : WB\n
-    2) Dry Cargo -> type: DC\n
-    3) Liquid Cargo -> type: LC    \n
-    4) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL\n
-    5) Fresh Water -> type: FW\n
-    6) Dry/Void Space -> type: VOID\n
-    ------------------------------------------\n
+    Section, ie. a Water Ballast tank, or Cargo Space.
+    This is done to further enhance the clarity of what substances are in contact with certain plates.
+    Currently are supported 5 Volume Categories :
+    1) Water Ballast -> type : WB
+    2) Dry Cargo -> type: DC
+    3) Liquid Cargo -> type: LC    
+    4) Fuel Oil/ Lube Oil/ Diesel Oil -> type: OIL
+    5) Fresh Water -> type: FW
+    6) Dry/Void Space -> type: VOID
+    ------------------------------------------
     In order to properly calculate the Pressure Distributions the normal Vectors need to be properly evaluated.
     Is considered that the Global Positive Direction is upwards of Keel (z = 0) towards the Main Deck.
     However, the local positive axis are outwards for the internal Tanks and inwards for
-    the SEA and ATMosphere Blocks. So, pay attention to the way the plates are inserted and blocks are evaluated.\n
+    the SEA and ATMosphere Blocks. So, pay attention to the way the plates are inserted and blocks are evaluated.
     It would be preferable to have a counterclockwise plate definition order for shell plates and a clockwise order
-    for internal plates. Also, use the minus before each plate id at the input file to address the block's boundary direction on the specified plate.\n
+    for internal plates. Also, use the minus before each plate id at the input file to address the block's boundary direction on the specified plate.
     For example, a shell plate at Draught has a certain orientation that is uniform with the SEA block
     (the stiffeners (and normals) are facing inwards) while the WB block requires a different direction
     (normals facing outwards). For this purpose, the id in the WB block would be
-    -id.\n
-    !!! BE CAREFUL THAT A CLOSED SMOOTH GEOMETRY IS CREATED !!!\n Verify the block appropriate set up using the
+    -id.
+    !!! BE CAREFUL THAT A CLOSED SMOOTH GEOMETRY IS CREATED !!! Verify the block appropriate set up using the
     *block_plot(ship)* and *pressure_plot(ship,'Null','<block tag>')* rendering methods.
 
         Args:
@@ -69,12 +70,6 @@ class Block:
             self.Kc = []
         else:
             self.Kc = None
-
-    def __repr__(self):
-        return f"BLOCK: type:{self.space_type}, ids: {self.list_plates_id}"
-
-    def __str__(self):
-        return f"BLOCK : {self.name} of type {self.space_type}"
 
     def Kc_eval(self, start, end, stiff_plate_type):
         if self.Kc is not None:
@@ -243,7 +238,7 @@ class Block:
                 if self.space_type != 'ATM' and pressure_index != 'STATIC':
                     Logger.warning(
                         f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated '
-                        f'for block {self}.\n !Returning zeros as pressure!')
+                        f'for block {self}. !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i], *self.eta[i], 0) for i in range(x0, x1 + 1, 1)]
 
         Logger.warning(
@@ -251,39 +246,3 @@ class Block:
             f'that does not belong in the block {self}. Returning None'
         )
         return None
-
-
-@auto_str
-class SeaSur(Block):
-    def __init__(self, list_plates_id: list[int]):
-        super().__init__("SEA", True, 'VOID', list_plates_id)
-        self.space_type = "SEA"
-
-    def get_coords(self, stiff_plates: list[StiffPlate]):
-        super().get_coords(stiff_plates)
-        # add a buffer zone for sea of 2 m
-        if len(self.coords) == 0:
-            Logger.error("SEA Boundary plates are missing!. The program terminates...")
-            quit()
-        end = self.coords[-1]
-        self.coords.append((end[0] + 2, end[1]))
-        self.coords.append((end[0] + 2, self.coords[0][1] - 2))
-        self.coords.append((self.coords[0][0], self.coords[0][1] - 2))
-
-
-@auto_str
-class AtmSur(Block):
-    def __init__(self, list_plates_id: list[int]):
-        super().__init__("ATM", True, 'VOID', list_plates_id)
-        self.space_type = "ATM"
-
-    def get_coords(self, stiff_plates: list[StiffPlate]):
-        super().get_coords(stiff_plates)
-        # add a buffer zone for atmosphere of 2 m
-        if len(self.coords) == 0:
-            Logger.error("WEATHER DECK Boundary plates are missing!. The program terminates...")
-            quit()
-        end = self.coords[-1]
-        self.coords.append((end[0], end[1] + 2))
-        self.coords.append((self.coords[0][0] + 2, self.coords[0][1] + 2))
-        self.coords.append((self.coords[0][0] + 2, self.coords[0][1]))

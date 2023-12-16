@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QTableWidget,QTableWidgetItem,QItemDelegate)
 from PySide6.QtCore import Qt
-from modules.utilities import Logger
+from modules.utils.logger import Logger
 
 
 class AlignDelegate(QItemDelegate):

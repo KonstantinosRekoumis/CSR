@@ -1,9 +1,10 @@
 import numpy as np
-from modules.baseclass.plate import StiffPlate
+
+from modules.baseclass.stiff_plate import StiffPlate
 from modules.baseclass.ship import Ship
-from modules.constants import LOADS, TEX_PREAMBLE
-from modules.datahandling.datacell import DataCell
-from modules.utilities import Logger, auto_str
+from modules.io.datacell import DataCell
+from modules.utils.decorators import auto_str
+from modules.utils.logger import Logger
 
 
 @auto_str

@@ -1,25 +1,11 @@
-# -_-
-# #################################
-"""
-Structural Calculator for Bulk Carriers
-Courtesy of Navarx0s and his st0los
-
-Studies HSM and BSP conditions at midships
-"""
-# #################################
-# _____ IMPORTS _____
-# import ezdxf #to be installed 
-
-# _____ CALLS _______
-
-import modules.datahandling.IO as IO
-import modules.physics.physics as phzx
+import modules.io.IO as IO
+import modules.physics.evaluators
 import modules.render as rnr
 import modules.rules as csr
-from modules.constants import RHO_S
-from modules.datahandling.datalogger import DataLogger
-from modules.datahandling.latex import generate_latex_rep
-from modules.utilities import Logger
+from modules.utils.constants import RHO_S
+from modules.io.datalogger import DataLogger
+from modules.io.latex import generate_latex_rep
+from modules.utils.logger import Logger
 
 
 def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger):
@@ -61,9 +47,9 @@ def main(filepath, ship_plots, pressure_plots):
     Logger.info(' Evaluating Corrosion Reduction for stiffened plates...')
     csr.corrosion_assign(ship, offload=True)
     Logger.info(' Proceeding to calculating the Specified Static and Dynamic Cases..')
-    phzx.static_total_eval(ship, 16, RHO_S, False)
-    hsm1, hsm2 = phzx.dynamic_total_eval(ship, 16, 'HSM', False)
-    bsp1, bsp2 = phzx.dynamic_total_eval(ship, 16, 'BSP', False)
+    modules.physics.evaluators.static_total_eval(ship, 16, RHO_S, False)
+    hsm1, hsm2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'HSM', False)
+    bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'BSP', False)
     logger.load_conds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
         rnr.pressure_plot(ship, 'HSM-1', 'SEA,ATM', path='./essay/HSM1_Shell.pdf')
@@ -121,5 +107,5 @@ if __name__ == "__main__":
         main('./out.json', False, False)
     # Single Step Manual Design evaluation
     else:
-        main('./structural-out/final.json', True, True)
+        main('out/final.json', True, True)
         Logger.info('Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
