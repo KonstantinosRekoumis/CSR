@@ -1,6 +1,6 @@
 import os
 from importlib import resources as resources
-from importlib.abc import Traversable
+from importlib.resources.abc import Traversable
 from io import TextIOWrapper
 from typing import Self, Iterator
 
@@ -13,15 +13,10 @@ class Resource:
     """
     Opens a read-only local resource located in the local /resources module.
     The resource will be automatically found based on its filename.
-    Only usabel with a context manager.
-
-    If there's a filename conflict, for example there are files on different
-    levels of directories with the same filename, in order to avoid conflicts,
-    use the "module" parameter to specify the relative path from the top-level
-    /resources folder.
+    Usable with a context manager.
     """
 
-    def __init__(self, fname: str, module: str = "", binary: bool = False, **kwargs):
+    def __init__(self, *path: str, binary: bool = False, **kwargs):
         """
         :param fname: Name of the file to open.
         :param module: The directory filter. Specify in "import" style, for example: "dir.subdir"
@@ -29,32 +24,17 @@ class Resource:
         :param kwargs: Kwargs to pass to file.open(mode, **kwargs)
         """
 
-        self.fname = fname
-        self.path = module
+        self.path = list(path)
         self.bmode = binary
         # noinspection PyTypeChecker
         self.file_descriptor: TextIOWrapper = None
+        # noinspection PyTypeChecker
+        self.resource: Traversable = None
+
         self.kwargs = kwargs
 
     def __enter__(self) -> Self:
-        directory_specifier = self.path.split(".") if self.path else None
-
-        toplevel_resources_module = resources.files('resources')
-        for resource in Resource.iterate_directory(toplevel_resources_module):
-            if resource.name == self.fname:
-                # directory filter
-                if directory_specifier:
-                    full_path = str(resource).split(os.sep)
-                    resource_contents_index = full_path.index("resources") + 1  # shift to the right
-                    relative_path = full_path[resource_contents_index:-1]
-                    for specified_dir, relative_dir in zip(directory_specifier, relative_path):
-                        if specified_dir != relative_dir:
-                            continue
-                self.file_descriptor = resource.open("rb" if self.bmode else "r", **self.kwargs)
-                break
-
-        if not self.file_descriptor:
-            raise FileNotFoundError
+        self.open()
 
         return self
 
@@ -62,22 +42,60 @@ class Resource:
         if self.file_descriptor is None:
             raise RuntimeError("self.file_descriptor is none in __exit__?!")
 
+        self.close()
+
+    def open(self):
+        self.__cache_resource()
+        self.file_descriptor = self.resource.open("rb" if self.bmode else "r", **self.kwargs)
+
+    def close(self):
         if not self.file_descriptor.closed:
             self.file_descriptor.close()
 
         self.file_descriptor = None
 
+    def is_closed(self) -> bool:
+        return self.file_descriptor is None or self.file_descriptor.closed
+
     @property
-    def contents(self) -> TextIOWrapper:
+    def handle(self) -> TextIOWrapper:
         """
+        Opens the file, if it isn't already, and returns the file handle. Make sure to close after using.
         :raises FileNotOpenError: If the file is not open, raise a FileNotOpenError
         """
-        if self.file_descriptor is None:
-            raise FileNotOpenError()
+        if self.is_closed():
+            self.open()
 
-        # FIXME: this is hacky; it's better to just expose the methods rather than the entire object
-        #  however I'm limited by the technology of my time (meaning, I just don't know how to do it)
         return self.file_descriptor
+
+    @property
+    def absolute_path(self) -> str:
+        self.__cache_resource()
+
+        return str(self.resource)
+
+    def __cache_resource(self):
+        if self.resource is not None:
+            return
+
+        toplevel_resources_module = resources.files('resources')
+        for resource in Resource.iterate_directory(toplevel_resources_module):
+            if resource.name == self.path[-1]:
+                # directory filter
+                full_path = str(resource).split(os.sep)
+                resource_contents_index = full_path.index("resources") + 1  # shift to the right
+                relative_path = full_path[resource_contents_index:]
+
+                if len(self.path) != len(relative_path):
+                    continue
+
+                for specified_dir, relative_dir in zip(self.path, relative_path):
+                    if specified_dir != relative_dir:
+                        continue
+                self.resource = resource
+                return
+
+        raise FileNotFoundError
 
     @staticmethod
     def iterate_directory(directory: Traversable) -> Iterator[Traversable]:

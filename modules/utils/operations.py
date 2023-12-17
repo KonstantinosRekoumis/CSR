@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt
 from modules.utils.logger import Logger
 
 
-def check_one_to_one_relationship(l1: list, l2: list) -> set:
+def set_diff(l1: list, l2: list) -> set:
     """
-    Verifies that all keys in l1 are present in l2 by the difference of their sets.
+    Difference between l1 and l2 sets (l2 - l1).
     """
 
     l1_keys = set(l1)

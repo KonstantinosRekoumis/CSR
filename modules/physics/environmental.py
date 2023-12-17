@@ -171,32 +171,20 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     elif block.space_type == 'ATM':
         x = 1.0  # Section 5.2.2.4, Studying only the weather deck
 
+        Pmin = 14.9 + 0.195 * LBP
         if LBP >= 100:
             Pmin = 34.3  # xl = 0.5
-        else:
-            Pmin = 14.9 + 0.195 * LBP
 
-        hw = Pbsp(B / 2, Tlc) / rho / G
+        hw = -Pbsp(B / 2, Tlc) / rho / G
         if _1_:
             hw = Pbsp(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if Tlc <= point[1] < Tlc + hw:
-                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = max(Pw[i], Pmin)
-                else:
-                    Pw[i] = 0
-                Pw[i] *= x
-        else:
-            hw = -Pbsp(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if Tlc <= point[1] < Tlc + hw:
-                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = max(Pw[i], Pmin)
-                else:
-                    Pw[i] = 0
-                Pw[i] *= x
+        for i, point in enumerate(block.pressure_coords):
+            if Tlc <= point[1] < Tlc + hw:
+                Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
+                Pw[i] = max(Pw[i], Pmin)
+            else:
+                Pw[i] = 0
+            Pw[i] *= x
     if Port:
         key = 'BSP-1P' if _1_ else 'BSP-2P'
     else:
