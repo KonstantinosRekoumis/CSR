@@ -116,10 +116,3 @@ class Resource:
 
         # prevent StopIteration
         return
-
-
-if __name__ == "__main__":
-    with Resource("ui", "subui", "geom_dialog.ui") as r:
-        print(r)
-        print(r.absolute_path)
-        print(r.handle)
