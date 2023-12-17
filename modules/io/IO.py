@@ -7,7 +7,7 @@ from modules.baseclass.plate import Plate
 from modules.baseclass.ship import Ship
 from modules.utils.constants import MATERIALS
 from modules.utils.logger import Logger
-from modules.utils.operations import check_one_to_one_relationship
+from modules.utils.operations import set_diff
 
 
 def plate_save(plate: Plate):
@@ -87,7 +87,7 @@ def load_ship(filename):
         data = json.loads(file.read())
     tags = ['LBP', 'Lsc', 'B', 'T', 'Tmin', 'Tsc', 'D', 'Cb', 'Cp', 'Cm', 'DWT']
 
-    set_diff = check_one_to_one_relationship(tags + ["geometry", "blocks"], data.keys())
+    set_diff = set_diff(tags + ["geometry", "blocks"], data.keys())
     if set_diff:
         Logger.error(
             f"The input file is not appropriately formatted, and it is missing crucial data. "
@@ -165,7 +165,7 @@ def blocks_parser(blocks_t: list):
     required_keys = ["name", "symmetrical", "type", "ids"]
     out = []
     for block in blocks_t:
-        if check_one_to_one_relationship(required_keys, block):
+        if set_diff(required_keys, block):
             Logger.error("Loading block {block} has resulted in an error.")
 
         tmp = Block(block['name'], block['symmetrical'], block['type'], block['ids'])
