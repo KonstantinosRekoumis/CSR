@@ -1,7 +1,36 @@
 import modules.render as rnr
-from modules.constants import TEX_PREAMBLE
-from modules.datahandling.datalogger import DataLogger
-from modules.utilities import Logger
+from modules.io.datalogger import DataLogger
+from modules.utils.logger import Logger
+
+
+TEX_PREAMBLE = (
+    '\\documentclass[12pt,a4paper]{report}\n'
+    '\\usepackage[a4paper,headheight =15pt]{geometry}\n'
+    '\\usepackage{array}\n'
+    '\\usepackage{multirow}\n'
+    '\\usepackage{longtable}\n'
+    '\\usepackage{pdflscape}\n'
+    '\\usepackage{amsmath}\n'
+    '\\usepackage{comment}\n'
+    '\\usepackage{caption}\n'
+    '\\usepackage{graphicx}\n'
+    '\\usepackage{fancyhdr}\n'
+    '\\usepackage{typearea}\n'
+    '\\usepackage[absolute]{textpos}\n'
+    '\\fancypagestyle{normal}{\\fancyhf{}\\rhead{\\thepage}\\lhead{\\leftmark}\\setlength{\\headheight}{15pt}\n'
+    '\\renewcommand{\\headrulewidth}{1pt} \n'
+    '\\renewcommand{\\footrulewidth}{0pt}}\n'
+    '\\fancypagestyle{lscape}{% \n'
+    '\\fancyhf{} % clear all header and footer fields \n'
+    '\\fancyhead[L]{%\n'
+    '\\begin{textblock}{0}(1,12){\\rotatebox{90}{\\underline{\\leftmark}}}\\end{textblock}\n'
+    '\\begin{textblock}{2}(1,1){\\rotatebox{90}{\\underline{\\thepage}}}\\end{textblock}}\n'
+    '\\setlength{\\headheight}{15pt}\n'
+    '\\setlength{\\footheight}{0pt}\n'
+    '\\renewcommand{\\headrulewidth}{0pt} \n'
+    '\\renewcommand{\\footrulewidth}{0pt}}\n'
+    '\\graphicspath{{./}}\n'
+)
 
 
 def generate_latex_rep(data: DataLogger, path='./', _standalone=True):

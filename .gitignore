@@ -3,6 +3,7 @@ essay/
 csr_mods/
 .idea/
 venv/
+logs/
 DOM*
 out.json
 in*.json

@@ -1,10 +1,13 @@
 
 
 import math
-from modules.baseclass.block import AtmSur, Block, SeaSur
-from modules.baseclass.plate import StiffPlate
-from modules.constants import LOADS
-from modules.utilities import Logger, auto_str
+from modules.baseclass.block import Block
+from modules.baseclass.subblocks.atm_sur_block import AtmSur
+from modules.baseclass.subblocks.sea_sur_block import SeaSur
+from modules.baseclass.stiff_plate import StiffPlate
+from modules.utils.constants import LOADS
+from modules.utils.decorators import auto_str
+from modules.utils.logger import Logger
 
 
 @auto_str

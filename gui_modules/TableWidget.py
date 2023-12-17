@@ -2,7 +2,7 @@ from typing import Optional
 from PySide6.QtWidgets import (QTableWidget, QTableWidgetItem, QItemDelegate)
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QComboBox, QStackedLayout)
 from PySide6.QtCore import Qt
-from modules.utilities import Logger
+from modules.utils.logger import Logger
 from modules.datahandling.datalogger import DataLogger
 
 
