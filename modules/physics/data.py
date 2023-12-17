@@ -10,6 +10,7 @@ from modules.utils.operations import d2r, lin_int_dict
 
 @auto_str
 class Data:
+    # RIP PhysicsData. Best Class name ever 2022 - 2023 @Navarx0s misses you
     """
     -------------------------------------------------------------------------------------------------------------------
     PhysicsData: Class that holds each different simulation scenario data to pass to the appropriate
@@ -46,7 +47,7 @@ class Data:
             Logger.error("Your current Draught must not exceed the Scantling Draught.\n The program Terminates....")
 
         self.ft = self.Tlc / ship.Tsc
-        if self.ft <= 0.5: self.ft = 0.5
+        if self.ft < 0.5: self.ft = 0.5
         self.fbeta = {
             'HSM-1': 1.05, 'HSM-2': 1.05,
             'HSA-1': 1.00, 'HSA-2': 1.00,

@@ -55,7 +55,7 @@ pip install -r requirements.txt
 - [x] Modify the corrosion addition function to account for 0 state entry ( all thicknesses are less than corrosion addition)  
 - [x] **ESSAY -> Change the table figures, iamges, check for mistakes, add beff in Inertia Calculations**
 - [x] Close the LaTeX export (check the savefig func)
-- [x] Not lose sanity
+- [ ] Not lose sanity
 - [x] physics module HSM ans BSP need Lwl not LBP on weather deck calculations (actually they needed Lsc) 
 - [x] Fix colorbar, added multiple subplots 
 - [x] kr and GM calculation is different for WB, add to `__init__()` (actually use it)
