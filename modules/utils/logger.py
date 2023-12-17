@@ -27,24 +27,24 @@ class Logger:
 
     @staticmethod
     def success(*args):
-        print(Logger.get_prefix("SUCCESS"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.SUCCESS, "SUCCESS"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
     def info(*args):
-        print(Logger.get_prefix("INFO"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.INFO, "INFO"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
     def debug(*args):
         if Logger.LEVEL < 4:
             return
-        print(Logger.get_prefix("DEBUG"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.DEBUG, "DEBUG"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
     def warning(*args):
         if Logger.LEVEL < 2:
             return
 
-        print(Logger.get_prefix("WARNING"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.WARNING, "WARNING"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
     def error(*args, die=True, rethrow: Exception = None):
@@ -57,7 +57,7 @@ class Logger:
 
         if Logger.LEVEL < 1:
             return
-        print(Logger.get_prefix("ERROR"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.ERROR, "ERROR"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
         # noinspection PyExceptionInherit
         if rethrow is not None:
             raise rethrow
@@ -74,6 +74,5 @@ class Logger:
         return inspect.stack()[3][1].split(os.sep)[-1]
 
     @staticmethod
-    def get_prefix(name) -> str:
-        return (f"{LogLevelColours.ERROR}{datetime.now().strftime('%H:%M:%S')}|"
-                f"{name}|{Logger.get_file()}|{Logger.get_parent()}")
+    def get_prefix(colour: LogLevelColours, name) -> str:
+        return f"{colour}{datetime.now().strftime('%H:%M:%S')}|{name}|{Logger.get_file()}|{Logger.get_parent()}"
