@@ -248,4 +248,3 @@ class Ship:
         v["n50_Ixx"] = round(self.n50_Ixx, 2)
         v["a0"] = round(self.a0, 5)
         return v
-    
