@@ -3,8 +3,17 @@ import numpy as np
 from modules.baseclass.stiff_plate import StiffPlate
 from modules.baseclass.ship import Ship
 from modules.io.datacell import DataCell
+from modules.io.templates import TemplateFactory
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
+
+condition_template = TemplateFactory.get_latex_template("longtable", "conditions")
+pressure_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_pressure")
+plating_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_plating")
+stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffeners")
+stiffened_plates_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffened_plates")
+ordinary_stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_ordinary_stiffeners")
+Logger.debug("Done loading datalogger.py templates.")
 
 
 @auto_str
@@ -88,7 +97,7 @@ class DataLogger:
         self.PrimS_D = []
         # load/update data 
         self.load_data()
-        _ship = self.ship # ugly solution to an even uglier problem
+        _ship = self.ship  # ugly solution to an even uglier problem
 
         for i, cell in enumerate(self.Cells):
             p = []
@@ -145,9 +154,9 @@ class DataLogger:
             return self.Press_D, self.Plate_D, self.Stiff_D, self.St_Pl_D, self.PrimS_D
 
     @staticmethod
-    def tabular(data, clmns, header):
+    def tabular(data, clmns):
         endl = '\\tabularnewline\\hline\n'
-        out = header
+        out = ""
         for line in data:
             _bold = False
             if isinstance(line, list):
@@ -216,112 +225,41 @@ class DataLogger:
             Logger.warning(f'Variable {a} of {type(a)} is not supported. Thus f() will return value None.')
 
     def get_tabular_pressure_data(self) -> str:
-        # sanity check inherited from latex_output
-        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
-        endl = '\\tabularnewline\\hline\n'
-        # Pressure Table
+        assert self.Press_D
         clm_pres = 4 + len(self.conds)
-        press_head = (
-                '\\begin{longtable}{*{2}{>{\centering}m{1.5cm}}*{' + str(clm_pres - 2) + '}{>{\centering}m{2cm}}}\n'
-                                                                                         '\\caption{Plating Pressure Data}\n'
-                                                                                         '\\label{tab:Press_Data}\n'
-                                                                                         '\\tabularnewline'
-                                                                                         '\\hline\n')
-        press_head += 'Name & Breadth [m] & CoA [m] (y,z) &'
-        for i in self.conds: press_head += f' {i} [kN/$m^2$] &'
-        press_head += ' Max Pressure [kN/$m^2$] ' + endl + '\\endfirsthead\n'
-        press_tab = DataLogger.tabular(self.Press_D, clm_pres, press_head)
-        press_tab += '\\end{longtable}\n\n'
-        Logger.debug(press_tab)
-        return press_tab
+        conds_str_list = list(map(lambda o: str(o), self.conds))
+        conditions = TemplateFactory.substitute_template_values(condition_template, conds_str_list, separator="")
+        data = DataLogger.tabular(self.Press_D, clm_pres)
+        out = pressure_longtable_template.substitute(clm_pres=clm_pres, conditions=conditions, data=data)
+        Logger.debug(out)
+        return out
 
     def get_tabular_plating_data(self) -> str:
-        # sanity check inherited from latex_output
-        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
-        endl = '\\tabularnewline\\hline\n'
-        # Plating Table
-        plate_head = ('\\begin{longtable}{*{4}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{2cm}}}\n'
-                    '\\caption{Plating Data}\n'
-                    '\\label{tab:Plate_Data}\n'
-                    '\\tabularnewline'
-                    '\\hline\n'
-                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] (y,z) & Design Pressure [kN/$m^2$]'
-                    '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
-                    '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endfirsthead\n'
-                    '\multicolumn{12}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
-                    'Name & Material & Effective Breadth [m] & Stiffener Spacing [mm] & CoA [m] (y,z) & Design Pressure [kN/$m^2$]'
-                    '& Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] & Corrosion Thickness [mm]'
-                    '& Design Net Thickness [mm]& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm] '+endl+'\\endhead\n')
-        plate_tab = DataLogger.tabular(self.Plate_D,12,plate_head)
-        plate_tab += '\\end{longtable}\n\n'
-        Logger.debug(plate_tab)
-        return plate_tab
+        assert self.Plate_D
+        # FIXME for some reason this is set as 12, however the matching template has "8" columns
+        #  while everything else ALSO has 8 columns in both the file & the appropriate call
+        data = DataLogger.tabular(self.Plate_D, 12)
+        out = plating_longtable_template.substitute(data=data)
+        Logger.debug(out)
+        return out
 
     def get_tabular_stiffeners_data(self) -> str:
-        # sanity check inherited from latex_output
-        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
-        endl = '\\tabularnewline\\hline\n'
-        # Stiffeners Table
-        stiff_head =('\\begin{longtable}{*{6}{>{\centering}m{1.25cm}}*{8}{>{\centering}m{1.75cm}}}\n'
-                    '\\caption{Stiffener Data}\n'
-                    '\\label{tab:Stiff_Data}\n'
-                    '\\tabularnewline'
-                    '\\hline\n'
-                    'Name & Material & Type & Z actual [$cm^3$] & Z rule [$cm^3$] &  &'
-                    'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] &'
-                    'Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] '
-                    '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endfirsthead\n'
-                    '\multicolumn{14}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
-                    'Name & Material & Type & Z actual [$cm^3$] & Z rule [$cm^3$] &  &'
-                    'Length [mm] & Yield Net Thickness [mm] & Minimum Empirical Net Thickness [mm] &'
-                    'Buckling Net Thickness [mm] & Corrosion Thickness [mm] & Design Net Thickness [mm] '
-                    '& Design Net Thickness + 50\% Corrosion [mm] & As Built Thickness [mm]'+endl+'\\endhead\n')
-        stiff_tab = DataLogger.tabular(self.Stiff_D,14,stiff_head)
-        stiff_tab += '\\end{longtable}\n\n'
-        Logger.debug(stiff_tab)
-        return stiff_tab
+        assert self.Stiff_D
+        data = DataLogger.tabular(self.Stiff_D, 14)
+        out = stiffeners_longtable_template.substitute(data=data)
+        Logger.debug(out)
+        return out
 
     def get_tabular_stiffened_plates_data(self) -> str:
-        # sanity check inherited from latex_output
-        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
-        endl = '\\tabularnewline\\hline\n'
-        # Stiffened Plate Table
-        st_pl_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
-                    '\\caption{Stiffened Plate Data}\n'
-                    '\\label{tab:St_Pl_Data}\n'
-                    '\\tabularnewline'
-                    '\\hline\n'
-                    'Name &  & Area n-50 [$mm^2$] '
-                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
-                    '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endfirsthead\n'
-                    '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
-                    'Name &  & Area n-50 [$mm^2$] '
-                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
-                    '& ixx,c [$mm^4$] & $Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$] & ixx,pl [$mm^4$]'+endl+'\\endhead\n')
-        st_pl_tab = DataLogger.tabular(self.St_Pl_D,8,st_pl_head)
-        st_pl_tab += '\\end{longtable}\n\n'
-        Logger.debug(st_pl_tab)
-        return st_pl_tab
+        assert self.St_Pl_D
+        data = DataLogger.tabular(self.St_Pl_D, 8)
+        out = stiffened_plates_longtable_template.substitute(data=data)
+        Logger.debug(out)
+        return out
 
     def get_tabular_ordinary_stiffeners_data(self) -> str:
-        # sanity check inherited from latex_output
-        assert self.Press_D and self.Plate_D and self.Stiff_D and self.St_Pl_D and self.PrimS_D
-        endl = '\\tabularnewline\\hline\n'
-        # Ordinary Section Data
-        or_se_head =('\\begin{longtable}{*{8}{>{\centering}m{1.72cm}}}\n'
-                    '\\caption{Stiffened Plate Data}\n'
-                    '\\label{tab:St_Pl_Data}\n'
-                    '\\tabularnewline'
-                    '\\hline\n'
-                    'Name & Area n-50 [$mm^2$] '
-                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
-                    '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endfirsthead\n'
-                    '\multicolumn{8}{c}{{\\bfseries \\tablename\\ \\thetable{} -- continued from previous page}}\\\\\\hline\n'
-                    'Name & Area n-50 [$mm^2$] '
-                    '& CoA [m] (y,z) & Moments of Area [$cm^3$] '
-                    '& Ixx,pc [$mm^4$] & $Area*(y_{CoA}-y_n)^2$ [$mm^4$] & Ixx [$mm^4$]'+endl+'\\endhead\n')
-        or_se_tab = DataLogger.tabular(self.PrimS_D,8,or_se_head)
-        or_se_tab += '\\end{longtable}\n\n'
-        Logger.debug(or_se_tab)
-        return or_se_tab
-
+        assert self.PrimS_D
+        data = DataLogger.tabular(self.PrimS_D, 8)
+        out = ordinary_stiffeners_longtable_template.substitute(data=data)
+        Logger.debug(out)
+        return out
