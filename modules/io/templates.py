@@ -8,7 +8,7 @@ class LatexTemplate(Template):
     delimiter = "^^^"
 
 
-class LatexFactory:
+class TemplateFactory:
 
     def __init__(self):
         raise RuntimeError("Cannot instantiate static factory!")

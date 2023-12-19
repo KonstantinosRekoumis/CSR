@@ -1,5 +1,3 @@
-
-
 import math
 from modules.baseclass.block import Block
 from modules.baseclass.subblocks.atm_sur_block import AtmSur
@@ -29,8 +27,20 @@ class Ship:
         stiff_plates (list[StiffPlate]): _description_
         blocks (list[Block]): _description_
     """
-    def __init__(self, LBP : float, Lsc: float, B: float, T: float, Tmin: float, Tsc: float, D: float, Cb: float, Cp: float, Cm: float, DWT: float,  # PSM_spacing,
-                 stiff_plates: list[StiffPlate], blocks: list[Block]):
+    def __init__(self,
+                 LBP: float,
+                 Lsc: float,
+                 B: float,
+                 T: float,
+                 Tmin: float,
+                 Tsc: float,
+                 D: float,
+                 Cb: float,
+                 Cp: float,
+                 Cm: float,
+                 DWT: float,  # PSM_spacing,
+                 stiff_plates: list[StiffPlate],
+                 blocks: list[Block]):
         self.symmetrical = True  # Checks that implies symmetry. For the time being is arbitrary constant
         self.LBP = LBP
         self.Lsc = Lsc  # Rule Length
@@ -63,8 +73,8 @@ class Ship:
         self.n50_Ixx, self.n50_Iyy = self.Calculate_I(n50=True)
         self.kappa = 1.0  # material factor
 
-        self.a0 = (1.58 - 0.47 * self.Cb) * (2.4 / math.sqrt(
-            self.Lsc) + 34 / self.Lsc - 600 / self.Lsc ** 2)  # Acceleration parameter Part 1 Chapter 4 Section 3 pp.180
+        # Acceleration parameter Part 1 Chapter 4, Section 3 pp.180
+        self.a0 = (1.58 - 0.47 * self.Cb) * (2.4 / math.sqrt(self.Lsc) + 34 / self.Lsc - 600 / self.Lsc ** 2)
         self.evaluate_kappa()
 
     def evaluate_kappa(self):
@@ -224,3 +234,18 @@ class Ship:
         if "data" not in self.__dict__:
             self.data = text
         self.data += text
+
+    def map_members(self):
+        v = vars(self)
+        v["kappa"] = f"{self.kappa: 0.3g}"
+        v["Mwh"] = round(self.Mwh, 2)
+        v["Mws"] = round(self.Mws, 2)
+        v["Msw_h_mid"] = round(self.Msw_h_mid, 2)
+        v["Msw_s_mid"] = round(self.Msw_s_mid, 2)
+        v["Cw"] = round(self.Cw, 3)
+        v["yo"] = round(self.yo, 3)
+        v["Ixx"] = round(self.Ixx, 2)
+        v["n50_Ixx"] = round(self.n50_Ixx, 2)
+        v["a0"] = round(self.a0, 5)
+        return v
+    

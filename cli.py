@@ -95,7 +95,7 @@ def main(filepath, ship_plots, pressure_plots):
     Logger.info('Outputting Data to /out.json file...')
     IO.ship_save(ship, 'out.json')
     Logger.info('Generating LaTeX Report Data to /out.json file...')
-    generate_latex_rep(logger, path='./essay/', _standalone=False)
+    generate_latex_rep(logger, path='./essay/', standalone=False)
     Logger.success('Program terminated successfully!')
 
 
