@@ -100,12 +100,6 @@ def main(filepath, ship_plots, pressure_plots):
 
 
 if __name__ == "__main__":
-    # Three step automated design method 
-    auto = False
-    if auto:
-        main('./in.json', False, False)
-        main('./out.json', False, False)
+    envelope_path = 'out/final.json'
     # Single Step Manual Design evaluation
-    else:
-        main('out/final.json', True, True)
-        Logger.info('Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
+    main(envelope_path, True, True)
