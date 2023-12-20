@@ -87,11 +87,11 @@ def load_ship(filename):
         data = json.loads(file.read())
     tags = ['LBP', 'Lsc', 'B', 'T', 'Tmin', 'Tsc', 'D', 'Cb', 'Cp', 'Cm', 'DWT']
 
-    set_diff = set_diff(tags + ["geometry", "blocks"], data.keys())
-    if set_diff:
+    sd = set_diff(tags + ["geometry", "blocks"], data.keys())
+    if sd:
         Logger.error(
             f"The input file is not appropriately formatted, and it is missing crucial data. "
-            f"Keys {set_diff} are missing."
+            f"Keys {sd} are missing."
         )
 
     particulars = []
