@@ -18,6 +18,12 @@ pip install -r requirements.txt
 ## Running
 
 [//]: # ( add instructions on how to run the terminal version, and the gui version )
+- cli version:
+    1. Open the `cli.py` with your favorite text editor and navigate to the bottom of the file
+    2. There change the path of the envelope's json file to the path of the your project's .json file
+    4. Run the `cli.py` with the CSR python environment activated
+- gui version:
+    1. Run the `gui.py` with the CSR python environment activated
 
 ## Design Comments on the Ordinary Section
 
