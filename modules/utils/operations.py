@@ -1,4 +1,5 @@
 import math
+from typing import Iterable
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -6,7 +7,7 @@ from matplotlib import pyplot as plt
 from modules.utils.logger import Logger
 
 
-def set_diff(l1: list, l2: list) -> set:
+def set_diff(l1: Iterable, l2: Iterable) -> set:
     """
     Difference between l1 and l2 sets (l2 - l1).
     """

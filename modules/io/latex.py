@@ -14,7 +14,7 @@ stiffeners_data_template = TemplateFactory.get_latex_template("chapters", "stiff
 stiffened_data_template = TemplateFactory.get_latex_template("chapters", "stiffened_data.tex")
 stiffened_ordinary_data_template = TemplateFactory.get_latex_template("chapters", "stiffened_ordinary_data.tex")
 content_template = TemplateFactory.get_latex_template("report", "content.tex")
-Logger.debug("Done loading LaTeX templates.")
+Logger.debug("Done loading latex.py templates.")
 
 
 def generate_latex_rep(data: DataLogger, path='./', standalone=True):
