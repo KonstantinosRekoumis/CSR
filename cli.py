@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
+import os
+import sys
 import modules.io.IO as IO
 import modules.physics.evaluators
 import modules.render as rnr
 import modules.rules as csr
-from modules.utils.constants import RHO_S
 from modules.io.datalogger import DataLogger
 from modules.io.latex import generate_latex_rep
+from modules.utils.constants import RHO_S
 from modules.utils.logger import Logger
 
 
@@ -100,6 +103,5 @@ def main(filepath, ship_plots, pressure_plots):
 
 
 if __name__ == "__main__":
-    envelope_path = 'out/final.json'
     # Single Step Manual Design evaluation
-    main(envelope_path, True, True)
+    main(os.path.join(os.getcwd(), sys.argv[1]), True, True)
