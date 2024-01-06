@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QTableWidget, QTableWidgetItem, QItemDelegate)
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QComboBox, QStackedLayout)
 from PySide6.QtCore import Qt
 from modules.utils.logger import Logger
-from modules.datahandling.datalogger import DataLogger
+from modules.io.datalogger import DataLogger
 
 
 class AlignDelegate(QItemDelegate):

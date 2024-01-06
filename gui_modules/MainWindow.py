@@ -4,12 +4,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, QPushButton, QVBoxLayout, QStackedLayout, QMainWindow)
 from PySide6.QtWidgets import (QWidget, QFileDialog)
 
-import modules.io.IO as IO
 from gui_modules.PlotRenderWidget import DiagramPanel
 from gui_modules.TableWidget import TablesPanel
 from gui_modules.ToolBarActions import ExitAction, LoadAction, SaveAction, AboutAction
-from modules.utilities.logger import Logger
-from modules.datahandling.datalogger import DataLogger
+from modules.utils.logger import Logger
+import modules.io.IO as IO
+from modules.io.datalogger import DataLogger
     
 class AuxWindow(QWidget):
     """
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
     def __init__(self,title: str, parent=None):
         super().__init__(parent)
         # Title update
-        self.setWindowTitle(f'SDA MSD ver.:0.1 ')
+        self.setWindowTitle(f'SDA MSD ver.: 0.1 ')
         # Initialize ship and data_logger variables
         self.ship = None 
         self.data_logger = None
