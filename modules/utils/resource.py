@@ -21,7 +21,6 @@ class Resource:
     def __init__(self, *path: str, binary: bool = False, **kwargs):
         """
         :param fname: Name of the file to open.
-        :param module: The directory filter. Specify in "import" style, for example: "dir.subdir"
         :param binary: Whether to open the file in binary mode. Defaults to False
         :param kwargs: Kwargs to pass to file.open(mode, **kwargs)
         """
@@ -44,9 +43,9 @@ class Resource:
         self.close()
 
     def open(self):
-        self.__cache_resource()
         if not self.is_closed():
             raise Logger.error("File descriptor is not closed?!")
+        self.__cache_resource()
 
         self.file_descriptor = self.resource.open("rb" if self.bmode else "r", **self.kwargs)
 
@@ -100,7 +99,7 @@ class Resource:
                 self.resource = resource
                 return
 
-        raise FileNotFoundError
+        raise FileNotFoundError(os.path.join(*self.path))
 
     @staticmethod
     def iterate_directory(directory: Traversable) -> Iterator[Traversable]:

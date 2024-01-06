@@ -2,6 +2,7 @@ from string import Template
 from typing import Iterable
 
 from modules.utils.resource import Resource
+from modules.utils.logger import Logger
 
 
 class LatexTemplate(Template):
@@ -26,8 +27,15 @@ class TemplateFactory:
     @staticmethod
     def get_latex_template(*path: str) -> LatexTemplate:
         """
-        :param path: path of the latex template file; omit the toplevel "latex" "templates" directory
+        :param path: path of the latex template file; 
+        omit the toplevel "latex" "templates" directory and omit ".tex" extension
+        
         """
+        if not path[-1].endswith(".tex"):
+            if len(path[-1].split(".")) != 1:
+                Logger.error((f"Latex template files do not end with .{path[-1].split(".")[-1]} extension."
+                              " Either enter .tex extension or omit it as recommended!"))
+            path = (*path[:-1], path[-1] + ".tex")
         with Resource("templates", "latex", *path) as tex:
             return LatexTemplate(tex.handle.read())
 

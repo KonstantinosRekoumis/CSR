@@ -18,6 +18,14 @@ def set_diff(l1: Iterable, l2: Iterable) -> set:
 
 
 def d2r(x):
+    """d2r
+    Converts the given value from degrees to radians
+    Args:
+        x (float | int): The value of an angle in degrees
+
+    Returns:
+        float: The x transformed to radians
+    """
     return x / 180 * math.pi
 
 

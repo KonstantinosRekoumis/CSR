@@ -7,7 +7,7 @@ from modules.io.templates import TemplateFactory
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 
-condition_template = TemplateFactory.get_latex_template("longtable", "conditions")
+condition_template = TemplateFactory.get_latex_template("longtable", "conditions.dat")
 pressure_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_pressure")
 plating_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_plating")
 stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffeners")
@@ -34,16 +34,16 @@ class DataLogger:
         self.Plate_D = []
         self.Plate_Header = ['Name', 'Material', 'Effective Breadth [m]', 'Stiffener Spacing [mm]', 'CoA [m] (y,z)', 'Design Pressure [kN/$m^2$]',
                     'Yield Net Thickness [mm]', 'Minimum Empirical Net Thickness [mm]', 'Corrosion Thickness [mm]'
-                    'Design Net Thickness [mm]', 'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm] ']
+                    'Design Net Thickness [mm]', r'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm] ']
         self.Stiff_D = []
         self.Stiff_Header = [
                     'Name', 'Material', 'Type', 'Z actual [$cm^3$]', 'Z rule [$cm^3$]', ' ',
                     'Length [mm]', 'Yield Net Thickness [mm]', 'Minimum Empirical Net Thickness [mm]',
                     'Buckling Net Thickness [mm]', 'Corrosion Thickness [mm]', 'Design Net Thickness [mm]',
-                    'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm]']
+                    r'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm]']
         self.St_Pl_D = []
         self.St_Pl_Header = ['Name', ' ', 'Area n-50 [$mm^2$]', 'CoA [m] (y,z)', 'Moments of Area [$cm^3$]',
-                    'ixx,c [$mm^4$]', '$Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$]', 'ixx,pl [$mm^4$]']
+                    'ixx,c [$mm^4$]', r'$Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$]', 'ixx,pl [$mm^4$]']
         self.PrimS_D = []
         self.PrimS_Header = ['Name', 'Area n-50 [$mm^2$]', 'CoA [m] (y,z)', 'Moments of Area [$cm^3$]',
                     'Ixx,pc [$mm^4$]', '$Area*(y_{CoA}-y_n)^2$ [$mm^4$]', 'Ixx [$mm^4$]']

@@ -1,6 +1,7 @@
 import math
 
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 from matplotlib.cm import ScalarMappable
 
@@ -177,7 +178,7 @@ def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mod
     return fig, ax
 
 
-def c_contour(x, y, data, data_label, fig, ax, cmap, key="number", marker="+", lines=True):
+def c_contour(x, y, data, data_label, fig: Figure, ax, cmap, key="number", marker="+", lines=True):
     d_map = {}
     _map_ = ScalarMappable(cmap=cmap)
 
@@ -193,7 +194,7 @@ def c_contour(x, y, data, data_label, fig, ax, cmap, key="number", marker="+", l
                 vals.append(i)
         vals.sort()
         _map_.set_array(vals)
-        cb = fig.colorbar(_map_, cmap=cmap)
+        cb = fig.colorbar(_map_, cmap=cmap, ax=ax)
         cb.ax.set_title(data_label)
 
     if key == "string":
@@ -210,7 +211,7 @@ def c_contour(x, y, data, data_label, fig, ax, cmap, key="number", marker="+", l
 
         vals.sort()
         _map_.set_array(vals)
-        cb = fig.colorbar(_map_, ticks=vals)
+        cb = fig.colorbar(_map_, ticks=vals, ax=ax)
         cb.ax.set_title(data_label)
         cb.ax.get_yaxis().set_ticks([])
         for j, lab in enumerate(text):
