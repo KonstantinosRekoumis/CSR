@@ -6,7 +6,7 @@ This code is developed to aid the design of the principal strength members of a 
 For the time being is developed for Bulk Carriers, under Common Structural Rules.
 
 ## Installation
-Python3.9 or later **REQUIRED**!
+Python3.12 or later **REQUIRED**!
 
 ```bash
 git clone git@github.com:KonstantinosRekoumis/CSR.git && cd CSR
@@ -17,7 +17,21 @@ pip install -r requirements.txt
 
 ## Running
 
-[//]: # ( add instructions on how to run the terminal version, and the gui version )
+### CLI
+```bash 
+# activate the virtual environment mentioned above
+source ./venv/bin/activate
+# run
+./cli.py "path/to/envelope.json"
+```
+
+### GUI
+```bash 
+# activate the virtual environment mentioned above
+source ./venv/bin/activate
+# run
+./gui.py
+```
 
 ## Design Comments on the Ordinary Section
 

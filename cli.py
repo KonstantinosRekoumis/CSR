@@ -1,10 +1,13 @@
+#!/usr/bin/env python3
+import os
+import sys
 import modules.io.IO as IO
 import modules.physics.evaluators
 import modules.render as rnr
 import modules.rules as csr
-from modules.utils.constants import RHO_S
 from modules.io.datalogger import DataLogger
 from modules.io.latex import generate_latex_rep
+from modules.utils.constants import RHO_S
 from modules.utils.logger import Logger
 
 
@@ -95,17 +98,10 @@ def main(filepath, ship_plots, pressure_plots):
     Logger.info('Outputting Data to /out.json file...')
     IO.ship_save(ship, 'out.json')
     Logger.info('Generating LaTeX Report Data to /out.json file...')
-    generate_latex_rep(logger, path='./essay/', _standalone=False)
+    generate_latex_rep(logger, path='./essay/', standalone=False)
     Logger.success('Program terminated successfully!')
 
 
 if __name__ == "__main__":
-    # Three step automated design method 
-    auto = False
-    if auto:
-        main('./in.json', False, False)
-        main('./out.json', False, False)
     # Single Step Manual Design evaluation
-    else:
-        main('out/final.json', True, True)
-        Logger.info('Initial pass evaluated results successfully. Renaming ./out.json to ./inter.json.')
+    main(os.path.expanduser(sys.argv[1]), True, True)

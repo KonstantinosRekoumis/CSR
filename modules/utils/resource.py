@@ -4,6 +4,8 @@ from importlib.resources.abc import Traversable
 from io import TextIOWrapper
 from typing import Self, Iterator
 
+from modules.utils.logger import Logger
+
 
 class FileNotOpenError(Exception):
     pass
@@ -39,16 +41,19 @@ class Resource:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.file_descriptor is None:
-            raise RuntimeError("self.file_descriptor is none in __exit__?!")
-
         self.close()
 
     def open(self):
         self.__cache_resource()
+        if not self.is_closed():
+            raise Logger.error("File descriptor is not closed?!")
+
         self.file_descriptor = self.resource.open("rb" if self.bmode else "r", **self.kwargs)
 
     def close(self):
+        if self.file_descriptor is None:
+            Logger.error("file descriptor is none?!")
+
         if not self.file_descriptor.closed:
             self.file_descriptor.close()
 
