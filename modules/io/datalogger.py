@@ -7,7 +7,7 @@ from modules.io.templates import TemplateFactory
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 
-condition_template = TemplateFactory.get_latex_template("longtable", "conditions.dat")
+condition_template = TemplateFactory.get_latex_template("longtable", "conditions")
 pressure_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_pressure")
 plating_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_plating")
 stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffeners")
