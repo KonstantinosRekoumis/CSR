@@ -5,7 +5,9 @@ This was part of a ship design assignment, by [SNAME @ NTUA](http://www.naval.nt
 This code is developed to aid the design of the principal strength members of a ship's Midship.
 For the time being is developed for Bulk Carriers, under Common Structural Rules.
 
-## Installation
+## Contributing 
+
+### Installation
 Python3.12 or later **REQUIRED**!
 
 ```bash
@@ -13,6 +15,18 @@ git clone git@github.com:KonstantinosRekoumis/CSR.git && cd CSR
 python3 -m venv venv
 source ./venv/bin/activate
 pip install -r requirements.txt
+```
+
+### Build 
+Configure the hooks:
+```bash
+# this will automatically run some predetermined steps before each stage
+git config core.hooksPath ./hooks
+```
+If you want to read the generated junit reports locally, install **xunit-viewer** && chromium.
+```
+sudo npm install xunit-viewer -g
+sudo dnf install -y --best --allowerasing chromium
 ```
 
 ## Running
