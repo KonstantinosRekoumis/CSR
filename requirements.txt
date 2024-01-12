@@ -4,3 +4,4 @@ matplotlib
 # gui (in development) modules
 pyside6
 pytest
+pytest-html

@@ -1,13 +1,16 @@
 # Constructional Strength Calculations
+
 This was part of a ship design assignment, by [SNAME @ NTUA](http://www.naval.ntua.gr/).
 
 ## Primary goal
+
 This code is developed to aid the design of the principal strength members of a ship's Midship.
 For the time being is developed for Bulk Carriers, under Common Structural Rules.
 
-## Contributing 
+## Contributing
 
 ### Installation
+
 Python3.12 or later **REQUIRED**!
 
 ```bash
@@ -17,12 +20,15 @@ source ./venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Build 
+### Build
+
 Configure the hooks:
+
 ```bash
 # this will automatically run some predetermined steps before each stage
 git config core.hooksPath ./hooks
 ```
+
 If you want to read the generated junit reports locally, install **xunit-viewer** && chromium.
 ```
 sudo npm install xunit-viewer -g
