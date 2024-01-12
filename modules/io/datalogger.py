@@ -7,12 +7,12 @@ from modules.io.templates import TemplateFactory
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 
-condition_template = TemplateFactory.get_latex_template("longtable", "conditions")
-pressure_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_pressure")
-plating_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_plating")
-stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffeners")
-stiffened_plates_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffened_plates")
-ordinary_stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_ordinary_stiffeners")
+condition_template = TemplateFactory.get_latex_template("longtable", "conditions.tex")
+pressure_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_pressure.tex")
+plating_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_plating.tex")
+stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffeners.tex")
+stiffened_plates_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_stiffened_plates.tex")
+ordinary_stiffeners_longtable_template = TemplateFactory.get_latex_template("longtable", "tabular_ordinary_stiffeners.tex")
 Logger.debug("Done loading datalogger.py templates.")
 
 

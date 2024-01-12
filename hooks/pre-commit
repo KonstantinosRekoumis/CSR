@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+readonly TLD="$(git rev-parse --show-toplevel)"
+readonly VENV_STATUS="${VIRTUAL_ENV:-N/A}"
+readonly SMOKE_TEST_DIR="$TLD/tests/smoke/"
+[[ -z $TLD ]] && echo "git rev-parse --show-toplevel couldn't find toplevel dir?!" && exit 1
+
+[[ "$VENV_STATUS" != "N/A" ]] && source "$TLD/venv/bin/activate"

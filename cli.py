@@ -50,9 +50,9 @@ def main(filepath, ship_plots, pressure_plots):
     Logger.info(' Evaluating Corrosion Reduction for stiffened plates...')
     csr.corrosion_assign(ship, offload=True)
     Logger.info(' Proceeding to calculating the Specified Static and Dynamic Cases..')
-    modules.physics.evaluators.static_total_eval(ship, 16, RHO_S, False)
-    hsm1, hsm2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'HSM', False)
-    bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'BSP', False)
+    modules.physics.evaluators.static_total_eval(ship, 16, RHO_S)
+    hsm1, hsm2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'HSM')
+    bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'BSP')
     logger.load_conds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
         rnr.pressure_plot(ship, 'HSM-1', 'SEA,ATM', path='./essay/HSM1_Shell.pdf')
