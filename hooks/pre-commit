@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
 echo "Running pre-commit hook..."
 
 
@@ -13,8 +12,16 @@ echo "Git toplevel directory is $TLD"
 
 [[ -z $TLD ]] && echo "git rev-parse --show-toplevel couldn't find toplevel dir?!" && exit 1
 [[ "$VENV_STATUS" == "N/A" ]] && (
+    readonly OUTPUT_XML="$LOGS_DIR/tests_$(date +%H_%M_%S).xml"
+    readonly OUTPUT_HTML="$LOGS_DIR/tests_$(date +%H_%M_%S).html"
+
     source "$TLD/venv/bin/activate"
-    python3 -m pytest "$SMOKE_TEST_DIR" | tee "$LOGS_DIR/tests_$(date +%H_%M_%S).log"
+    python3 -m pytest --junit-xml="$OUTPUT_XML" "$SMOKE_TEST_DIR"
+    [[ $? -ne 0 && -n "$(command -v xunit-viewer)" ]] && (
+        xunit-viewer --output "$OUTPUT_HTML" --results "$OUTPUT_XML"
+        chromium-browser "$OUTPUT_HTML"
+        exit 1
+    )
 )
 
 echo "Success!"

@@ -23,6 +23,11 @@ Configure the hooks:
 # this will automatically run some predetermined steps before each stage
 git config core.hooksPath ./hooks
 ```
+If you want to read the generated junit reports locally, install **xunit-viewer** && chromium.
+```
+sudo npm install xunit-viewer -g
+sudo dnf install -y --best --allowerasing chromium
+```
 
 ## Running
 
