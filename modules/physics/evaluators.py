@@ -21,7 +21,7 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
     case_2 = Data(Tlc, ship, case + _2)
     for c in (case_1, case_2):
         for i in ship.blocks:
-            args = lambda x: (i, x, False)
+            args = lambda x: (i, x)
 
             if i.space_type == 'SEA' or i.space_type == 'ATM':
                 F = c.wave_pressure
@@ -60,6 +60,7 @@ def static_total_eval(ship: Ship, Tlc: float, rho: float):
         elif b.space_type in ('WB', 'LC', 'OIL', 'FW'):
             F = static_liquid_pressure
             args = (b, )
+        elif b.space_type == "VOID": continue
 
         Pd = F(*args)
         if None not in Pd:
