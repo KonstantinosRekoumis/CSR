@@ -37,32 +37,37 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
             Pd = F(*args(c))
             if None not in Pd:
                 Logger.success(f'{c.cond} CASE STUDY:\nCalculated block: ', i)
-                Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
-                [Logger.success(
-                    f'{round(i.pressure_coords[j][0], 4): =11f}  {round(i.pressure_coords[j][1], 4): =11f} {round(Pd[j], 4): =11f}',
-                    default=False) for j in range(len(Pd))]
+                Logger.success(' ---- X ----  ---- Y ----  ---- P ----')
+                for j in range(len(Pd)):
+                    Logger.success(
+                        f'{round(i.pressure_coords[j][0], 4): =11f} '
+                        f'{round(i.pressure_coords[j][1], 4): =11f} '
+                        f'{round(Pd[j], 4): =11f}'
+                    )
     return case_1, case_2
 
 
 def static_total_eval(ship: Ship, Tlc: float, rho: float):
-    for i in ship.blocks:
-        if i.space_type == 'SEA':
+    for b in ship.blocks:
+        if b.space_type == 'SEA':
             F = block_hydrostatic_pressure
-            args = (i, Tlc, rho)
-        elif i.space_type == 'DC':
+            args = (b, Tlc, rho)
+        elif b.space_type == 'DC':
             F = static_dry_cargo_pressure
-            args = (i, False)
-        elif i.space_type == 'ATM':
+            args = (b, )
+        elif b.space_type == 'ATM':
             continue
-        elif i.space_type in ('WB', 'LC', 'OIL', 'FW'):
+        elif b.space_type in ('WB', 'LC', 'OIL', 'FW'):
             F = static_liquid_pressure
-            args = (i, False)
+            args = (b, )
 
         Pd = F(*args)
         if None not in Pd:
-            Logger.success(f'STATIC CASE STUDY:\nCalculated block: ', i)
-            Logger.success(' ---- X ----  ---- Y ----  ---- P ----', default=False)
-            [Logger.success(
-                f'{round(i.pressure_coords[j][0], 4): =11f}  '
-                f'{round(i.pressure_coords[j][1], 4): =11f} {round(Pd[j], 4): =11f}',
-                default=False) for j in range(len(Pd))]
+            Logger.success(f'STATIC CASE STUDY:\nCalculated block: ', b)
+            Logger.success(' ---- X ----  ---- Y ----  ---- P ----')
+            for j in range(len(Pd)):
+                Logger.success(
+                    f'{round(b.pressure_coords[j][0], 4): =11f} '
+                    f'{round(b.pressure_coords[j][1], 4): =11f} '
+                    f'{round(Pd[j], 4): =11f}'
+                )
