@@ -75,4 +75,4 @@ class Logger:
 
     @staticmethod
     def get_prefix(colour: LogLevelColours, name) -> str:
-        return f"{colour}{datetime.now().strftime('%H:%M:%S')}|{name}|{Logger.get_file()}|{Logger.get_parent()}"
+        return f"{colour}{datetime.now().strftime('%H:%M:%S')}|{name}|{Logger.get_file()}|{Logger.get_parent()} :"

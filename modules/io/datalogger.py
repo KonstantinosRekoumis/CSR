@@ -30,10 +30,23 @@ class DataLogger:
         self.conds = []  # EDWs that were documented
         self.Cells = []
         self.Press_D = []
+        self.Press_Header = []
         self.Plate_D = []
+        self.Plate_Header = ['Name', 'Material', 'Effective Breadth [m]', 'Stiffener Spacing [mm]', 'CoA [m] (y,z)', 'Design Pressure [kN/$m^2$]',
+                    'Yield Net Thickness [mm]', 'Minimum Empirical Net Thickness [mm]', 'Corrosion Thickness [mm]'
+                    'Design Net Thickness [mm]', r'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm] ']
         self.Stiff_D = []
+        self.Stiff_Header = [
+                    'Name', 'Material', 'Type', 'Z actual [$cm^3$]', 'Z rule [$cm^3$]', ' ',
+                    'Length [mm]', 'Yield Net Thickness [mm]', 'Minimum Empirical Net Thickness [mm]',
+                    'Buckling Net Thickness [mm]', 'Corrosion Thickness [mm]', 'Design Net Thickness [mm]',
+                    r'Design Net Thickness + 50\% Corrosion [mm]', 'As Built Thickness [mm]']
         self.St_Pl_D = []
+        self.St_Pl_Header = ['Name', ' ', 'Area n-50 [$mm^2$]', 'CoA [m] (y,z)', 'Moments of Area [$cm^3$]',
+                    'ixx,c [$mm^4$]', r'$Area*(y_{c,\ element} - y_{c,\ st. plate})^2$ [$mm^4$]', 'ixx,pl [$mm^4$]']
         self.PrimS_D = []
+        self.PrimS_Header = ['Name', 'Area n-50 [$mm^2$]', 'CoA [m] (y,z)', 'Moments of Area [$cm^3$]',
+                    'Ixx,pc [$mm^4$]', '$Area*(y_{CoA}-y_n)^2$ [$mm^4$]', 'Ixx [$mm^4$]']
         self.ship = ship
         self.load_data()
 
@@ -54,6 +67,9 @@ class DataLogger:
             _conds (list[str]): The physics conditions evaluated
         """
         self.conds = _conds
+        self.Press_Header = ['Name', 'Breadth [m]', 'CoA [m] (y,z)',
+                            *[f'{i} [kN/$m^2$]' for i in self.conds],
+                            'Max Pressure [kN/$m^2$]']
 
     def update_stiff_plate(self, stiff_plate: StiffPlate):
         for cell in self.Cells:

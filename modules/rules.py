@@ -219,12 +219,11 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Data,
             Logger.debug(f"Press: {p}, "
                          f"Point: {point}, "
                          f"sigma {abs(case.sigma(*point))}, "
-                         f"Ca {ca(point)}",
-                         default=False)
+                         f"Ca {ca(point)}")
             t_temp = t(point, p)
-            Logger.debug(f"t_temp:{t_temp}", default=False)
+            Logger.debug(f"t_temp:{t_temp}")
             max_t = t_temp if max_t < t_temp else max_t
-        Logger.debug(f", max_t:{max_t}", default=False)
+        Logger.debug(f", max_t:{max_t}")
     except KeyError:
         Logger.warning(f"(rules.py) plating_thickness_calculation: The {case.cond} "
                        f"condition has not been calculated for  plate {plate}. "
@@ -476,12 +475,12 @@ def loading_cases_eval(ship: Ship, case: Data, condition: dict, logger: DataLogg
             p = []
             for block in blocks:
                 # force the singular evaluation of each pressure distribution
-                p.append(plate_pressure_assigner(plate, [block], case, condition['Dynamics'], return_=True))
+                p.append(plate_pressure_assigner([block], plate, case, condition['Dynamics']))
             p_max = maximum_p(p)
             plate.Pressure[case.cond] = p[p_max]
         else:
             # let the function handle the proper aggregation
-            plate_pressure_assigner(plate, blocks, case, condition['Dynamics'])
+            plate.Pressure[case.cond]= plate_pressure_assigner(blocks, plate, case, condition['Dynamics'])
         logger.update_stiff_plate(plate)  # save pressure maximum pressure data
 
 

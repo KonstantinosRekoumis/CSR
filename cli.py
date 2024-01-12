@@ -20,7 +20,7 @@ def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], 
         csr.net_scantling(ship, case, condition['Dynamics'])
 
 
-def main(filepath, ship_plots, pressure_plots):
+def main(filepath, ship_plots, pressure_plots, export_to_TeX):
     print(r"""
        ____  ____    _      __  __ ____  ____    
       / ___||  _ \  / \    |  \/  / ___||  _ \  
@@ -97,11 +97,12 @@ def main(filepath, ship_plots, pressure_plots):
 
     Logger.info('Outputting Data to /out.json file...')
     IO.ship_save(ship, 'out.json')
-    Logger.info('Generating LaTeX Report Data to /out.json file...')
-    generate_latex_rep(logger, path='./essay/', standalone=False)
-    Logger.success('Program terminated successfully!')
+    if export_to_TeX:
+        Logger.info('Generating LaTeX Report Data to /out.json file...')
+        generate_latex_rep(logger, path='./essay/', standalone=False)
+        Logger.success('Program terminated successfully!')
 
 
 if __name__ == "__main__":
     # Single Step Manual Design evaluation
-    main(os.path.expanduser(sys.argv[1]), True, True)
+    main(os.path.expanduser(sys.argv[1]), False, False)

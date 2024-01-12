@@ -4,22 +4,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QLabel, QPushButton, QVBoxLayout, QStackedLayout, QMainWindow)
 from PySide6.QtWidgets import (QWidget, QFileDialog)
 
-import modules.io.IO as IO
 from gui_modules.PlotRenderWidget import DiagramPanel
-from gui_modules.TableWidget import Table
+from gui_modules.TableWidget import TablesPanel
 from gui_modules.ToolBarActions import ExitAction, LoadAction, SaveAction, AboutAction
 from modules.utils.logger import Logger
-
-
-class dataManager:
-    def __init__(self, data, header):
-        self.header = header
-        self.data = data
-
-    def say_hello(self):
-        return self.data, self.header
-
-
+import modules.io.IO as IO
+from modules.io.datalogger import DataLogger
+    
 class AuxWindow(QWidget):
     """
     Class for all the necessary auxiliary windows
@@ -50,11 +41,13 @@ class LoadFileDialog(QFileDialog):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, title, dataManager: dataManager, parent=None):
+    def __init__(self,title: str, parent=None):
         super().__init__(parent)
-        path = r"D:\Python Projects\CSR\final.json"  # temporary
-        self.setWindowTitle(f'SDA MSD ver.:0.1 {path}')
-        self.ship = None  # Initial Value
+        # Title update
+        self.setWindowTitle(f'SDA MSD ver.: 0.1 ')
+        # Initialize ship and data_logger variables
+        self.ship = None 
+        self.data_logger = None
         # Create a central Widget to attach everything on to
         self.canvas = QWidget()
         self.setCentralWidget(self.canvas)
@@ -70,12 +63,10 @@ class MainWindow(QMainWindow):
         # self.menu_about = self.menu.addMenu('About')
         self.menu.addAction(
             AboutAction(self, partial(self.show_new_window, self.about_win)))
-
-        self.dataManager = dataManager
         # Widget init
-        self.text = QLabel(title, alignment=Qt.AlignCenter)
-        self.table = Table(*self.dataManager.say_hello())
-        self.graph = DiagramPanel(self.ship, self, )
+        self.text = QLabel(title,alignment=Qt.AlignCenter)
+        self.table = TablesPanel(self.data_logger, self)
+        self.graph = DiagramPanel(self.ship, self,)
         self.button = QPushButton('Start')
         # Layout
         self.displayLayout = QStackedLayout()
@@ -97,7 +88,6 @@ class MainWindow(QMainWindow):
         if self.displayLayout.currentIndex() == 1:
             self.displayLayout.setCurrentIndex(2)
         elif self.displayLayout.currentIndex() == 0:
-            self.table.populate_table(*self.dataManager.say_hello())
             self.displayLayout.setCurrentIndex(1)
         else:
             self.displayLayout.setCurrentIndex(0)
@@ -112,9 +102,16 @@ class MainWindow(QMainWindow):
             if data[0] != '':
                 if data[0][-5:] == '.json':
                     self.ship = IO.load_ship(data[0])
+                    self.data_logger = DataLogger(self.ship)
+                    self.data_logger.create_tabular_data()
+                    self.setWindowTitle(f'SDA MSD ver.:0.1 {data[0]}')
                     print(self.ship.LBP)
                 else:
                     Logger.warning('Ship data files are .json files')
+            elif data[0] == '' and self.ship is None:
+                #TODO: Start the program without loading any ship and only after
+                #loading one render the UI except the menu bars
+                Logger.error(" The program can not execute without inputing a ship envelope!")
         elif mode == 1:
             data = LoadFileDialog(mode=mode).getOpenFileName(self, "Save", '.', "Project Files (*.json)")
             if data[0] != '':

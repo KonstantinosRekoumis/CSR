@@ -7,21 +7,26 @@ readonly TLD="$(git rev-parse --show-toplevel)"
 readonly VENV_STATUS="${VIRTUAL_ENV:-N/A}"
 readonly SMOKE_TEST_DIR="$TLD/tests/smoke/"
 readonly LOGS_DIR="$TLD/logs"
+readonly OUTPUT_XML="$LOGS_DIR/tests_$(date +%H_%M_%S).xml"
+readonly OUTPUT_HTML="$LOGS_DIR/tests_$(date +%H_%M_%S).html"
+readonly OUTPUT_BASIC_HTML="$LOGS_DIR/tests_basic_$(date +%H_%M_%S).html"
 
 echo "Git toplevel directory is $TLD"
 
 [[ -z $TLD ]] && echo "git rev-parse --show-toplevel couldn't find toplevel dir?!" && exit 1
-[[ "$VENV_STATUS" == "N/A" ]] && (
-    readonly OUTPUT_XML="$LOGS_DIR/tests_$(date +%H_%M_%S).xml"
-    readonly OUTPUT_HTML="$LOGS_DIR/tests_$(date +%H_%M_%S).html"
-
-    source "$TLD/venv/bin/activate"
-    python3 -m pytest --junit-xml="$OUTPUT_XML" "$SMOKE_TEST_DIR"
-    [[ $? -ne 0 && -n "$(command -v xunit-viewer)" ]] && (
-        xunit-viewer --output "$OUTPUT_HTML" --results "$OUTPUT_XML"
-        chromium-browser "$OUTPUT_HTML"
-        exit 1
-    )
+if [[ "$VENV_STATUS" == "N/A" ]]; then 
+    if [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+        source "$TLD/venv/bin/activate"
+    elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+        source "$TLD/venv/Scripts/activate"
+    fi
+fi
+export CSR_LOG_LEVEL=1
+python -m pytest --html="$OUTPUT_BASIC_HTML" --junit-xml="$OUTPUT_XML" "$SMOKE_TEST_DIR" || exit 1
+[[ $? -ne 0 && -n "$(command -v xunit-viewer)" ]] && (
+    xunit-viewer --output "$OUTPUT_HTML" --results "$OUTPUT_XML"
+    chromium-browser "$OUTPUT_HTML"
+    exit 1
 )
 
 echo "Success!"

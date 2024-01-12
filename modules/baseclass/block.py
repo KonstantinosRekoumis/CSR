@@ -52,7 +52,7 @@ class Block:
         if space_type in TAGS:
             self.space_type = space_type
         else:
-            Logger.error("(classes.py) block :The block type is not currently supported or non-existent.")
+            Logger.error("The block type is not currently supported or non-existent.")
         self.list_plates_id = list_plates_id
 
         # containing the various coefficients to calculate internal pressures
@@ -76,11 +76,7 @@ class Block:
             try:
                 kc = lambda a: math.cos(a) ** 2 + (1 - math.sin(d2r(self.payload['psi']))) * math.sin(a) ** 2
             except KeyError:
-                Logger.error(
-                    f'(classes.py) Class block/Kc_eval: '
-                    f'The required \'psi\' value is missing in the payload declaration.'
-                )
-                quit()
+                Logger.error(f'The required \'psi\' value is missing in the payload declaration.')
             if stiff_plate_type not in (3, 5, 4):
                 dx = end[0] - start[0]
                 dy = end[1] - start[1]
@@ -211,7 +207,7 @@ class Block:
             P = self.Pressure[pressure_index] if not graphical else [1 for i in self.pressure_coords]
         except KeyError:
             Logger.warning(
-                f'(classes.py) block/pressure_data: A pressure distribution for block: '
+                f'A pressure distribution for block: '
                 f'{self} is not calculated for Dynamic Condition {pressure_index} !!! Treat this appropriately !'
             )
             P = None
@@ -237,12 +233,12 @@ class Block:
                 # known and expected scenario, thus no need for warning spam
                 if self.space_type != 'ATM' and pressure_index != 'STATIC':
                     Logger.warning(
-                        f'(classes.py) block/pressure_over_plate: {pressure_index} is not calculated '
+                        f'{pressure_index} is not calculated '
                         f'for block {self}. !Returning zeros as pressure!')
                 return [(*self.pressure_coords[i], *self.eta[i], 0) for i in range(x0, x1 + 1, 1)]
 
         Logger.warning(
-            f'(classes.py) blocks/pressure_over_plate : Requesting pressure over plate {stiff_plate} '
+            f'Requesting pressure over plate {stiff_plate} '
             f'that does not belong in the block {self}. Returning None'
         )
         return None

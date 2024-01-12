@@ -61,7 +61,6 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
         if _1_:
             for i, point in enumerate(block.pressure_coords):  # the last 3 coordinates pressure_are rent
                 kp_c = lin_int_dict(kp, fxL, fyB(point[0]), suppress=True)
-                # print(f'kp_c: {kp_c}')
                 hw = -1 * Phs(B / 2, Tlc) / rho / G
                 if point[1] < Tlc:
                     Pw[i] = max(-1 * Phs(*point), -hydrostatic_pressure(point[1], Tlc, rho))
