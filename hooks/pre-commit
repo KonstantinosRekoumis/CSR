@@ -22,11 +22,13 @@ if [[ "$VENV_STATUS" == "N/A" ]]; then
     fi
 fi
 export CSR_LOG_LEVEL=1
-python -m pytest --html="$OUTPUT_BASIC_HTML" --junit-xml="$OUTPUT_XML" "$SMOKE_TEST_DIR" || exit 1
-[[ $? -ne 0 && -n "$(command -v xunit-viewer)" ]] && (
+python -m pytest --html="$OUTPUT_BASIC_HTML" --junit-xml="$OUTPUT_XML" "$SMOKE_TEST_DIR"
+readonly HAS_DIED=$?
+[[ $HAS_DIED -ne 0 && -n "$(command -v xunit-viewer)" ]] && (
     xunit-viewer --output "$OUTPUT_HTML" --results "$OUTPUT_XML"
-    chromium-browser "$OUTPUT_HTML"
-    exit 1
+    chromium-browser "$OUTPUT_HTML" &
 )
+
+[[ $HAS_DIED -ne 0 ]] && exit 1
 
 echo "Success!"
