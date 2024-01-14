@@ -56,68 +56,34 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
     Pw = [None] * len(block.pressure_coords)
     # args = ((stiff_plate.plate.start[1],stiff_plate.plate.start[0]),
     #         (stiff_plate.plate.end[1]  ,stiff_plate.plate.end[0]  ))
+    alpha = -1 if _1_ else 1
 
     if block.space_type == 'SEA':  # Weatherdeck has special rules according to Section 5.2.2
-        if _1_:
-            for i, point in enumerate(block.pressure_coords):  # the last 3 coordinates pressure_are rent
-                kp_c = lin_int_dict(kp, fxL, fyB(point[0]), suppress=True)
-                hw = -1 * Phs(B / 2, Tlc) / rho / G
-                if point[1] < Tlc:
-                    Pw[i] = max(-1 * Phs(*point), -hydrostatic_pressure(point[1], Tlc, rho))
-                elif Tlc <= point[1] < Tlc + hw:
-                    Pw[i] = Phs(point[0], Tlc) + hydrostatic_pressure(point[1], Tlc, rho)  # PW = PW,WL - ρg(z - TLC)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)  # PW = PW,WL - ρg(z - TLC)
-                    # print('------ Tlc < x < Tlc+hw----')
-                    # print("Wave height : ",hw)
-                    # print("Pw,wl : ",hw*rho*G)
-                    # print("Hydrostatic Pressure : ",hydrostatic_pressure(point[1],Tlc,rho))
-                    # print('---------------------------')
-                else:
-                    Pw[i] = 0
-        else:
-            for i, point in enumerate(block.pressure_coords):
-                kp_c = lin_int_dict(kp, fxL, fyB(point[0]), suppress=True)
-                hw = Phs(B / 2, Tlc) / rho / G
-                if point[1] < Tlc:
-                    Pw[i] = max(Phs(*point), -hydrostatic_pressure(point[1], Tlc, rho))
-                elif Tlc <= point[1] < Tlc + hw:
-                    Pw[i] = Phs(point[0], Tlc) + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                else:
-                    Pw[i] = 0
-
+        for i, point in enumerate(block.pressure_coords):  # the last 3 coordinates pressure_are rent
+            kp_c = lin_int_dict(kp, fxL, fyB(point[0]), suppress=True)
+            hw = alpha * Phs(B / 2, Tlc) / rho / G #wave height
+            if point[1] < Tlc:
+                Pw[i] = max(alpha * Phs(*point), -hydrostatic_pressure(point[1], Tlc, rho))
+            elif Tlc <= point[1] < Tlc + hw:
+                Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)  # PW = PW,WL - ρg(z - TLC)
+            else:
+                Pw[i] = 0
     elif block.space_type == 'ATM':
         x = 1.0  # Section 5.2.2.4, Studying only the weather deck
-
         if LBP >= 100:
             Pmin = 34.3  # xl = 0.5
         else:
             Pmin = 14.9 + 0.195 * LBP
-
-        kp_c = lin_int_dict(kp, fxL, fyB(D), suppress=True)
-        if _1_:
-            hw = -1 * Phs(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if Tlc <= point[1] < Tlc + hw:
-                    Pw[i] = Phs(point[0], Tlc) + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = max(Pw[i], Pmin)
-                else:
-                    Pw[i] = 0
-                    Pw[i] = max(Pw[i], Pmin)
-                Pw[i] *= x
-        else:
-            hw = Phs(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if Tlc <= point[1] < Tlc + hw:
-                    Pw[i] = Phs(point[0], Tlc) + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                    Pw[i] = max(Pw[i], Pmin)
-                else:
-                    Pw[i] = 0
-                    Pw[i] = max(Pw[i], Pmin)
-                Pw[i] *= x
-
+        kp_c = lin_int_dict(kp, fxL, fyB(B), suppress=True)
+        hw = alpha * Phs(B / 2, Tlc) / rho / G
+        for i, point in enumerate(block.pressure_coords):
+            if Tlc <= point[1] < Tlc + hw:
+                Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
+                Pw[i] = max(Pw[i], Pmin)
+            else:
+                Pw[i] = 0
+                Pw[i] = max(Pw[i], Pmin)
+            Pw[i] *= x
     else:
         Logger.warning('Cannot evaluate External pressures for an internal block.')
     key = 'HSM-1' if _1_ else 'HSM-2'
@@ -147,36 +113,22 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
     Pbsp = lambda y, z: 4.5 * fbeta * fps * fnl * fyz(y, z) * Cw * math.sqrt((l + Lsc - 125) / LBP)
 
     Pw = [None] * len(block.pressure_coords)
+    alpha = 1 if _1_ else -1
     if block.space_type == 'SEA':  # Weatherdeck has special rules according to Section 5.2.2
-        if _1_:
-            hw = Pbsp(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if point[1] < Tlc:
-                    Pw[i] = max(Pbsp(*point), -hydrostatic_pressure(point[1], Tlc, rho / G))
-                elif Tlc <= point[1] < Tlc + hw:
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho / G)
-                else:
-                    Pw[i] = 0
-        else:
-            hw = -Pbsp(B / 2, Tlc) / rho / G
-            for i, point in enumerate(block.pressure_coords):
-                if point[1] < Tlc:
-                    Pw[i] = max(-Pbsp(*point), -hydrostatic_pressure(point[1], Tlc, rho))
-                elif Tlc <= point[1] < Tlc + hw:
-                    # Pw[i] = Pbsp(point[0],Tlc) + hydrostatic_pressure(point[1],Tlc,rho)
-                    Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
-                else:
-                    Pw[i] = 0
+        hw = alpha * Pbsp(B / 2, Tlc) / rho / G
+        for i, point in enumerate(block.pressure_coords):
+            if point[1] < Tlc:
+                Pw[i] = max(alpha * Pbsp(*point), -hydrostatic_pressure(point[1], Tlc, rho / G))
+            elif Tlc <= point[1] < Tlc + hw:
+                Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho / G)
+            else:
+                Pw[i] = 0
     elif block.space_type == 'ATM':
         x = 1.0  # Section 5.2.2.4, Studying only the weather deck
-
         Pmin = 14.9 + 0.195 * LBP
         if LBP >= 100:
             Pmin = 34.3  # xl = 0.5
-
-        hw = -Pbsp(B / 2, Tlc) / rho / G
-        if _1_:
-            hw = Pbsp(B / 2, Tlc) / rho / G
+        hw = alpha * Pbsp(B / 2, Tlc) / rho / G
         for i, point in enumerate(block.pressure_coords):
             if Tlc <= point[1] < Tlc + hw:
                 Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)
