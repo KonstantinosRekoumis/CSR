@@ -16,9 +16,12 @@ echo "Git toplevel directory is $TLD"
 [[ -z $TLD ]] && echo "git rev-parse --show-toplevel couldn't find toplevel dir?!" && exit 1
 if [[ "$VENV_STATUS" == "N/A" ]]; then 
     if [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        source "$TLD/venv/bin/activate"
+        source "$TLD/venv/bin/activate" || exit 1
     elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
-        source "$TLD/venv/Scripts/activate"
+        source "$TLD/venv/Scripts/activate" || exit 1
+    else 
+        echo "Unsupported OS! Please don't use this hook for further commits. Exiting unsuccesfully..."
+        exit 1
     fi
 fi
 export CSR_LOG_LEVEL=1
