@@ -1,17 +1,37 @@
 import math
+from enum import Enum
 
 from modules.baseclass.stiff_plate import StiffPlate
 from modules.utils.decorators import auto_str
 from modules.utils.operations import d2r, linespace, normals_2d
 from modules.utils.logger import Logger
+from modules.utils.constants import RHO_F, RHO_S, HEAVY_HOMO
 
+class SpaceType(Enum):
+    WaterBallast = {'rho': RHO_S, 'hair': 0.0}
+    DryCargo = {'rho': HEAVY_HOMO, 'fdc': 1.0, 'psi': 30.0}
+    LiquidCargo = {'rho': 0.8, 'Ppv': 25.0, 'fcd': 1.0}
+    OilTank = {'rho': 0.8, 'hair': 0.0}
+    FreshWater  = {'rho': RHO_F, 'hair': 0.0}
+    VoidSpace = {'rho': 0.0, 'hair': 0.0}
+    Sea = {'rho': RHO_S}
+    Atmosphere = {'rho': RHO_S}
 
+LOAD_SPACE_TYPE = {
+    "SpaceType.WaterBallast" : SpaceType.WaterBallast,
+    "SpaceType.DryCargo" : SpaceType.DryCargo,
+    "SpaceType.LiquidCargo" : SpaceType.LiquidCargo,
+    "SpaceType.OilTank" : SpaceType.OilTank,
+    "SpaceType.FreshWater"  : SpaceType.FreshWater,
+    "SpaceType.VoidSpace" : SpaceType.VoidSpace,
+}
 @auto_str
 class Block:
     """
     ------------------------------------------
-    Block class can be useful to evaluate the plates that consist a part of the Midship 
-    Section, ie. a Water Ballast tank, or Cargo Space.
+    Block class holds the geometric and physical properties of the various Volumes encountered on a ship. 
+    Blocks are associated with their boundary plates that give them their geometry.
+    Block class is used to represent a Water Ballast / Fuel / Oil (etc.) tank, Dry / Liquid Cargo Space.
     This is done to further enhance the clarity of what substances are in contact with certain plates.
     Currently are supported 5 Volume Categories :
     1) Water Ballast -> type : WB
@@ -42,22 +62,13 @@ class Block:
             defining the volume
     """        
 
-    def __init__(self, name: str, symmetrical: bool, space_type: str, list_plates_id: list[int], *args):
-        TAGS = ['WB', 'DC', 'LC', 'OIL', 'FW', 'VOID']
-        f ="""
-        We need to pass the type of Cargo that is stored in the Volume and out of which stiffened plates it consists of
-        """
+    def __init__(self, name: str, symmetrical: bool, space_type: SpaceType, list_plates_id: list[int], *args):
         self.name = name
         self.symmetrical = symmetrical  # Symmetry around the Z-axis
-        if space_type in TAGS:
-            self.space_type = space_type
-        else:
-            Logger.error("The block type is not currently supported or non-existent.")
+        self.space_type = space_type
         self.list_plates_id = list_plates_id
+        self.payload = self.space_type.value
 
-        # containing the various coefficients to calculate internal pressures
-        # for the time being static initialization through space type var
-        self.payload = {}
 
         self.coords = []
         self.pressure_coords = []
@@ -66,26 +77,28 @@ class Block:
 
         self.eta = []  # Evaluates the normal vectors of each block
         self.Pressure = {}  # Pass each Load Case index as key and values as a list
-        if self.space_type == 'DC':
-            self.Kc = []
-        else:
-            self.Kc = None
+        self.Kc = []
+        self.Kc_eval = self.Kc_eval_ if self.space_type is SpaceType.DryCargo else lambda *x : None
 
-    def Kc_eval(self, start, end, stiff_plate_type):
-        if self.Kc is not None:
-            try:
-                kc = lambda a: math.cos(a) ** 2 + (1 - math.sin(d2r(self.payload['psi']))) * math.sin(a) ** 2
-            except KeyError:
-                Logger.error(f'The required \'psi\' value is missing in the payload declaration.')
-            if stiff_plate_type not in (3, 5, 4):
-                dx = end[0] - start[0]
-                dy = end[1] - start[1]
-                alpha = math.atan2(dy, dx)
-                self.Kc.append(kc(alpha))
-            else:
-                self.Kc.append(0)
+    def Kc_eval_(self, start, end, stiff_plate_type):
+        """Kc_eval_
+            Function used to evaluate the Kc parameter in the case of dry cargo holds
+        Args:
+            start (float): _description_
+            end (float): _description_
+            stiff_plate_type (int): _description_
+        """        
+        try:
+            kc = lambda a: math.cos(a) ** 2 + (1 - math.sin(d2r(self.payload['psi']))) * math.sin(a) ** 2
+        except KeyError:
+            Logger.error(f'The required \'psi\' value is missing in the payload declaration.')
+        if stiff_plate_type not in (3, 5, 4):
+            dx = end[0] - start[0]
+            dy = end[1] - start[1]
+            alpha = math.atan2(dy, dx)
+            self.Kc.append(kc(alpha))
         else:
-            pass
+            self.Kc.append(0)
 
     def get_coords(self, stiff_plates: list[StiffPlate]):
         """
@@ -162,11 +175,12 @@ class Block:
         K = []
         P = []
         temp = linespace(1, resolution, 1)
+        Kc_not_None = True if self.space_type is SpaceType.DryCargo else False
         for i in range(len(self.coords) - 1):
             # eliminate duplicate entries -> no problems with normal vectors
             if self.coords[i] not in self.pressure_coords:
                 self.pressure_coords.append(self.coords[i])
-                if self.Kc is not None:
+                if Kc_not_None:
                     K.append(self.Kc[i])
             dy = self.coords[i + 1][1] - self.coords[i][1]
             dx = self.coords[i + 1][0] - self.coords[i][0]
@@ -176,15 +190,15 @@ class Block:
                 self.pressure_coords.append((self.coords[i][0] + span / resolution * j * math.cos(phi),
                                              self.coords[i][1] + span / resolution * j * math.sin(phi)))
                 P.append(self.plates_indices[i])
-                if self.Kc is not None:
+                if Kc_not_None:
                     K.append(self.Kc[i])
             self.pressure_coords.append(self.coords[i + 1])
             P.append(self.plates_indices[i])
-            if self.Kc is not None:
+            if Kc_not_None:
                 K.append(self.Kc[i + 1])
 
         self.plates_indices = P
-        if self.Kc is not None:
+        if Kc_not_None:
             self.Kc = K
         self.eta = normals_2d(self.pressure_coords)
 

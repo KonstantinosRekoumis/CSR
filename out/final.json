@@ -34,9 +34,9 @@
 {"id":211,"plate":[[9.71, 22.17], [9.71, 23.22], 24.0, "AH36", "Wing"],"stiffeners": {},"spacing":900.0,"PSM_spacing":5.52,"skip":0,"s_pad":100.0,"e_pad":100.0}
 ],
 "blocks":[
-{"name":"WB Tank Bottom","symmetrical":false,"type":"WB","ids":[300, -201, -202, -105, -104, -103, -102, -101]},
-{"name":"Cargo Hold","symmetrical":true,"type":"DC","ids":[-111, 211, 210, -107, -106, 202, 201, 200]},
-{"name":"WB Wing Tank","symmetrical":false,"type":"WB","ids":[-210, 211, -110, -109, -108]},
-{"name":"Pipe Duct","symmetrical":true,"type":"VOID","ids":[100, 300, 200]}
+{"name":"WB Tank Bottom","symmetrical":false,"type":"SpaceType.WaterBallast","ids":[300, -201, -202, -105, -104, -103, -102, -101]},
+{"name":"Cargo Hold","symmetrical":true,"type":"SpaceType.DryCargo","ids":[-111, 211, 210, -107, -106, 202, 201, 200]},
+{"name":"WB Wing Tank","symmetrical":false,"type":"SpaceType.WaterBallast","ids":[-210, 211, -110, -109, -108]},
+{"name":"Pipe Duct","symmetrical":true,"type":"SpaceType.VoidSpace","ids":[100, 300, 200]}
 ]
 }

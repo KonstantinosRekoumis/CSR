@@ -7,6 +7,7 @@ from matplotlib.cm import ScalarMappable
 
 from modules.utils.logger import Logger
 from modules.baseclass.ship import Ship
+from modules.baseclass.block import SpaceType
 from modules.utils.operations import normals_2d_np, normalize
 
 
@@ -42,13 +43,13 @@ def block_plot(ship: Ship, show_w=True, color="black", fill=True, fig=None, ax=N
         marker = "*"
 
     colors = {
-        "SEA": "blue",
-        "ATM": "lightcyan",
-        "WB": "turquoise",
-        "DC": "tomato",
-        "OIL": "darkgoldenrod",
-        "FW": "aqua",
-        "VOID": "silver"
+        SpaceType.Sea: "blue",
+        SpaceType.Atmosphere: "lightcyan",
+        SpaceType.WaterBallast: "turquoise",
+        SpaceType.DryCargo: "tomato",
+        SpaceType.OilTank: "darkgoldenrod",
+        SpaceType.FreshWater: "aqua",
+        SpaceType.VoidSpace: "silver"
     }
 
     # ! gui update passes the fig reference
@@ -120,7 +121,7 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
                f"Valid options are 'thickness', 'material', 'tag', 'id', 'spacing'. Thus no plot is produced.")
 
 
-def pressure_plot(ship: Ship, pressure_index: str, block_types: str, normals_mode=False, path=None, fig=None, ax=None):
+def pressure_plot(ship: Ship, pressure_index: str, block_types: str | list[SpaceType], normals_mode=False, path=None, fig=None, ax=None):
     """
     Rendering Function using the Matplotlib library. Is used to graph the pressure distribution on each plate's face.
     This is done by calculating each plate's normal vector and applying the pressure on it to get a graph.\n

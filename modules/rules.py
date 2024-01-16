@@ -5,7 +5,7 @@
 # Materials Constant Array see. CSR ... to be filled
 import math
 from modules.baseclass.stiff_plate import StiffPlate
-from modules.baseclass.block import Block
+from modules.baseclass.block import Block, SpaceType
 from modules.baseclass.ship import Ship
 from modules.io.datalogger import DataLogger
 from modules.physics.data import Data
@@ -454,7 +454,7 @@ def loading_cases_eval(ship: Ship, case: Data, condition: dict, logger: DataLogg
                 continue
             # use a zero pressure pseudo block as the plate is well-defined
             #  and raising an exception is unwanted behavior
-            zero = Block("zero", False, "VOID", [plate.id])
+            zero = Block("zero", False, SpaceType.VoidSpace, [plate.id])
             zero.get_coords([plate, ])
             zero.Pressure[case.cond] = [0 for _ in zero.pressure_coords]
             blocks.append(zero)
@@ -608,16 +608,16 @@ def corrosion_addition(stiff_plate: StiffPlate, blocks: list[Block], tmin, tmax)
         # FIXME remove duplicate with line 686
         t_in = 0
         for i in tags:
-            if "WB" == i:
+            if i is SpaceType.WaterBallast:
                 if t_in < corr["WBT"]["FacePlate"]["=< 3,tank_top"]:
                     t_in = corr["WBT"]["FacePlate"]["=< 3,tank_top"]
-            elif 'DC' == i:
+            elif i is SpaceType.DryCargo:
                 if t_in < corr["CHP"]["UpperPart"]:
                     t_in = corr["CHP"]["UpperPart"]
-            elif 'OIL' == i or 'FW' == i:
+            elif i in [SpaceType.OilTank, SpaceType.FreshWater]:
                 if t_in < corr["Misc"]["FO/FW/LO/VS"]:
                     t_in = corr["Misc"]["FO/FW/LO/VS"]
-            elif 'VOID' == i:
+            elif i is SpaceType.VoidSpace:
                 if t_in < corr["Misc"]["DrySpace"]:
                     t_in = corr["Misc"]["DrySpace"]
 
@@ -636,19 +636,19 @@ def corrosion_addition(stiff_plate: StiffPlate, blocks: list[Block], tmin, tmax)
         # not the best way but oh well
         while c <= 1:
             for i, tag in enumerate(tags):
-                if "WB" == tag:
+                if tag is SpaceType.WaterBallast:
                     if t[c] < corr['WBT']['FacePlate']['=< 3,tank_top']:
                         t[c] = corr['WBT']['FacePlate']['=< 3,tank_top']
                         ind = i
-                elif 'DC' == tag:
+                elif tag is SpaceType.DryCargo:
                     if t[c] < corr["CHP"]["Hopper/InBot"]:
                         t[c] = corr["CHP"]["Hopper/InBot"]
                         ind = i
-                elif 'OIL' == tag or 'FW' == tag:
+                elif tag in [SpaceType.OilTank, SpaceType.FreshWater]:
                     if t[c] < corr["Misc"]["FO/FW/LO/VS"]:
                         t[c] = corr["Misc"]["FO/FW/LO/VS"]
                         ind = i
-                elif 'VOID' == tag:
+                elif tag is SpaceType.VoidSpace:
                     if t[c] < corr["Misc"]["DrySpace"]:
                         t[c] = corr["Misc"]["DrySpace"]
                         ind = i
@@ -662,16 +662,16 @@ def corrosion_addition(stiff_plate: StiffPlate, blocks: list[Block], tmin, tmax)
 
         t_in = 0
         for i in tags:
-            if "WB" == i:
+            if i is SpaceType.WaterBallast:
                 if t_in < corr["WBT"]["FacePlate"]["=< 3,tank_top"]:
                     t_in = corr["WBT"]["FacePlate"]["=< 3,tank_top"]
-            elif 'DC' == i:
+            elif i is SpaceType.DryCargo:
                 if t_in < corr["CHP"]["UpperPart"]:
                     t_in = corr["CHP"]["UpperPart"]
-            elif 'OIL' == i or 'FW' == i:
+            elif i in [SpaceType.OilTank, SpaceType.FreshWater]:
                 if t_in < corr["Misc"]["FO/FW/LO/VS"]:
                     t_in = corr["Misc"]["FO/FW/LO/VS"]
-            elif 'VOID' == i:
+            elif i is SpaceType.VoidSpace:
                 if t_in < corr["Misc"]["DrySpace"]:
                     t_in = corr["Misc"]["DrySpace"]
 

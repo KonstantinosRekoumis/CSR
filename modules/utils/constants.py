@@ -4,6 +4,7 @@ RHO_S = 1.025  # tn/m^3 seawater @ 17 Celsius
 RHO_F = 0.997  # tn/m^3 fresh water @ 17 Celsius
 G = 9.8063  # gravitational acceleration
 HEAVY_HOMO = 0.8
+
 LOADS = {
     # Block TAG : {Content Properties}
     'WB': {'rho': RHO_S, 'hair': 0.0},
@@ -12,11 +13,13 @@ LOADS = {
     'OIL': {'rho': 0.8, 'hair': 0.0},
     'FW': {'rho': RHO_F, 'hair': 0.0},
     'VOID': {'rho': 0.0, 'hair': 0.0}}
+
 STATIC = {
     'Liquids': ['S-NOS', 'S-HSWO'],
     'Dry': 'STATIC',
     'Sea': 'STATIC'
 }
+
 MATERIALS = {
     # 'type' :('Reh','Rm range'   ,'Teh')
     "A": (235, (400, 520), 235 / sqrt(3)),

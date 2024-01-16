@@ -1,4 +1,4 @@
-from modules.baseclass.block import Block
+from modules.baseclass.block import Block, SpaceType
 from modules.physics.data import Data
 from modules.physics.operations import hydrostatic_pressure
 from modules.utils.constants import G
@@ -15,14 +15,14 @@ def static_liquid_pressure(block: Block):
     # Ppv : Design vapour Pressure not to be taken less than 25 kPa
     # When the Code is made universal for Dry and Tankers it shall be taken to consideration
     # For the time is left as it is. IF AN LC BLOCK IS CREATED THE RESULT WILL BE USELESS
-    if block.space_type == 'DC':
+    if block.space_type is SpaceType.DryCargo:
         return [None, None]
 
     P_nos = [None] * len(block.pressure_coords)
     P_hswo = [None] * len(block.pressure_coords)
     Ztop = max(block.coords, key=lambda x: x[1])[1]
 
-    if block.space_type == "LC":
+    if block.space_type is SpaceType.LiquidCargo:
         F_nos = lambda z: hydrostatic_pressure(z, Ztop, max(block.payload['rho'], 1.025)) + block.payload['Ppv']
     else:
         F_nos = lambda z: hydrostatic_pressure(z, (Ztop + block.payload['hair'] / 2), max(block.payload['rho'], 1.025))
@@ -86,7 +86,7 @@ def dynamic_liquid_pressure(block: Block, case: Data):
     Logger.debug('ax : ', ax, ' ay : ', ay, ' az : ', az, 'x0 : ', x0, ' y0 : ', y0, ' z0 : ', z0)
 
     # strength assessment only
-    if block.space_type == "LC":
+    if block.space_type is SpaceType.LiquidCargo:
         full_l = 0.62
         full_t = 0.67
     else:

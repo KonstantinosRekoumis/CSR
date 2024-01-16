@@ -1,6 +1,6 @@
 import math
 
-from modules.baseclass.block import Block
+from modules.baseclass.block import Block, SpaceType
 from modules.physics.operations import hydrostatic_pressure
 from modules.utils.constants import G
 from modules.utils.logger import Logger
@@ -12,13 +12,13 @@ def block_hydrostatic_pressure(block: Block, Tlc: float, rho: float):
     Evaluation of hydrostatic pressure for SEA block
     """
     P = [0] * len(block.pressure_coords)
-    if block.space_type == 'SEA':
+    if block.space_type is SpaceType.Sea:
         for i, point in enumerate(block.pressure_coords):
             if point[1] <= Tlc:
                 P[i] = hydrostatic_pressure(point[1], Tlc, rho)
         block.Pressure['STATIC'] = P
     else:
-        Logger.warning(f'Does not support block of type {block.space_type}')
+        Logger.warning(f'Does not support block of type {str(block.space_type)}')
         pass
     return P
 
@@ -58,7 +58,7 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
     #         (stiff_plate.plate.end[1]  ,stiff_plate.plate.end[0]  ))
     alpha = -1 if _1_ else 1
 
-    if block.space_type == 'SEA':  # Weatherdeck has special rules according to Section 5.2.2
+    if block.space_type is SpaceType.Sea:  # Weatherdeck has special rules according to Section 5.2.2
         for i, point in enumerate(block.pressure_coords):  # the last 3 coordinates pressure_are rent
             kp_c = lin_int_dict(kp, fxL, fyB(point[0]), suppress=True)
             hw = alpha * Phs(B / 2, Tlc) / rho / G #wave height
@@ -68,7 +68,7 @@ def hsm_wave_pressure(cons_: list[float], _1_: bool, block: Block):
                 Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho)  # PW = PW,WL - ρg(z - TLC)
             else:
                 Pw[i] = 0
-    elif block.space_type == 'ATM':
+    elif block.space_type is SpaceType.Atmosphere:
         x = 1.0  # Section 5.2.2.4, Studying only the weather deck
         if LBP >= 100:
             Pmin = 34.3  # xl = 0.5
@@ -114,7 +114,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
 
     Pw = [None] * len(block.pressure_coords)
     alpha = 1 if _1_ else -1
-    if block.space_type == 'SEA':  # Weatherdeck has special rules according to Section 5.2.2
+    if block.space_type is SpaceType.Sea:  # Weatherdeck has special rules according to Section 5.2.2
         hw = alpha * Pbsp(B / 2, Tlc) / rho / G
         for i, point in enumerate(block.pressure_coords):
             if point[1] < Tlc:
@@ -123,7 +123,7 @@ def bsp_wave_pressure(cons_: list[float], _1_: bool, block: Block, Port=True):
                 Pw[i] = hw * rho * G + hydrostatic_pressure(point[1], Tlc, rho / G)
             else:
                 Pw[i] = 0
-    elif block.space_type == 'ATM':
+    elif block.space_type is SpaceType.Atmosphere:
         x = 1.0  # Section 5.2.2.4, Studying only the weather deck
         Pmin = 14.9 + 0.195 * LBP
         if LBP >= 100:

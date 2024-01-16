@@ -1,6 +1,6 @@
 import json
 
-from modules.baseclass.block import Block
+from modules.baseclass.block import Block, LOAD_SPACE_TYPE
 from modules.baseclass.stiff_plate import StiffPlate
 from modules.baseclass.stiffener import Stiffener
 from modules.baseclass.plate import Plate
@@ -43,10 +43,16 @@ def stiff_pl_save(stiff_plate: StiffPlate):
 
 
 def blocks_save(block: Block):
-    save = ""
-    save += '{"name":"' + block.name + '","symmetrical":' + json.dumps(
-        block.symmetrical) + ',"type":"' + block.space_type + '","ids":' + json.dumps(block.list_plates_id) + "}"
-    return save
+    save = {
+        "name" : block.name,
+        "symmetrical" : block.symmetrical,
+        "type" : str(block.space_type),
+        "ids" : block.list_plates_id
+    }
+    # save = ""
+    # save += '{"name":"' + block.name + '","symmetrical":' + json.dumps(
+    #     block.symmetrical) + ',"type":"' + str(block.space_type) + '","ids":' + json.dumps(block.list_plates_id) + "}"
+    return json.dumps(save)
 
 
 def section_save(ship: Ship):
@@ -167,8 +173,8 @@ def blocks_parser(blocks_t: list):
     for block in blocks_t:
         if set_diff(required_keys, block):
             Logger.error("Loading block {block} has resulted in an error.")
-
-        tmp = Block(block['name'], block['symmetrical'], block['type'], block['ids'])
+        space_type = LOAD_SPACE_TYPE[block['type']]
+        tmp = Block(block['name'], block['symmetrical'], space_type, block['ids'])
         out.append(tmp)
 
     return out

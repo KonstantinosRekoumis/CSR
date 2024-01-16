@@ -1,4 +1,5 @@
 from modules.baseclass.ship import Ship
+from modules.baseclass.block import SpaceType
 from modules.physics.data import Data
 from modules.physics.environmental import block_hydrostatic_pressure
 from modules.physics.internal import dynamic_dry_cargo_pressure, dynamic_liquid_pressure, void_pressure, \
@@ -23,15 +24,18 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
         for i in ship.blocks:
             args = lambda x: (i, x)
 
-            if i.space_type == 'SEA' or i.space_type == 'ATM':
+            if i.space_type in (SpaceType.Atmosphere, SpaceType.Sea):
                 F = c.wave_pressure
 
                 args = lambda x: (x.external_loadsC(), '1' in x.cond, i)
-            elif i.space_type == 'DC':
+            elif i.space_type is SpaceType.DryCargo:
                 F = dynamic_dry_cargo_pressure
-            elif i.space_type in ('WB', 'LC', 'OIL', 'FW'):
+            elif i.space_type in (SpaceType.WaterBallast, 
+                                  SpaceType.LiquidCargo,
+                                  SpaceType.OilTank,
+                                  SpaceType.FreshWater):
                 F = dynamic_liquid_pressure
-            elif i.space_type == 'VOID':
+            elif i.space_type is SpaceType.VoidSpace:
                 F = void_pressure
 
             Pd = F(*args(c))
@@ -49,18 +53,21 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
 
 def static_total_eval(ship: Ship, Tlc: float, rho: float):
     for b in ship.blocks:
-        if b.space_type == 'SEA':
+        if b.space_type is SpaceType.Sea:
             F = block_hydrostatic_pressure
             args = (b, Tlc, rho)
-        elif b.space_type == 'DC':
+        elif b.space_type is SpaceType.DryCargo:
             F = static_dry_cargo_pressure
             args = (b, )
-        elif b.space_type == 'ATM':
+        elif b.space_type is SpaceType.Atmosphere:
             continue
-        elif b.space_type in ('WB', 'LC', 'OIL', 'FW'):
+        elif b.space_type in (SpaceType.WaterBallast, 
+                              SpaceType.LiquidCargo,
+                              SpaceType.OilTank,
+                              SpaceType.FreshWater):
             F = static_liquid_pressure
             args = (b, )
-        elif b.space_type == "VOID": continue
+        elif b.space_type is SpaceType.VoidSpace: continue
 
         Pd = F(*args)
         if None not in Pd:

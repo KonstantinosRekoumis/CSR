@@ -113,9 +113,7 @@ class Ship:
             for j in i.list_plates_id:
                 if (abs(j) not in ids):
                     Logger.error(
-                        f"ship.validate_blocks: The block: {repr(i)} has as boundaries non-existent plates.Program Terminates")
-                    quit()
-            self.block_properties(i)
+                        f"ship.validate_blocks: The block: {repr(i)} has as boundaries non-existent plates. Program Terminates")
         return blocks
 
     def evaluate_sea_n_air(self):
@@ -131,23 +129,6 @@ class Ship:
                 deck_.append(i.id)
         self.blocks.append(SeaSur(shell_))
         self.blocks.append(AtmSur(deck_))
-
-    def block_properties(self, block: Block):
-        """
-        Function built to give each block its contents properties\n
-        For the time being the contents are static and case specific!\n
-        In the Future maybe a more dynamic approach will be implemented.
-        """
-
-        if block.space_type in LOADS:
-            block.payload = LOADS[block.space_type]
-        elif block.space_type in ["SEA", "ATM"]:
-            pass
-        else:
-            Logger.warning(
-                '(classes.py) ship/block_properties: The Current block space type does not correspond to a specified '
-                f'load.\n Check your input. Defaulting to type of VOID cargo for block : {str(block)}'
-            )
 
     def Cw_calc(self):
         # CSR PART 1 CHAPTER 4.2

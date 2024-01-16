@@ -9,6 +9,7 @@ from modules.io.datalogger import DataLogger
 from modules.io.latex import generate_latex_rep
 from modules.utils.constants import RHO_S
 from modules.utils.logger import Logger
+from modules.baseclass.block import SpaceType
 
 
 def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger):
@@ -55,12 +56,13 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
     bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'BSP')
     logger.load_conds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
-        rnr.pressure_plot(ship, 'HSM-1', 'SEA,ATM', path='./essay/HSM1_Shell.pdf')
-        rnr.pressure_plot(ship, 'STATIC', 'SEA,ATM', path='./essay/STATIC_Shell.pdf')
-        rnr.pressure_plot(ship, 'Normals', 'SEA', True, path='./essay/NORMALS.png')
-        rnr.pressure_plot(ship, 'HSM-2', 'SEA,ATM', path='./essay/HSM2_Shell.pdf')
-        rnr.pressure_plot(ship, 'BSP-1P', 'SEA,ATM', path='./essay/BSP1_Shell.pdf')
-        rnr.pressure_plot(ship, 'BSP-2P', 'SEA,ATM', path='./essay/BSP2_Shell.pdf')
+        st  = [SpaceType.Atmosphere, SpaceType.Sea]
+        rnr.pressure_plot(ship, 'HSM-1', st, path='./essay/HSM1_Shell.pdf')
+        rnr.pressure_plot(ship, 'STATIC', st, path='./essay/STATIC_Shell.pdf')
+        rnr.pressure_plot(ship, 'Normals', [SpaceType.Sea], True, path='./essay/NORMALS.png')
+        rnr.pressure_plot(ship, 'HSM-2', st, path='./essay/HSM2_Shell.pdf')
+        rnr.pressure_plot(ship, 'BSP-1P', st, path='./essay/BSP1_Shell.pdf')
+        rnr.pressure_plot(ship, 'BSP-2P', st, path='./essay/BSP2_Shell.pdf')
 
     Logger.info('Evaluating Stiffened Plates Slenderness Requirements...')
     ship.evaluate_beff()
@@ -70,13 +72,23 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
     # calculation Recipes
     flc = {
         'Dynamics': 'S+D',
-        'max value': 'DC',
-        'skip value': 'LC,WB,OIL,FW,VOID'
+        'max value': [SpaceType.DryCargo],
+        'skip value': [
+            SpaceType.LiquidCargo,
+            SpaceType.WaterBallast,
+            SpaceType.OilTank,
+            SpaceType.FreshWater,
+            SpaceType.VoidSpace]
     }
     wb = {
         'Dynamics': 'S+D',
-        'max value': '',
-        'skip value': 'DC,LC,OIL,FW,VOID'
+        'max value': [],
+        'skip value': [
+            SpaceType.LiquidCargo,
+            SpaceType.DryCargo,
+            SpaceType.OilTank,
+            SpaceType.FreshWater,
+            SpaceType.VoidSpace]
     }
 
     Logger.info(f'Evaluating Full Load Condition...')
@@ -105,4 +117,4 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
 
 if __name__ == "__main__":
     # Single Step Manual Design evaluation
-    main(os.path.expanduser(sys.argv[1]), False, False)
+    main(os.path.expanduser(sys.argv[1]), False, False, False)
