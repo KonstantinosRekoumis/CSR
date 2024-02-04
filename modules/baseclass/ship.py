@@ -117,8 +117,6 @@ class Ship:
         return blocks
 
     def evaluate_sea_n_air(self):
-        def atm_key(item: StiffPlate):
-            return item.plate.start[0]
 
         shell_ = []
         deck_ = []

@@ -23,8 +23,10 @@ _PLACE_ = {
     5: "WeatherDeck",
     6: "Girder",
 }
-
-
+@auto_str
+class Bilge(Plate):
+    def __str__(self):
+        return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
 @auto_str
 class Plate:
     """
@@ -62,7 +64,7 @@ class Plate:
         # Implicitly Calculated Quantities
         self.angle, self.length = self.calc_lna()
         self.area = self.length * self.thickness
-        self.Ixx_c, self.Iyy_c = self.calc_I_center(b=self.net_thickness)
+        self.Ixx_c, self.Iyy_c = self.calc_I_center(self.net_thickness)
         self.CoA = self.calc_CoA()
         self.eta = self.eta_eval()
         # t = net + 50% corrosion Related Calculations and Quantities
@@ -71,77 +73,40 @@ class Plate:
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
 
     def __str__(self):
-        if self.tag != 4:
-            return f"PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
-        else:
-            return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
+        return f"PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
+            
+    def calc_length(self, dx, dy):
+        raise NotImplementedError
+    
+    def calc_angle(self, dx, dy):
+        try:
+            return math.atan2(dy, dx)
+        except ZeroDivisionError:
+            if dy > 0:
+                return math.pi / 2
+            elif dy <= 0:
+                return -math.pi / 2
 
     def calc_lna(self):
         # calculate the plate's angle and length
         dy = self.end[1] - self.start[1]
         dx = self.end[0] - self.start[0]
-        try:
-            a = math.atan2(dy, dx)
-        except ZeroDivisionError:
-            if dy > 0:
-                a = math.pi / 2
-            elif dy <= 0:
-                a = -math.pi / 2
-        if self.tag != 4:
-            l = math.sqrt(dy ** 2 + dx ** 2)
-        else:
-            if abs(dx) == abs(dy):
-                l = math.pi * abs(dx) / 2
-            else:
-                Logger.error(
-                    "-- ERROR --\n"
-                    + "Edit your design. As the only bilge type supported is quarter circle."
-                )
-                quit()
-        return a, l
+        return self.calc_angle(dx, dy), self.calc_length(dx, dy)
 
-    def calc_I_center(self, b):
+    def calc_I_center(self, b: float):
         """
         Calculate the plate's Moments of Inertia at the center of the plate
+
+        Args:
+            b (float) : The desired thickness to perform calculations with
         """
-        l = self.length
-        a = self.angle
-        if self.tag != 4:
-            Ixx = b * l / 12 * ((b * math.cos(a)) ** 2 + (l * math.sin(a)) ** 2)
-            Iyy = b * l / 12 * ((b * math.cos(a + math.pi / 2)) ** 2
-                                + (l * math.sin(a + math.pi / 2)) ** 2
-                                )
-        else:
-            r = l / math.pi * 2
-            Ixx = 1 / 16 * math.pi * (r ** 4 - (r - self.thickness) ** 4)
-            Iyy = 1 / 16 * math.pi * (r ** 4 - (r - self.thickness) ** 4)
-            pass
-        return Ixx, Iyy
+        raise NotImplementedError
+        
+        
 
     def calc_CoA(self):
         # calculates Center of Area relative to the Global (0,0)
-        if self.tag != 4:
-            return (self.start[0] + self.length / 2 * math.cos(self.angle)), (
-                    self.start[1] + self.length / 2 * math.sin(self.angle)
-            )
-        else:
-            r = self.length / math.pi * 2
-            if 0 < self.angle < math.pi / 2:  # 1st quarter
-                startx = self.start[0]
-                starty = self.end[1]
-                return startx + (2 * r / math.pi), starty - (2 * r / math.pi)
-            elif 0 < self.angle < math.pi:  # 2nd quarter
-                startx = self.end[0]
-                starty = self.start[1]
-                return startx + (2 * r / math.pi), starty + (2 * r / math.pi)
-            elif 0 > self.angle > -math.pi / 2:
-                startx = self.end[0]
-                starty = self.start[1]
-                return startx - (2 * r / math.pi), starty - (2 * r / math.pi)
-            elif 0 > self.angle > -math.pi:
-                startx = self.start[0]
-                starty = self.end[1]
-                return startx - (2 * r / math.pi), starty + (2 * r / math.pi)
+        raise NotImplementedError
 
     def render(self, r_m="w"):
         """
@@ -237,15 +202,14 @@ class Plate:
             except KeyError | TypeError as e:
                 if isinstance(e, KeyError):
                     Logger.error("The axis dictionary is not properly structured", rethrow=e)
-
-                Logger.error(f"Improper axis values {axis}", rethrow=e)
+        Logger.error(f"Improper axis values {axis}", rethrow=e)
 
     def eta_eval(self):
         """
         Evaluates the normal vectors of the plate face. Useful in Pressure offloading
         """
-        X, Y = self.render_data()[:2]
-        geom = [[X[i], Y[i]] for i in range(len(X))]
+        x, y = self.render_data()[:2]
+        geom = [[x[i], y[i]] for i in range(len(x))]
         return normals_2d(geom)
 
     def update(self):

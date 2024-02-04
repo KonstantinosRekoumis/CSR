@@ -7,6 +7,22 @@ from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import d2r, lin_int_dict
 
+DYNAMIC_CONDITIONS_TAGS = [ 'HSM-1', 'HSM-2',
+                            'HSA-1', 'HSA-2',
+                            'FSM-1', 'FSM-2', 
+                            'BSR-1P', 'BSR-2P',
+                            'BSP-1P', 'BSP-2P',
+                            'OST-1P', 'OST-2P',
+                            'OSA-1P', 'OSA-2P']  
+def _check_cond(cond: str):
+    if cond in DYNAMIC_CONDITIONS_TAGS:
+        return cond
+    Logger.error(f"""{cond} is not a valid Dynamic Condition abbreviation.
+                Invalid condition to study. Enter an appropriate Condition out of :
+                {["{i}" for i in DYNAMIC_CONDITIONS_TAGS]}
+                Currently supported conditions are : HSM and BSP.
+                The other conditions will result in invalid results
+                The Program Terminates...""", rethrow=KeyError)
 
 @auto_str
 class Data:
@@ -20,11 +36,10 @@ class Data:
     fbk needs more
     -------------------------------------------------------------------------------------------------------------------
     """
-
     def __init__(self, tlc: float, ship: Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
         # Ship Data and General Data
         # The dynamic condition we are interested in
-        self.cond = cond
+        self.cond = _check_cond(cond)
 
         self.Tlc = tlc
         self.rho = rho
@@ -45,7 +60,6 @@ class Data:
 
         if self.Tlc > ship.Tsc:
             Logger.error("Your current Draught must not exceed the Scantling Draught.\n The program Terminates....")
-
         self.ft = self.Tlc / ship.Tsc
         if self.ft < 0.5: self.ft = 0.5
         self.fbeta = {
@@ -57,18 +71,8 @@ class Data:
             'OST-1P': 1.00, 'OST-2P': 1.00,
             'OSA-1P': 1.00, 'OSA-2P': 1.00,
         }  # pp. 186 Part 1 Chapter 4, Section 4
-        try:
-            self.fb = self.fbeta[self.cond]
-        except KeyError as e:
-            Logger.error(f'PhysicsData/__init__(): {self.cond} is not a valid Dynamic Condition abbreviation.', die=False)
-            Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", die=False)
-            [Logger.error(f"{i}", die=False) for i in self.fbeta]
-            Logger.error('Currently supported conditions are : HSM and BSP.', die=False)
-            Logger.error('The other conditions will result in invalid results', die=False)
-            Logger.error('The Program Terminates...', rethrow=e)
-
+        self.fb = self.fbeta[self.cond]
         self.flp = 1.0 if (self.fxL >= 0.5) else -1.0
-
         # roll angle
         self.T_theta = (2.3 * math.pi * kr_p * self.B) / math.sqrt(G * gm_p * self.B)
         self.theta = (9000 * (1.25 - 0.025 * self.T_theta) * self.fps * fbk) / ((self.B + 75) * math.pi)  # deg
@@ -82,27 +86,22 @@ class Data:
         self.a_pitch = self.fps * ((3.1 / math.sqrt(G * self.Lsc)) + 1) * self.phi * math.pi / 180 * (
                 2 * math.pi / self.T_phi) ** 2
         self.a_roll = self.fps * self.theta * math.pi / 180 * (2 * math.pi / self.T_theta) ** 2
-
         self.flp_osa_d = {'< 0.4': -(0.2 + 0.3 * self.ft),
                           '[0.4,0.6]': (-(0.2 + 0.3 * self.ft)) * (5.6 - 11.5 * self.fxL),
                           '> 0.6': 1.3 * (0.2 + 0.3 * self.ft)}
         self.flp_ost_d = {'< 0.2': 5 * self.fxL, '[0.2,0.4]': 1.0, '[0.4,0.65]': -7.6 * self.fxL + 4.04,
                           '[0.65,0.85]': -0.9, '> 0.85': 6 * (self.fxL - 1)}
-
         # as fxl = 0.5
-
         self.flp_osa = self.flp_osa_d['[0.4,0.6]']
         self.flp_ost = self.flp_ost_d['[0.4,0.65]']
-
         self.wave_pressure = 0
         self.wave_pressure_functions()
-
         self.Cwv, self.Cqw, self.Cwh, self.Cwt, self.Cxs, self.Cxp, self.Cxg, self.Cys, self.Cyr, self.Cyg, self.Czh, self.Czr, self.Czp = self.Combination_Factors()
         # Bending Moments and Shear Forces calculation
         self.Mwv_lc, self.Qwv_lc, self.Mwh_lc, self.Mws = self.moments_eval()  # maybe later add torsional calculations
         self.sigma = lambda y, z: 1e-3 * (
                 (self.Mwv_lc + self.Mws) / self.Ixx * (z - self.yn) - self.Mwh_lc / self.Iyy * y)
-
+        
     def external_loadsC(self):
         '''
         -------------------------------------------------------------------------------------------------------------------
