@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.baseclass.plate import _PLACE_
 from modules.utils.decorators import auto_str
 

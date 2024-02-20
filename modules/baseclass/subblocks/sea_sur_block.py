@@ -1,5 +1,5 @@
 from modules.baseclass.block import Block, SpaceType
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 

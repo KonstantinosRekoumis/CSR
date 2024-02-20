@@ -1,6 +1,6 @@
 import numpy as np
 
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.baseclass.ship import Ship
 from modules.io.datacell import DataCell
 from modules.io.templates import TemplateFactory

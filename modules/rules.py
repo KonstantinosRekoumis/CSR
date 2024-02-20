@@ -4,7 +4,7 @@
 
 # Materials Constant Array see. CSR ... to be filled
 import math
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.baseclass.block import Block, SpaceType
 from modules.baseclass.ship import Ship
 from modules.io.datalogger import DataLogger

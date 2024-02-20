@@ -2,7 +2,7 @@ import math
 from modules.baseclass.block import Block
 from modules.baseclass.subblocks.atm_sur_block import AtmSur
 from modules.baseclass.subblocks.sea_sur_block import SeaSur
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.utils.constants import LOADS
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger

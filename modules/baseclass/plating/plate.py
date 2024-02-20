@@ -47,7 +47,7 @@ class Plate:
                     + "\nThe plate's original tag is non existent. The existing tags are:"
             )
             Logger.warning(warn)
-            [print(_PLACE_[i], ") ->", i) for i in _PLACE_ if type(i) == str]
+            [print(_PLACE_[i], ") ->", i) for i in _PLACE_ if isinstance(i, str)]
             Logger.warning("The program defaults to Inner Bottom Plate")
         self.start = start
         self.end = end
@@ -102,8 +102,6 @@ class Plate:
         """
         raise NotImplementedError
         
-        
-
     def calc_CoA(self):
         # calculates Center of Area relative to the Global (0,0)
         raise NotImplementedError
@@ -129,46 +127,26 @@ class Plate:
             plt.plot(X, Y, color="b", marker=marker)
             plt.plot(self.CoA[0], self.CoA[1], color="red", marker="+")
 
-    def render_data(self):
-        if self.tag != 4:
-            out = [
-                (self.start[0], self.end[0]),
-                (self.start[1], self.end[1]),
-                self.thickness,
-                self.material,
-                _PLACE_[self.tag],
-            ]
-        else:
-            if 0 < self.angle < math.pi / 2:
-                start = -math.pi / 2
-                end = 0
-                startx = self.start[0]
-                starty = self.end[1]
-            elif 0 < self.angle < math.pi:
-                start = 0
-                end = math.pi / 2
-                startx = self.end[0]
-                starty = self.start[1]
-            elif 0 > self.angle > -math.pi / 2:
-                start = -math.pi
-                end = -math.pi / 2
-                startx = self.end[0]
-                starty = self.start[1]
-            elif 0 > self.angle > -math.pi:
-                start = math.pi / 2
-                end = math.pi
-                startx = self.start[0]
-                starty = self.end[1]
+    def calculate_grid(self, res=10):
+        raise NotImplementedError
 
-            lin = np.linspace(start, end, num=10)
-            r = self.end[0] - self.start[0]
-            X = startx + np.cos(lin) * abs(r)
-            Y = starty + np.sin(lin) * abs(r)
-            out = [X, Y, self.thickness, self.material, _PLACE_[self.tag]]
+    def render_data(self) -> tuple[tuple, tuple, float, str, str]:
+        """return the necessary data for the rendering functions to operate upon.
 
-        return out
+        Returns:
+            tuple[tuple, tuple, float, str, str]: x coords, y coords,
+            thickness, material, locality tag
+        """
+        raise NotImplementedError
+    
 
-    def save_data(self):
+    def save_data(self) -> tuple[tuple, tuple, float, str, str, str]:
+        """return the necessary data for saving the plate's information
+
+        Returns:
+            tuple[tuple, tuple, float, str, str]: start coords [m], end coords [m],
+            thickness [mm],  material, locality tag, Plate tag
+        """
         return [
             self.start,
             self.end,
@@ -213,6 +191,9 @@ class Plate:
         return normals_2d(geom)
 
     def update(self):
+        """Call to update the plate after every  modification done on the
+        plate's parameters.
+        """
         if self.net_thickness < max(
                 self.net_thickness_calc, self.net_thickness_empi, self.net_thickness_buck
         ):
@@ -230,3 +211,5 @@ class Plate:
         self.n50_thickness = self.net_thickness + 0.5 * self.cor_thickness
         self.n50_area = self.length * self.n50_thickness
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
+
+

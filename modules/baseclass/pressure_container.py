@@ -1,5 +1,5 @@
 import numpy as np
-from baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from baseclass.block import Block
 from physics.data import _check_cond
 
@@ -14,6 +14,7 @@ class PressureContainer:
         self.plate = plate
         self.block = block
         self.pressure_grid = self.plate.pressure_grid
+        self.evaluator = None
         self._pressure_distro = []
 
     @property
@@ -21,7 +22,10 @@ class PressureContainer:
         return self._pressure_distro
     
     @pressure_distro.setter
-    def pressure_distro(self, evaluator: callable):
-        evaluator(self.pressure_grid)
+    def pressure_distro(self):
+        self._pressure_distro = self.evaluator(self.pressure_grid)
 
+class BSP01_PressureContainer(PressureContainer):
+    def __init__(self, plate: StiffPlate, block: Block) -> None:
+        super().__init__(plate, block)
 

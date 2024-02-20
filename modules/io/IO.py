@@ -1,9 +1,9 @@
 import json
 
 from modules.baseclass.block import Block, LOAD_SPACE_TYPE
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.baseclass.stiffener import Stiffener
-from modules.baseclass.plate import Plate
+from modules.baseclass.plating.plate import Plate
 from modules.baseclass.ship import Ship
 from modules.utils.constants import MATERIALS
 from modules.utils.logger import Logger

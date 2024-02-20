@@ -11,11 +11,17 @@ def block_hydrostatic_pressure(block: Block, Tlc: float, rho: float):
     """
     Evaluation of hydrostatic pressure for SEA block
     """
-    P = [0] * len(block.pressure_coords)
-    if block.space_type is SpaceType.Sea:
-        for i, point in enumerate(block.pressure_coords):
+    def evaluate(pressure_coords: list):
+        for i, point in enumerate(pressure_coords):
             if point[1] <= Tlc:
                 P[i] = hydrostatic_pressure(point[1], Tlc, rho)
+                
+    # P = [0] * len(block.pressure_coords)
+    if block.space_type is SpaceType.Sea:
+        for p_c in block.pressure_containers:
+            p_c.pressure_distro = evaluate
+
+        
         block.Pressure['STATIC'] = P
     else:
         Logger.warning(f'Does not support block of type {str(block.space_type)}')

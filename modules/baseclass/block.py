@@ -1,7 +1,7 @@
 import math
 from enum import Enum
 
-from modules.baseclass.stiff_plate import StiffPlate
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.utils.decorators import auto_str
 from modules.utils.operations import d2r, linespace, normals_2d
 from modules.utils.logger import Logger

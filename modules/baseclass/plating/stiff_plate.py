@@ -2,7 +2,7 @@ import math
 
 from matplotlib import pyplot as plt
 
-from modules.baseclass.plate import Plate
+from modules.baseclass.plating.plate import Plate
 from modules.baseclass.stiffener import Stiffener
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
@@ -67,10 +67,7 @@ class StiffPlate:
                 N = math.floor(net_l / self.spacing)
                 _range = linespace(1, N, 1, skip=skip, truncate_end=False)
             except ZeroDivisionError:
-                Logger.error(
-                    f"(classes.py) stiff_plate: Plate {self} has no valid dimensions."
-                )
-                quit()
+                Logger.error(f"Plate {self} has no valid dimensions.")
             for i in _range:
                 root = (
                     self.plate.start[0]

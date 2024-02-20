@@ -1,5 +1,7 @@
 import math
-from baseclass.plating.plate import Plate
+
+import numpy as np
+from baseclass.plating.plate import _PLACE_, Plate
 from modules.utils.decorators import auto_str
 
 @auto_str
@@ -20,3 +22,18 @@ class LinearPlate(Plate):
         return (self.start[0] + self.length / 2 * math.cos(self.angle)), (
                     self.start[1] + self.length / 2 * math.sin(self.angle)
             )
+    def calculate_grid(self, res=10):
+        lin_ = np.linspace(0, self.length, res, endpoint=True)
+        x = self.start[0] + lin_ * np.cos(self.angle)
+        y = self.start[1] + lin_ * np.cos(self.angle)
+        return np.transpose(np.array((x,y)))
+    
+    def render_data(self):
+        return ((self.start[0], self.end[0]), 
+                (self.start[1], self.end[1]),
+                self.thickness,
+                self.material,
+                _PLACE_[self.tag],)
+    def save_data(self) -> tuple[tuple, tuple, float, str, str, str]:
+        out =  super().save_data()
+        return *out, "LINEAR"
