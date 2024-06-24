@@ -184,7 +184,7 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Data,
         4: 1.0,  # 'Bilge'
         5: 1.0  # 'WeatherDeck'
     }
-    ap = 1.2 - plate.spacing ** 2 / 2.1 / plate.PSM_spacing
+    ap = 1.2 - plate.spacing ** 2 / 2.1 / plate.psm_spacing
     try:
         reh, rem, teh = MATERIALS[plate.plate.material]
     except KeyError:
@@ -240,7 +240,7 @@ def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Data,
     elif plate.tag == 4:
         p = plate.Pressure[case.cond][0][-1]
         r = abs(plate.plate.start[1] - plate.plate.end[1]) + 0.5 * (plate.s_pad + plate.e_pad)
-        t = 6.45 * (p * plate.PSM_spacing * 1e3) ** 0.4 * (r * 1e3) ** 0.6 * 1e-7  # m
+        t = 6.45 * (p * plate.psm_spacing * 1e3) ** 0.4 * (r * 1e3) ** 0.6 * 1e-7  # m
         Logger.debug(f"(rules.py) plating_thickness_calculation: Plate {plate} "
                      f"Bilge Zone special t {t * 1e3} while local scantlings t {max_t * 1e3} [mm]")
     else:
@@ -295,8 +295,8 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
     fshr = 0.7  # lower end of vertical stiffeners is the minimum worst condition
     fbdg = 12  # horizontal stiffeners
 
-    lbdg = plate.PSM_spacing  # worst case scenario don't know the stiffener span
-    lshr = plate.PSM_spacing - plate.spacing / 2  # worst case scenario don't know the stiffener span
+    lbdg = plate.psm_spacing  # worst case scenario don't know the stiffener span
+    lshr = plate.psm_spacing - plate.spacing / 2  # worst case scenario don't know the stiffener span
     tw = lambda p: (fshr * abs(p) * plate.spacing * lshr) / (dshr * x[plate.tag] * ct * teh) * 1e-3
     z = lambda p, point: (abs(p) * plate.spacing * 1e3 * lbdg ** 2) / (
             fbdg * x[plate.tag] * cs(case.sigma(*point)) * reh) * 1e-6
@@ -364,7 +364,7 @@ def buckling_evaluator(ship: Ship):
         reh = min(MATERIALS[st_plate.plate.material][0], MATERIALS[st_plate.stiffeners[0].material][0])
         n = len(st_plate.stiffeners)
         aeff = n * st_plate.stiffeners[0].area + st_plate.plate.thickness * st_plate.b_eff  # m^2
-        ist = n * c * st_plate.PSM_spacing ** 2 * aeff * reh / 235 * 1e-4  # m^4
+        ist = n * c * st_plate.psm_spacing ** 2 * aeff * reh / 235 * 1e-4  # m^4
 
         # thickness check
         tp = st_plate.b_eff / 100 * math.sqrt(reh / 235)

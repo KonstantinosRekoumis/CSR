@@ -1,8 +1,8 @@
 import json
 
 from modules.baseclass.block import Block, LOAD_SPACE_TYPE
-from modules.baseclass.plating.stiff_plate import StiffPlate
-from modules.baseclass.stiffener import Stiffener
+from modules.baseclass.plating.stiff_plate import StiffPlate, StiffGroup
+from modules.baseclass.plating.stiffener import Stiffener
 from modules.baseclass.plating.plate import Plate
 from modules.baseclass.ship import Ship
 from modules.utils.constants import MATERIALS
@@ -26,15 +26,14 @@ def stiff_save(stiff: Stiffener):
 
 
 def stiff_pl_save(stiff_plate: StiffPlate):
-    save = ""
-    save += '{"id":' + str(stiff_plate.id) + ',"plate":' + plate_save(stiff_plate.plate) + ","
+    save = '{"id":' + str(stiff_plate.id) + ',"plate":' + plate_save(stiff_plate.plate) + ","
     if len(stiff_plate.stiffeners) != 0:
         save += '"stiffeners":' + stiff_save(stiff_plate.stiffeners[0]) + ","
     else:
         save += '"stiffeners": {},'
 
     save += '"spacing":' + json.dumps(stiff_plate.spacing * 1e3) + ","
-    save += '"PSM_spacing":' + json.dumps(stiff_plate.PSM_spacing) + ","
+    save += '"psm_spacing":' + json.dumps(stiff_plate.psm_spacing) + ","
     save += '"skip":' + json.dumps(stiff_plate.skip) + ","
     save += '"s_pad":' + json.dumps(stiff_plate.s_pad * 1e3) + ","
     save += '"e_pad":' + json.dumps(stiff_plate.e_pad * 1e3)
@@ -116,55 +115,65 @@ def load_ship(filename):
 def geometry_parser(geo_t: list):
     out = []
     temp_id = []
-    for i in geo_t:
-        if len(i['plate']) < 5:
-            Logger.error(f'Plate has no correct format.')
-
-        if i['plate'][0] == i['plate'][1]:
-            Logger.error(f'Plate :{i["plate"]} You cannot enter a plate with no length!')
-
-        if i['plate'][3] not in MATERIALS:
-            Logger.error(f'Plate :{i["plate"]} Your plate has a no documented material !')
-
-        t = i['plate'][2] if i['plate'][2] != 0 else 0.1
-        tmp_p = Plate(i['plate'][0], i['plate'][1], t, i['plate'][3], i['plate'][4])
-        if i['plate'][4] != 'Bilge' and 'stiffeners' in i and len(i['stiffeners']) != 0:
-            tmp_d = i['stiffeners']["dimensions"]
-            # extra dimensions than the first N required are omitted
-            if len(tmp_d) >= 2 and i['stiffeners']["type"] == 'fb':
-                dims = {'lw': tmp_d[0], 'bw': tmp_d[1]}
-            # extra dimensions than the first N required are omitted
-            elif len(tmp_d) >= 4 and i['stiffeners']["type"] in ('g', 'tb'):
-                dims = {'lw': tmp_d[0], 'bw': tmp_d[1], 'lf': tmp_d[2], 'bf': tmp_d[3]}
-            else:
-                Logger.error(
-                    "You input a stiffener type that has less dims than needed",
-                    i['stiffeners']
-                )
-            tmp_s = {
-                'type': i['stiffeners']['type'], 'material': i['stiffeners']['material'],
-                'dimensions': dims
-            }
-        elif i['plate'][4] == 'Bilge' or len(i['stiffeners']) == 0:
-            tmp_s = {}
-        else:
-            Logger.error('Error loading stiffeners.')
-        if i['id'] is int:
+    for st_pl_dict in geo_t:
+        tmp_p = load_plate(st_pl_dict["plate"])
+        tmp_s = [load_stiff_group(data) for data in st_pl_dict["stiffeners"]]
+        if st_pl_dict['id'] is int:
             Logger.error(f'Id is not an integer')
-        if i['id'] in temp_id:
+        if st_pl_dict['id'] in temp_id:
             Logger.error(
                 f'There was an overlap between the '
-                f'ids of two stiffened plates. \nCONFLICTING ID : ' + str(i['id']))
-        if 'null' in i:
-            null = i['null']
+                f'ids of two stiffened plates. \nCONFLICTING ID : ' + str(st_pl_dict['id']))
+        if 'null' in st_pl_dict:
+            null = st_pl_dict['null']
         else:
             null = False
-        tmp = StiffPlate(i['id'], tmp_p, i['spacing'], i['s_pad'], i['e_pad'], tmp_s, i['skip'],
-                         i['PSM_spacing'], null=null)
+        tmp = StiffPlate(st_pl_dict['id'], tmp_p, tmp_s, st_pl_dict['psm_spacing'], null=null)
         out.append(tmp)
-        temp_id.append(i['id'])
+        temp_id.append(st_pl_dict['id'])
 
     return out
+
+def load_stiff_group(data_dict: list[dict[str, any]], plate: Plate) -> StiffGroup:
+    keys = {0: 'lw' , 1: 'bw' , 2: 'lf' , 3: 'bf' }
+    stiff_types = {"fb": 2, "g": 4, "t": 4, "bb": 3}
+    if plate.tag != 'Bilge' and len(data_dict) != 0:
+        # extra dimensions than the first N required are omitted
+        stiff_dict = data_dict["stiffener_type"]
+        try:
+            min_dims = 0
+            if stiff_dict["type"] in stiff_types:
+                min_dims = stiff_types[stiff_dict["type"]]
+            else:
+                Logger.error(f"Invalid type of stiffener was used! {stiff_dict["type"]} is not a valid abbreviation")
+            assert (len(stiff_dict["dimensions"]) >= min_dims), "Your stiffener has not enough dimensions!"
+            # check if KeyError will rise
+            for index in range(len(stiff_dict["dimensions"])):
+                stiff_dict["dimensions"][index]
+        except KeyError:
+            Logger.error(f"The dimensions dict is not properly formatted! {stiff_dict["dimensions"]}")
+        except AssertionError as ae:
+            Logger.error("", rethrow=ae)
+
+        return StiffGroup(**{"plate": plate, **data_dict})
+    elif data_dict['plate']["tag"] == 'Bilge' or len(data_dict) == 0:
+        return None
+    else:
+        Logger.error('Error loading stiffeners.')
+
+def load_plate(kwargs: dict[str, any]) -> Plate:
+    if len(kwargs) < 5:
+        Logger.error(f'Plate has no correct format.')
+
+    if kwargs["start"] == kwargs["end"]:
+        Logger.error(f'Plate :{kwargs} You cannot enter a plate with no length!')
+
+    if kwargs["material"] not in MATERIALS:
+        Logger.error(f'Plate :{kwargs["plate"]} Your plate has a no documented material !')
+
+    t = kwargs["thickness"] if kwargs["thickness"] != 0 else 0.1
+    return Plate(**kwargs)
+
 
 
 def blocks_parser(blocks_t: list):

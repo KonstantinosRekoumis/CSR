@@ -10,6 +10,7 @@ from modules.io.latex import generate_latex_rep
 from modules.utils.constants import RHO_S
 from modules.utils.logger import Logger
 from modules.baseclass.block import SpaceType
+from modules.baseclass.plating.plate import Plate
 
 
 def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger):
@@ -113,6 +114,8 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
         Logger.info('Generating LaTeX Report Data to /out.json file...')
         generate_latex_rep(logger, path='./essay/', standalone=False)
         Logger.success('Program terminated successfully!')
+
+
 
 
 if __name__ == "__main__":

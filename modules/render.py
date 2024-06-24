@@ -94,7 +94,7 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
         m.append(m_)
         tag.append(tag_)
         identifier.append(f'{i.id}')
-        psm_spacing.append(i.PSM_spacing)
+        psm_spacing.append(i.psm_spacing)
 
         for j in i.stiffeners:
             ax.plot(*j.render_data()[:2], color=color)

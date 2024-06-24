@@ -1,7 +1,7 @@
-from utils.logger import Logger
-from baseclass.plating.plate import Plate, _PLACE_
+from modules.utils.logger import Logger
+from modules.baseclass.plating.plate import Plate, _PLACE_
 
-class SplinePlate(Plate):
+class SplinePlate(Plate, prefix="SPLINE"):
     """This type of plate is to be used to model complex plate geometry.
     There is no need to create something more complicated than that. 
 
@@ -47,3 +47,8 @@ class SplinePlate(Plate):
         self.n50_thickness = self.net_thickness + 0.5 * self.cor_thickness
         self.n50_area = self.length * self.n50_thickness
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
+
+    def save_data(self) -> tuple[tuple, tuple, float, str, str, str]:
+        out =  super().save_data()
+        out["prefix"] = "SPLINE"
+        return out

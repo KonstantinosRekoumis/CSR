@@ -38,7 +38,7 @@ class Ship:
                  Cb: float,
                  Cp: float,
                  Cm: float,
-                 DWT: float,  # PSM_spacing,
+                 DWT: float,  # psm_spacing,
                  stiff_plates: list[StiffPlate],
                  blocks: list[Block]):
         self.symmetrical = True  # Checks that implies symmetry. For the time being is arbitrary constant
@@ -53,7 +53,7 @@ class Ship:
         self.Cp = Cp
         self.Cm = Cm
         self.DWT = DWT
-        # self.PSM_spacing = PSM_spacing
+        # self.psm_spacing = psm_spacing
         self.Mwh = 0
         self.Mws = 0
         self.Msw_h_mid = 0

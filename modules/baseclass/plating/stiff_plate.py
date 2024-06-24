@@ -3,12 +3,75 @@ import math
 from matplotlib import pyplot as plt
 
 from modules.baseclass.plating.plate import Plate
-from modules.baseclass.stiffener import Stiffener
+from modules.baseclass.plating.linear_plate import LinearPlate
+from modules.baseclass.plating.quart_circ_plate import QuartCircPlate
+from modules.baseclass.plating.spline_plate import SplinePlate
+from modules.baseclass.plating.stiffener import Stiffener
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import linespace
+@auto_str
+class StiffGroup:
 
+    def __init__(self, plate: Plate, spacing: float, start_pad: float, stiffener_type: dict, end_pad: float, N: int | None = None):
+        """Stiffeners are grouped together to enable the user to model more complex stiffening configurations and not be limited 
+        in a single stiffener type per stiffened plate.
 
+        Note that either an end padding can be provided or a Number of Stiffeners to be input. As the target is to have a constant spacing
+        that is input by the user, the user can either provide a the distance from the end and let the class calculate the number of stiffeners
+        or explicitly provide the number of stiffeners and ignore the end padding.
+
+        Args:
+            plate (Plate):  The base plate to take the root of the geometry
+            spacing (float):  The spacing between each stiffener
+            start_pad (float): The offset from the start of the plate to the start of the group
+            stiffener_type (dict): A dictionary containing the geometric properties of the stiffener
+            end_pad (float): The offset from the end of the plate to the end of the group.
+        Kwargs:
+            N (int, optional): The number of stiffeners in the group. Defaults to 1.
+        """
+        self.base_plate = plate
+        self.spacing = spacing 
+        self.start_pad = start_pad
+        self.end_pad = end_pad
+        self.N = N
+        if spacing == 0 : Logger.error(f"The spacing you provided is 0. StiffGroup = {self}")
+
+        self.stiffeners: list[Stiffener] = []
+
+        if self.N is None:
+            net_l = self.base_plate.length - self.start_pad - self.end_pad
+            self.N = math.floor(net_l / self.spacing)
+        else:
+            if (end_pad:=(self.base_plate.length - self.start_pad - self.N * self.spacing)) <= 0:
+                Logger.error(f"Stiff Group has more elements than the plate can support!")                 
+            self.end_pad = end_pad
+        _range = linespace(1, self.N, 1, truncate_end=False)
+        for i in _range:
+            root = (
+                self.base_plate.start[0]
+                + math.cos(self.base_plate.angle) * (self.spacing * i + self.start_pad),
+                self.base_plate.start[1]
+                + math.sin(self.base_plate.angle) * (self.spacing * i + self.start_pad),
+            )
+            self.stiffeners.append(
+                Stiffener(
+                    stiffener_type["type"],
+                    stiffener_type["dimensions"],
+                    self.base_plate.angle,
+                    root,
+                    stiffener_type["material"],
+                    plate.tag,
+                )
+            )
+    
+    def save_data(self) -> str:
+        return {["stiffener_type"]: self.stiffeners[0].save_data(),
+                ["spacing"]: round(self.spacing*1e3, 2),
+                ["start_pad"]: round(self.start_pad*1e3, 2),
+                ["end_pad"]: round(self.end_pad*1e3, 2),
+                ["N"]: self.N}
+            
 @auto_str
 class StiffPlate:
     """
@@ -19,19 +82,15 @@ class StiffPlate:
     s_pad, e_pad -> Float numbers, to express the padding distance (in mm) of the stiffeners with
     respect to the starting and ending edge of the base plate.
     stiffener_dict -> A dict containing data to create stiffeners : {type : str, dims : [float (in mm)],mat:str}
-    PSM_spacing is in m.
+    psm_spacing is in m.
     """
 
     def __init__(
             self,
             id: int,
             plate: Plate,
-            spacing: float,
-            s_pad: float,
-            e_pad: float,
-            stiffener_: dict,
-            skip: int,
-            PSM_spacing: float,
+            stiffeners: list[StiffGroup],
+            psm_spacing: float,
             null: bool = False,
     ):
         """`StiffPlate` class
@@ -45,7 +104,7 @@ class StiffPlate:
             stiffener_ (dict): A dict containing data to create stiffeners : `{type : str, dims : [float (in mm)],mat:str}`
             skip (int): Consider $skip = N$, the Nth stiffener is ignored and
             not created
-            PSM_spacing (float): Primary Structural Members spacing in meters
+            psm_spacing (float): Primary Structural Members spacing in meters
             null (bool, optional): Keyword argument to disregard the plate for
             any strength calculations. Defaults to False.
         """
@@ -53,38 +112,24 @@ class StiffPlate:
         self.plate = plate
         self.tag = plate.tag  # it doesn't make sense not to grab it here
         self.stiffeners = []
-        self.spacing = spacing * 1e-3
-        self.s_pad = s_pad * 1e-3
-        self.e_pad = e_pad * 1e-3
-        self.skip = skip
         self.null = null
-        self.PSM_spacing = PSM_spacing
+        self.psm_spacing = psm_spacing
         self.b_eff = 0
         # if self.plate.tag != 4 or not self.null and len(stiffener_) != 0:
-        if self.tag != 4 and not self.null and len(stiffener_) != 0:
-            try:
-                net_l = self.plate.length - self.s_pad - self.e_pad
-                N = math.floor(net_l / self.spacing)
-                _range = linespace(1, N, 1, skip=skip, truncate_end=False)
-            except ZeroDivisionError:
-                Logger.error(f"Plate {self} has no valid dimensions.")
-            for i in _range:
-                root = (
-                    self.plate.start[0]
-                    + math.cos(self.plate.angle) * (self.spacing * i + self.s_pad),
-                    self.plate.start[1]
-                    + math.sin(self.plate.angle) * (self.spacing * i + self.s_pad),
-                )
-                self.stiffeners.append(
-                    Stiffener(
-                        stiffener_["type"],
-                        stiffener_["dimensions"],
-                        self.plate.angle,
-                        root,
-                        stiffener_["material"],
-                        plate.tag,
-                    )
-                )
+        if isinstance(self.plate, LinearPlate) and not self.null:
+            self.stiffeners = stiffeners
+            spacing = []
+            s_pad = []
+            e_pad = []
+            for group in stiffeners:
+                spacing.append(group.spacing)
+                s_pad.append(group.start_pad)
+                e_pad.append(group.end_pad)
+
+            self.spacing = sum(spacing) * 1e-3 / len(spacing)
+            self.s_pad = min(s_pad) * 1e-3
+            self.e_pad = e_pad * 1e-3
+            
         self.CoA = []
         self.area = 0
         self.n50_area = 0
@@ -96,15 +141,15 @@ class StiffPlate:
 
     def L_eff(self):
         if len(self.stiffeners) != 0 and self.tag != 6:
-            bef = min(self.spacing, self.PSM_spacing * 0.2)
+            bef = min(self.spacing, self.psm_spacing * 0.2)
             if self.plate.net_thickness < 8 * 1e-3:
                 bef = min(0.6, bef)
             self.plate.length = len(self.stiffeners) * bef
             self.update()
             self.b_eff = bef
 
-    def __repr__(self) -> str:
-        tmp = repr(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
+    def __str__(self) -> str:
+        tmp = str(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
         return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
 
     def center_of_area(self):
@@ -193,3 +238,12 @@ class StiffPlate:
         self.center_of_area()
         self.Ixx, self.Iyy = self.calc_I(n50=False)
         self.n50_Ixx, self.n50_Iyy = self.calc_I(n50=True)
+
+    def save_data(self):
+        return {
+            "id": self.id,
+            "plate": self.plate.save_data(),
+            "stiffeners": [group.save_data() for group in self.stiffeners],
+            "psm_spacing": self.psm_spacing,
+            "null": self.null,
+        }

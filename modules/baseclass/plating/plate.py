@@ -24,20 +24,34 @@ _PLACE_ = {
     6: "Girder",
 }
 @auto_str
-class Bilge(Plate):
-    def __str__(self):
-        return f"BILGE PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
-@auto_str
 class Plate:
     """
     The plate class is the bottom plate (no pun intended) class that is responsible for all geometry elements.
     Initializing a plate item requires the start and end point coordinates in meters, the plate's thickness in mm,
     and the plate's chosen material.
     """
+    # The subclassing system is inspired by the following mCoding video
+    # https://youtu.be/-zsV0_QrfTw?t=478
+
+    _lookup = {}
+
+    def __init_subclass__(cls, prefix: str, **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        cls._lookup[prefix] = cls
+
+    def __new__(cls, *args, **kwargs):
+        prefix = ""
+        if "prefix" in kwargs:
+            prefix = kwargs["prefix"]
+        
+        subclass = cls._lookup[prefix]
+        obj = object.__new__(subclass)
+        obj.__init__(*args, **kwargs)
+        return obj
 
     def __init__(
-            self, start: tuple, end: tuple, thickness: float, material: str, tag: str
-    ):
+            self, start: tuple, end: tuple, thickness: float, material: str, tag: str, **kwargs
+            ):
         try:
             self.tag = _PLACE_[tag]
         except KeyError:
@@ -73,7 +87,7 @@ class Plate:
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
 
     def __str__(self):
-        return f"PLATE: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
+        return f"PLATE {self.__class__}: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
             
     def calc_length(self, dx, dy):
         raise NotImplementedError
@@ -139,7 +153,6 @@ class Plate:
         """
         raise NotImplementedError
     
-
     def save_data(self) -> tuple[tuple, tuple, float, str, str, str]:
         """return the necessary data for saving the plate's information
 
@@ -147,13 +160,13 @@ class Plate:
             tuple[tuple, tuple, float, str, str]: start coords [m], end coords [m],
             thickness [mm],  material, locality tag, Plate tag
         """
-        return [
-            self.start,
-            self.end,
-            self.thickness * 1e3,
-            self.material,
-            _PLACE_[self.tag],
-        ]
+        return {
+            "start": self.start,
+            "end": self.end,
+            "thickness": round(self.thickness * 1e3, 3), # mm
+            "material": self.material,
+            "tag": _PLACE_[self.tag],
+        }
 
     def calc_I_global(self, Ixx_c, Iyy_c, axis="x"):
         """
