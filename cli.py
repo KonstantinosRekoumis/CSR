@@ -105,4 +105,4 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
 
 if __name__ == "__main__":
     # Single Step Manual Design evaluation
-    main(os.path.expanduser(sys.argv[1]), False, False)
+    main(os.path.expanduser(sys.argv[1]), False, False, False)

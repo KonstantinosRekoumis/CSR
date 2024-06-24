@@ -7,7 +7,7 @@ from modules.utils.colours import LogLevelColours, Colours
 
 
 class Logger:
-    LEVEL = 4
+    LEVEL = 2
     OUT = sys.stderr
 
     LOG_LEVELS = {
