@@ -23,17 +23,17 @@ class StiffGroup:
 
         Args:
             plate (Plate):  The base plate to take the root of the geometry
-            spacing (float):  The spacing between each stiffener
-            start_pad (float): The offset from the start of the plate to the start of the group
+            spacing [mm] (float):  The spacing between each stiffener
+            start_pad [mm] (float): The offset from the start of the plate to the start of the group
             stiffener_type (dict): A dictionary containing the geometric properties of the stiffener
-            end_pad (float): The offset from the end of the plate to the end of the group.
+            end_pad [mm] (float): The offset from the end of the plate to the end of the group.
         Kwargs:
             N (int, optional): The number of stiffeners in the group. Defaults to 1.
         """
         self.base_plate = plate
-        self.spacing = spacing 
-        self.start_pad = start_pad
-        self.end_pad = end_pad
+        self.spacing = spacing * 1e-3
+        self.start_pad = start_pad * 1e-3
+        self.end_pad = end_pad * 1e-3
         self.N = N
         if spacing == 0 : Logger.error(f"The spacing you provided is 0. StiffGroup = {self}")
 
@@ -64,7 +64,41 @@ class StiffGroup:
                     plate.tag,
                 )
             )
+        self.calc_center_of_area()
+        self.calc_inertia()
+
+    def calc_center_of_area(self):
+        total_A = 0
+        total_A_n50 = 0
+        total_Mx = 0
+        total_My = 0
+        for i in self.stiffeners:
+            total_A += i.area
+            total_A_n50 += i.n50_area
+            total_Mx += i.area * i.CoA[1]
+            total_My += i.area * i.CoA[0]
+        self.CoA = (total_My / total_A, total_Mx / total_A)
+        self.area = total_A
+        self.n50_area = total_A_n50
     
+    def calc_inertia(self):
+        Iyy, Ixx = 0, 0
+        for i in self.stiffeners:
+            Ixx += i.calc_I_global(
+                    i.Ixx_c, i.Iyy_c, {"axis": "x", "offset": self.CoA[1]}
+                )
+            Iyy += i.calc_I_global(
+                i.Ixx_c, i.Iyy_c, {"axis": "y", "offset": self.CoA[0]}
+            )
+        self.Ixx = Ixx
+        self.Iyy = Iyy
+    
+    def update(self):
+        for stiff in self.stiffeners:
+            stiff.update()
+        self.calc_center_of_area()
+        self.calc_inertia()
+
     def save_data(self) -> str:
         return {["stiffener_type"]: self.stiffeners[0].save_data(),
                 ["spacing"]: round(self.spacing*1e3, 2),
@@ -111,24 +145,29 @@ class StiffPlate:
         self.id = id
         self.plate = plate
         self.tag = plate.tag  # it doesn't make sense not to grab it here
-        self.stiffeners = []
+        self.stiffener_groups = []
         self.null = null
         self.psm_spacing = psm_spacing
         self.b_eff = 0
         # if self.plate.tag != 4 or not self.null and len(stiffener_) != 0:
         if isinstance(self.plate, LinearPlate) and not self.null:
-            self.stiffeners = stiffeners
-            spacing = []
-            s_pad = []
-            e_pad = []
-            for group in stiffeners:
-                spacing.append(group.spacing)
-                s_pad.append(group.start_pad)
-                e_pad.append(group.end_pad)
+            self.stiffener_groups = stiffeners
+            if len(self.stiffener_groups) == 0:
+                self.spacing = self.plate.length
+                self.s_pad = 0
+                self.e_pad = 0
+            else:
+                spacing = []
+                s_pad = []
+                e_pad = []
+                for group in stiffeners:
+                    spacing.append(group.spacing)
+                    s_pad.append(group.start_pad)
+                    e_pad.append(group.end_pad)
 
-            self.spacing = sum(spacing) * 1e-3 / len(spacing)
-            self.s_pad = min(s_pad) * 1e-3
-            self.e_pad = e_pad * 1e-3
+                self.spacing = sum(spacing) / len(spacing)
+                self.s_pad = min(s_pad)
+                self.e_pad = min(e_pad)
             
         self.CoA = []
         self.area = 0
@@ -140,16 +179,16 @@ class StiffPlate:
         # renew stiffener
 
     def L_eff(self):
-        if len(self.stiffeners) != 0 and self.tag != 6:
+        if len(self.stiffener_groups) != 0 and self.tag != 6:
             bef = min(self.spacing, self.psm_spacing * 0.2)
             if self.plate.net_thickness < 8 * 1e-3:
                 bef = min(0.6, bef)
-            self.plate.length = len(self.stiffeners) * bef
+            self.plate.length = len(self.stiffener_groups) * bef
             self.update()
             self.b_eff = bef
 
     def __str__(self) -> str:
-        tmp = str(self.stiffeners[0]) if len(self.stiffeners) != 0 else "No Stiffeners"
+        tmp = str(self.stiffener_groups[0]) if len(self.stiffener_groups) != 0 else "No Stiffeners"
         return f"stiff_plate({self.id},{self.plate},{self.spacing},{tmp})"
 
     def center_of_area(self):
@@ -157,8 +196,8 @@ class StiffPlate:
         total_A_n50 = self.plate.n50_area
         total_Mx = self.plate.area * self.plate.CoA[1]
         total_My = self.plate.area * self.plate.CoA[0]
-        if len(self.stiffeners) != 0:
-            for i in self.stiffeners:
+        if len(self.stiffener_groups) != 0:
+            for i in self.stiffener_groups:
                 total_A += i.area
                 total_A_n50 += i.n50_area
                 total_Mx += i.area * i.CoA[1]
@@ -180,14 +219,10 @@ class StiffPlate:
                 self.plate.n50_Iyy_c,
                 {"axis": "y", "offset": self.CoA[0]},
             )
-            if len(self.stiffeners) != 0:
-                for i in self.stiffeners:
-                    Ixx += i.calc_I_global(
-                        i.n50_Ixx_c, i.n50_Iyy_c, {"axis": "x", "offset": self.CoA[1]}
-                    )
-                    Iyy += i.calc_I_global(
-                        i.n50_Ixx_c, i.n50_Iyy_c, {"axis": "y", "offset": self.CoA[0]}
-                    )
+            if len(self.stiffener_groups) != 0:
+                for i in self.stiffener_groups:
+                    Ixx += i.Ixx
+                    Iyy += i.Iyy
             return Ixx, Iyy
 
         Ixx = self.plate.calc_I_global(
@@ -196,20 +231,17 @@ class StiffPlate:
         Iyy = self.plate.calc_I_global(
             self.plate.Ixx_c, self.plate.Iyy_c, {"axis": "y", "offset": self.CoA[0]}
         )
-        if len(self.stiffeners) != 0:
-            for i in self.stiffeners:
-                Ixx += i.calc_I_global(
-                    i.Ixx_c, i.Iyy_c, {"axis": "x", "offset": self.CoA[1]}
-                )
-                Iyy += i.calc_I_global(
-                    i.Ixx_c, i.Iyy_c, {"axis": "y", "offset": self.CoA[0]}
-                )
+        if len(self.stiffener_groups) != 0:
+            for i in self.stiffener_groups:
+                Ixx += i.Ixx
+                Iyy += i.Iyy
+
         return Ixx, Iyy
 
     def render(self, r_m="w_b"):
         plt.axis("square")
         self.plate.render(r_m=r_m)
-        [i.render() for i in self.stiffeners]
+        [i.render() for i in self.stiffener_groups]
 
     def local_P(self, key, point):
         """
@@ -233,7 +265,7 @@ class StiffPlate:
 
     def update(self):
         self.plate.update()
-        for stiff in self.stiffeners:
+        for stiff in self.stiffener_groups:
             stiff.update()
         self.center_of_area()
         self.Ixx, self.Iyy = self.calc_I(n50=False)
@@ -243,7 +275,7 @@ class StiffPlate:
         return {
             "id": self.id,
             "plate": self.plate.save_data(),
-            "stiffeners": [group.save_data() for group in self.stiffeners],
+            "stiffeners": [group.save_data() for group in self.stiffener_groups],
             "psm_spacing": self.psm_spacing,
             "null": self.null,
         }

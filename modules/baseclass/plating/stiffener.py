@@ -1,7 +1,7 @@
 import math
 
 # from modules.baseclass.plating.plate import Plate
-from modules.baseclass.plating.linear_plate import LinearPlate
+from modules.baseclass.plating.plate import Plate
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 
@@ -45,7 +45,7 @@ class Stiffener:
         self.Z_rule = 0
         self.dimensions = dimensions
         if self.type == "fb":  # flat bar
-            pw = LinearPlate(
+            pw = Plate(
                 root,
                 (
                     root[0] + math.cos(angle + math.pi / 2) * dimensions["lw"] * 1e-3,
@@ -53,7 +53,7 @@ class Stiffener:
                 ),
                 dimensions["bw"],
                 material,
-                tag,
+                tag, prefix="LINEAR",
             )
             self.plates = [pw]
         elif self.type == "g":  # angled bar
@@ -61,19 +61,19 @@ class Stiffener:
                 root[0] + math.cos(angle + math.pi / 2) * dimensions["lw"] * 1e-3,
                 root[1] + math.sin(angle + math.pi / 2) * dimensions["lw"] * 1e-3,
             )
-            pw = LinearPlate(root, end_web, dimensions["bw"], material, tag)
+            pw = Plate(root, end_web, dimensions["bw"], material, tag, prefix="LINEAR")
             end_flange = (
                 end_web[0] + math.cos(angle) * dimensions["lf"] * 1e-3,
                 end_web[1] + math.sin(angle) * dimensions["lf"] * 1e-3,
             )
-            pf = LinearPlate(end_web, end_flange, dimensions["bf"], material, tag)
+            pf = Plate(end_web, end_flange, dimensions["bf"], material, tag, prefix="LINEAR")
             self.plates = [pw, pf]
         elif self.type == "tb":  # T bar
             end_web = (
                 root[0] + math.cos(angle + math.pi / 2) * dimensions["lw"] * 1e-3,
                 root[1] + math.sin(angle + math.pi / 2) * dimensions["lw"] * 1e-3,
             )
-            pw = LinearPlate(root, end_web, dimensions["bw"], material, tag)
+            pw = Plate(root, end_web, dimensions["bw"], material, tag, prefix="LINEAR")
             start_flange = (
                 end_web[0] - math.cos(angle) * dimensions["lf"] / 2 * 1e-3,
                 end_web[1] - math.sin(angle) * dimensions["lf"] / 2 * 1e-3,
@@ -82,7 +82,7 @@ class Stiffener:
                 end_web[0] + math.cos(angle) * dimensions["lf"] / 2 * 1e-3,
                 end_web[1] + math.sin(angle) * dimensions["lf"] / 2 * 1e-3,
             )
-            pf = LinearPlate(start_flange, end_flange, dimensions["bf"], material, tag)
+            pf = Plate(start_flange, end_flange, dimensions["bf"], material, tag, prefix="LINEAR")
             self.plates = [pw, pf]
 
         self.calc_CoA()

@@ -126,8 +126,8 @@ def minimum_stiff_net_thickness(plate: StiffPlate, l2: float):
     sup = 2.0 * plate.plate.net_thickness
     base = max(_CHECK_["Longs"]["Watertight"], 0.4 * plate.plate.net_thickness)
     update = False
-    if plate.stiffeners[0].type == 'fb' or plate.stiffeners[0].type in ('g', 'tb'):
-        stiff = plate.stiffeners[0]
+    if plate.stiffener_groups[0].type == 'fb' or plate.stiffener_groups[0].type in ('g', 'tb'):
+        stiff = plate.stiffener_groups[0]
         if (stiff.plates[0].net_thickness_empi < base) and (stiff.plates[0].net_thickness_empi < sup):
             # For the time being every Longitudinal is on a watertight plate
             Logger.debug((f"Stiffened plate's : {plate} Stiffener Web plate thickness was lower than", base,
@@ -161,13 +161,13 @@ def minimum_stiff_net_thickness(plate: StiffPlate, l2: float):
     else:
         Logger.error(f"(rules.py) minimum_stiff_net_thickness: Plate {plate}. You are not supposed to enter here.")
     if update:
-        if plate.stiffeners[0].type == 'fb':
-            for stiff in plate.stiffeners[1:]:
-                stiff.plates[0].net_thickness_empi = plate.stiffeners[0].plates[0].net_thickness_empi
-        elif plate.stiffeners[0].type in ('g', 'tb'):
-            for stiff in plate.stiffeners[1:]:
-                stiff.plates[0].net_thickness_empi = plate.stiffeners[0].plates[0].net_thickness_empi
-                stiff.plates[1].net_thickness_empi = plate.stiffeners[0].plates[1].net_thickness_empi
+        if plate.stiffener_groups[0].type == 'fb':
+            for stiff in plate.stiffener_groups[1:]:
+                stiff.plates[0].net_thickness_empi = plate.stiffener_groups[0].plates[0].net_thickness_empi
+        elif plate.stiffener_groups[0].type in ('g', 'tb'):
+            for stiff in plate.stiffener_groups[1:]:
+                stiff.plates[0].net_thickness_empi = plate.stiffener_groups[0].plates[0].net_thickness_empi
+                stiff.plates[1].net_thickness_empi = plate.stiffener_groups[0].plates[1].net_thickness_empi
 
 
 def plating_net_thickness_calculation(ship: Ship, plate: StiffPlate, case: Data, dynamic=False, debug=False):
@@ -258,7 +258,7 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
     IACS Part 1 Chapter 6, Section 4
     """
     try:
-        reh, rem, teh = MATERIALS[plate.stiffeners[0].plates[0].material]
+        reh, rem, teh = MATERIALS[plate.stiffener_groups[0].plates[0].material]
     except KeyError:
         Logger.warning(f"(rules.py) plating_thickness_calculation: "
                        f"Stiffened plate's plate {plate} has material {plate.plate.material} that is not documented "
@@ -289,8 +289,8 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
         return 1.0 - abs(sigma) / reh
 
     # hardcoded that phiw = 90 deg This is a critical assumption
-    dshr = (plate.plate.length + plate.stiffeners[0].plates[0].net_thickness + 0.5 * plate.plate.cor_thickness - 0.5 *
-            plate.stiffeners[0].plates[0].net_thickness) * 1.0
+    dshr = (plate.plate.length + plate.stiffener_groups[0].plates[0].net_thickness + 0.5 * plate.plate.cor_thickness - 0.5 *
+            plate.stiffener_groups[0].plates[0].net_thickness) * 1.0
 
     fshr = 0.7  # lower end of vertical stiffeners is the minimum worst condition
     fbdg = 12  # horizontal stiffeners
@@ -304,7 +304,7 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
     max_t = 0
     max_z = 0
     p = 0
-    for i, stiff in enumerate(plate.stiffeners):
+    for i, stiff in enumerate(plate.stiffener_groups):
         try:
             p = plate.local_P(case.cond, stiff.plates[0].start)
         except KeyError:
@@ -315,8 +315,8 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
         t_tmp = tw(p)
         if max_t < t_tmp:
             max_t = t_tmp
-    if plate.stiffeners[0].plates[0].net_thickness_calc < max_t:
-        for stiff in plate.stiffeners:
+    if plate.stiffener_groups[0].plates[0].net_thickness_calc < max_t:
+        for stiff in plate.stiffener_groups:
             if len(stiff.plates) > 1:
                 for st_pl in stiff.plates:
                     st_pl.net_thickness_calc = max_t
@@ -324,13 +324,13 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
 
     minimum_stiff_net_thickness(plate, min(300, case.Lsc))
     plate.update()
-    for i, stiff in enumerate(plate.stiffeners):
+    for i, stiff in enumerate(plate.stiffener_groups):
         z_tmp = z(p, stiff.plates[0].start)
         if max_z < z_tmp:
             max_z = z_tmp
-    z_local = plate.stiffeners[0].calc_Z()
-    if max_z > plate.stiffeners[0].Z_rule:
-        for i in plate.stiffeners:
+    z_local = plate.stiffener_groups[0].calc_Z()
+    if max_z > plate.stiffener_groups[0].Z_rule:
+        for i in plate.stiffener_groups:
             i.Z_rule = max_z
 
     if max_z > z_local:
@@ -358,12 +358,12 @@ def buckling_evaluator(ship: Ship):
     for st_plate in ship.stiff_plates:
         Logger.debug(st_plate)
 
-        if len(st_plate.stiffeners) <= 0 or st_plate.tag in (4, 6):
+        if len(st_plate.stiffener_groups) <= 0 or st_plate.tag in (4, 6):
             continue
 
-        reh = min(MATERIALS[st_plate.plate.material][0], MATERIALS[st_plate.stiffeners[0].material][0])
-        n = len(st_plate.stiffeners)
-        aeff = n * st_plate.stiffeners[0].area + st_plate.plate.thickness * st_plate.b_eff  # m^2
+        reh = min(MATERIALS[st_plate.plate.material][0], MATERIALS[st_plate.stiffener_groups[0].material][0])
+        n = len(st_plate.stiffener_groups)
+        aeff = n * st_plate.stiffener_groups[0].area + st_plate.plate.thickness * st_plate.b_eff  # m^2
         ist = n * c * st_plate.psm_spacing ** 2 * aeff * reh / 235 * 1e-4  # m^4
 
         # thickness check
@@ -378,31 +378,31 @@ def buckling_evaluator(ship: Ship):
                                f"Available tp: {st_plate.plate.net_thickness * 1e3} mm is less than minimum "
                                f"tp: {tp * 1e3} mm by the rules for plate {st_plate} ")
             st_plate.plate.net_thickness_calc = tp
-        tw = st_plate.stiffeners[0].plates[0].length / cwcf[st_plate.stiffeners[0].type][0] * math.sqrt(reh / 235)
+        tw = st_plate.stiffener_groups[0].plates[0].length / cwcf[st_plate.stiffener_groups[0].type][0] * math.sqrt(reh / 235)
 
         Logger.debug("tw: ", tw)
 
-        if st_plate.stiffeners[0].plates[0].net_thickness_buck < tw:
-            if st_plate.stiffeners[0].plates[0].net_thickness < tw:
+        if st_plate.stiffener_groups[0].plates[0].net_thickness_buck < tw:
+            if st_plate.stiffener_groups[0].plates[0].net_thickness < tw:
                 Logger.warning(f"(rules.py) buckling_evaluator: "
-                               f"Available tw: {st_plate.stiffeners[0].plates[0].net_thickness * 1e3} mm is less than minimum "
+                               f"Available tw: {st_plate.stiffener_groups[0].plates[0].net_thickness * 1e3} mm is less than minimum "
                                f"tw: {tw * 1e3} mm by the rules for plate {st_plate} ")
-            st_plate.stiffeners[0].plates[0].net_thickness_buck = tw
+            st_plate.stiffener_groups[0].plates[0].net_thickness_buck = tw
 
-        if st_plate.stiffeners[0].type in ('tb', 'g'):
-            tf = (math.sqrt((st_plate.stiffeners[0].plates[1].end[0] - st_plate.stiffeners[0].plates[0].end[0]) ** 2
-                            + (st_plate.stiffeners[0].plates[1].end[1] - st_plate.stiffeners[0].plates[0].end[1]) ** 2)
-                  / cwcf[st_plate.stiffeners[0].type][1] * math.sqrt(reh / 235))
+        if st_plate.stiffener_groups[0].type in ('tb', 'g'):
+            tf = (math.sqrt((st_plate.stiffener_groups[0].plates[1].end[0] - st_plate.stiffener_groups[0].plates[0].end[0]) ** 2
+                            + (st_plate.stiffener_groups[0].plates[1].end[1] - st_plate.stiffener_groups[0].plates[0].end[1]) ** 2)
+                  / cwcf[st_plate.stiffener_groups[0].type][1] * math.sqrt(reh / 235))
 
             Logger.debug("tf: ", tf)
 
-            if st_plate.stiffeners[0].plates[1].net_thickness_buck < tf:
-                if st_plate.stiffeners[0].plates[1].net_thickness < tf:
+            if st_plate.stiffener_groups[0].plates[1].net_thickness_buck < tf:
+                if st_plate.stiffener_groups[0].plates[1].net_thickness < tf:
                     Logger.warning(f"(rules.py) buckling_evaluator: "
-                                   f"Available tf: {st_plate.stiffeners[0].plates[1].net_thickness * 1e3} "
+                                   f"Available tf: {st_plate.stiffener_groups[0].plates[1].net_thickness * 1e3} "
                                    f"mm is less than minimum "
                                    f"tf: {tf * 1e3} mm by the rules for plate {st_plate} ")
-                st_plate.stiffeners[0].plates[1].net_thickness_buck = tf
+                st_plate.stiffener_groups[0].plates[1].net_thickness_buck = tf
         # Area Moment check
         st_plate.update()
 
@@ -545,7 +545,7 @@ def net_scantling(ship: Ship, case: Data, dynamics: str, debug=True):
             continue
         Logger.debug(f"(rules.py) net_scantling: Evaluating plate's {stiff_plate} STIFFENERS NET SCANTLING")
         # Bilge plate and other loose plates
-        if len(stiff_plate.stiffeners) != 0:
+        if len(stiff_plate.stiffener_groups) != 0:
             stiffener_plating_net_thickness_calculation(stiff_plate, case, dynamic=_Dynamic)
     ship.update()
 
@@ -702,7 +702,7 @@ def corrosion_assign(ship: Ship, offload: bool):
             # maybe redundant but a good sanity check
             assert stiff_plate.plate.net_thickness > 0
 
-            for stiffener in stiff_plate.stiffeners:
+            for stiffener in stiff_plate.stiffener_groups:
                 for plate in stiffener.plates:
                     plate.cor_thickness = (round_to_p5(c_t['out'] + c_t['in']) + 0.5) * 1e-3
                     plate.net_thickness = plate.thickness - plate.cor_thickness
@@ -720,7 +720,7 @@ def corrosion_assign(ship: Ship, offload: bool):
                          )
             quit()
         stiff_plate.plate.thickness = stiff_plate.plate.net_thickness + stiff_plate.plate.cor_thickness
-        for stiffener in stiff_plate.stiffeners:
+        for stiffener in stiff_plate.stiffener_groups:
             for plate in stiffener.plates:
                 if plate.cor_thickness < 0:
                     Logger.error(f"(rules.py) corrosion_assign: "

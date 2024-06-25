@@ -27,8 +27,8 @@ def stiff_save(stiff: Stiffener):
 
 def stiff_pl_save(stiff_plate: StiffPlate):
     save = '{"id":' + str(stiff_plate.id) + ',"plate":' + plate_save(stiff_plate.plate) + ","
-    if len(stiff_plate.stiffeners) != 0:
-        save += '"stiffeners":' + stiff_save(stiff_plate.stiffeners[0]) + ","
+    if len(stiff_plate.stiffener_groups) != 0:
+        save += '"stiffeners":' + stiff_save(stiff_plate.stiffener_groups[0]) + ","
     else:
         save += '"stiffeners": {},'
 
@@ -117,7 +117,7 @@ def geometry_parser(geo_t: list):
     temp_id = []
     for st_pl_dict in geo_t:
         tmp_p = load_plate(st_pl_dict["plate"])
-        tmp_s = [load_stiff_group(data) for data in st_pl_dict["stiffeners"]]
+        tmp_s = [load_stiff_group(data, tmp_p) for data in st_pl_dict["stiffeners"]]
         if st_pl_dict['id'] is int:
             Logger.error(f'Id is not an integer')
         if st_pl_dict['id'] in temp_id:
@@ -136,7 +136,7 @@ def geometry_parser(geo_t: list):
 
 def load_stiff_group(data_dict: list[dict[str, any]], plate: Plate) -> StiffGroup:
     keys = {0: 'lw' , 1: 'bw' , 2: 'lf' , 3: 'bf' }
-    stiff_types = {"fb": 2, "g": 4, "t": 4, "bb": 3}
+    stiff_types = {"fb": 2, "g": 4, "tb": 4, "bb": 3}
     if plate.tag != 'Bilge' and len(data_dict) != 0:
         # extra dimensions than the first N required are omitted
         stiff_dict = data_dict["stiffener_type"]
@@ -149,7 +149,7 @@ def load_stiff_group(data_dict: list[dict[str, any]], plate: Plate) -> StiffGrou
             assert (len(stiff_dict["dimensions"]) >= min_dims), "Your stiffener has not enough dimensions!"
             # check if KeyError will rise
             for index in range(len(stiff_dict["dimensions"])):
-                stiff_dict["dimensions"][index]
+                stiff_dict["dimensions"][keys[index]]
         except KeyError:
             Logger.error(f"The dimensions dict is not properly formatted! {stiff_dict["dimensions"]}")
         except AssertionError as ae:

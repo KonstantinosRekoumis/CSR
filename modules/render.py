@@ -30,7 +30,7 @@ def lines_plot(ship: Ship, show_w=False, color="black", axis_padding=(3, 1), fig
     for i in ship.stiff_plates:
         x, y = i.plate.render_data()[:2]
         ax.plot(x, y, marker=marker, color=color)
-        for j in i.stiffeners:
+        for j in i.stiffener_groups:
             ax.plot(*j.render_data()[:2], color=color)
     ax.set_ylim([-1, ship.D + axis_padding[0]])
     ax.set_xlim([-1, ship.B / 2 + axis_padding[1]])
@@ -96,7 +96,7 @@ def contour_plot(ship: Ship, cmap="Set2", color="black", key="thickness", path=N
         identifier.append(f'{i.id}')
         psm_spacing.append(i.psm_spacing)
 
-        for j in i.stiffeners:
+        for j in i.stiffener_groups:
             ax.plot(*j.render_data()[:2], color=color)
 
     data = {
