@@ -146,6 +146,7 @@ class StiffPlate:
         self.plate = plate
         self.tag = plate.tag  # it doesn't make sense not to grab it here
         self.stiffener_groups = []
+        self.stiffeners = [] # simplify stiffener data acquisition
         self.null = null
         self.psm_spacing = psm_spacing
         self.b_eff = 0
@@ -168,6 +169,10 @@ class StiffPlate:
                 self.spacing = sum(spacing) / len(spacing)
                 self.s_pad = min(s_pad)
                 self.e_pad = min(e_pad)
+                
+        for group in self.stiffener_groups:
+            for stiffener in group.stiffeners:
+                self.stiffeners.append(stiffener)
             
         self.CoA = []
         self.area = 0
