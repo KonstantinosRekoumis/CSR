@@ -13,9 +13,10 @@ from modules.baseclass.block import SpaceType
 from modules.baseclass.plating.plate import Plate
 
 
-def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger):
+def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger: DataLogger):
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.loading_cases_eval(ship, case, condition, logger)
+        logger.update_stiff_plates()
     Logger.info(' Pressure offloading to plates concluded. Evaluating plating thickness...')
     Logger.info(' Evaluating Local Scantlings of stiffened plates...')
     for case in (hsm1, hsm2, bsp1, bsp2):
@@ -41,7 +42,6 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
     # import geometry data
     ship = IO.load_ship(filepath)
     logger = DataLogger(ship)
-    logger.load_data()
     Logger.success(f' The ship at location {filepath} has been successfully loaded.')
     if ship_plots:
         rnr.lines_plot(ship)

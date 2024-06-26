@@ -28,7 +28,7 @@ class DataLogger:
 
     def __init__(self, ship: Ship):
         self.conds = []  # EDWs that were documented
-        self.Cells = []
+        self.Cells: list[DataCell] = []
         self.Press_D = []
         self.Press_Header = []
         self.Plate_D = []
@@ -71,11 +71,9 @@ class DataLogger:
                             *[f'{i} [kN/$m^2$]' for i in self.conds],
                             'Max Pressure [kN/$m^2$]']
 
-    def update_stiff_plate(self, stiff_plate: StiffPlate):
+    def update_stiff_plates(self):
         for cell in self.Cells:
-            if cell.id == stiff_plate.id:
-                cell.update(stiff_plate)
-                break
+            cell.update()
 
     def create_tabular_data(self, dump=False):
         """
@@ -142,8 +140,9 @@ class DataLogger:
             # Pressure Table
             self.Press_D.append([cell.name, cell.breadth, cell.CoA, *p, max_p(p)])
             # Plating Table
-            self.Plate_D.append([cell.name, cell.plate_material, cell.breadth_eff, cell.spacing, cell.CoA, max_p(p),
-                                 cell.p_calc_t, cell.p_empi_t, cell.p_corr_t, cell.p_net_t, cell.p_tn50_c,
+            self.Plate_D.append([cell.name, cell.plate_material, cell.breadth_eff, 
+                                 cell.spacing, cell.CoA, max_p(p), cell.p_calc_t, 
+                                 cell.p_empi_t, cell.p_corr_t, cell.p_net_t, cell.p_tn50_c,
                                  cell.p_thick])
             # Stiffened Plate Table
             self.St_Pl_D.append([cell.name, 'Main Plate', *cell.Area_Data[0]])
