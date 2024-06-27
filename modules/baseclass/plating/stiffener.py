@@ -99,10 +99,10 @@ class Stiffener:
         return f"stiffener(type: {self.type},dimensions : {dim}" + "}"
 
     def calc_CoA(self):
-        area = 0
-        n50_area = 0
-        MoM_x = 0
-        MoM_y = 0
+        area = 0.
+        n50_area = 0.
+        MoM_x = 0.
+        MoM_y = 0.
         for i in self.plates:
             area += i.area
             n50_area += i.n50_area
@@ -137,7 +137,7 @@ class Stiffener:
         self.n50_Ixx_c = n50_Ixx
         self.n50_Iyy_c = n50_Iyy
 
-    def calc_I_global(self, Ixx_c, Iyy_c, axis="x"):
+    def calc_I_global(self, Ixx_c: float, Iyy_c: float, axis: str="x"):
         """Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'(to indicate the Global Axis)
         or an custom Vertical or Horizontal Axis as a dictionary
         ie. axis = { 'axis' : 'x', 'offset' : 1.0} (This indicates an horizontal axis offset to the global axis positive 1 unit.)
