@@ -146,8 +146,11 @@ class DataLogger:
                                  cell.p_thick])
             # Stiffened Plate Table
             self.St_Pl_D.append([cell.name, 'Main Plate', *cell.Area_Data[0]])
-            for j in range(1, len(cell.Area_Data)): self.St_Pl_D.append(
-                [cell.name, f'Stiffener : {j}', *cell.Area_Data[j]])
+            for j, group in enumerate(cell.Area_Data[1:]): # Stiff Group
+                self.St_Pl_D.append([" ", f"Group : {j}", *[" "]*len(group[0])])
+                for i, st in enumerate(group):
+                    self.St_Pl_D.append(
+                    [cell.name, f'Stiffener : {i}', *st])
             self.St_Pl_D.append(
                 [cell.name, 'Total St. Plate Sums:', cell.Area, cell.CoA, [round(x * cell.Area, 2) for x in cell.CoA],
                  '', '', cell.Ixx_c])
@@ -155,8 +158,11 @@ class DataLogger:
             if cell.N_st != '-':
                 tmp = [cell.name, cell.stiffener_material, cell.type, cell.Zc, cell.Zrule]
                 for j in range(len(cell.s_empi_t)):
-                    tmp.append([cell.heights[j], cell.s_calc_t[j], cell.s_empi_t[j],
-                                cell.s_buck_t[j], cell.s_corr_t[j], cell.s_net_t[j], cell.s_tn50_c[j], cell.s_thick[j]])
+                    tmp_in = []
+                    for i in range(len(cell.s_empi_t[j])):
+                        tmp_in.append([cell.heights[j][i], cell.s_calc_t[j][i], cell.s_empi_t[j][i],
+                                    cell.s_buck_t[j][i], cell.s_corr_t[j][i], cell.s_net_t[j][i], cell.s_tn50_c[j][i], cell.s_thick[j][i]])
+                    tmp.append(tmp_in)
                 self.Stiff_D.append(tmp)
             self.PrimS_D.append([cell.name, cell.Area, cell.CoA, [round(x * cell.Area, 2) for x in cell.CoA],
                                  cell.Ixx_c, cell.Area * (cell.CoA[1] - _ship.yo) ** 2,
