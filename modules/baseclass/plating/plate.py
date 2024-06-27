@@ -168,7 +168,7 @@ class Plate:
             "tag": _PLACE_[self.tag],
         }
 
-    def calc_I_global(self, Ixx_c, Iyy_c, axis="x"):
+    def calc_I_global(self, Ixx_c: float, Iyy_c: float, axis: str="x") -> float:
         """
         Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'
         (to indicate the Global Axis) or a custom Vertical or Horizontal Axis as a dictionary
@@ -190,6 +190,7 @@ class Plate:
                 elif axis["axis"] == "y":
                     Iyy = Iyy_c + (self.CoA[0] - axis["offset"]) ** 2 * self.area
                     return Iyy
+                Logger.error(f"{axis["axis"]=} is not a valid option! valid axes are 'x', 'y'!")
             except KeyError | TypeError as e:
                 if isinstance(e, KeyError):
                     Logger.error("The axis dictionary is not properly structured", rethrow=e)
