@@ -40,10 +40,10 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
 
             Pd = F(*args(c))
             if None not in Pd:
-                Logger.success(f'{c.cond} CASE STUDY:\nCalculated block: ', i)
-                Logger.success(' ---- X ----  ---- Y ----  ---- P ----')
+                Logger.debug(f'{c.cond} CASE STUDY:\nCalculated block: ', i.name)
+                Logger.debug(' ---- X ----  ---- Y ----  ---- P ----')
                 for j in range(len(Pd)):
-                    Logger.success(
+                    Logger.debug(
                         f'{round(i.pressure_coords[j][0], 4): =11f} '
                         f'{round(i.pressure_coords[j][1], 4): =11f} '
                         f'{round(Pd[j], 4): =11f}'
@@ -71,10 +71,10 @@ def static_total_eval(ship: Ship, Tlc: float, rho: float):
 
         Pd = F(*args)
         if None not in Pd:
-            Logger.success(f'STATIC CASE STUDY:\nCalculated block: ', b)
-            Logger.success(' ---- X ----  ---- Y ----  ---- P ----')
+            Logger.debug(f'STATIC CASE STUDY:\nCalculated block: ', b.name)
+            Logger.debug(' ---- X ----  ---- Y ----  ---- P ----')
             for j in range(len(Pd)):
-                Logger.success(
+                Logger.debug(
                     f'{round(b.pressure_coords[j][0], 4): =11f} '
                     f'{round(b.pressure_coords[j][1], 4): =11f} '
                     f'{round(Pd[j], 4): =11f}'
