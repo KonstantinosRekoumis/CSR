@@ -68,7 +68,7 @@ def dynamic_liquid_pressure(block: Block, case: Data):
 
     def ref_eval(block: Block, a: tuple):
         """
-        V j = aX ( xj – x G ) + aY ( y j – y G ) + ( aZ + g ) ( zj – zG )
+        V j = aX ( xj - x G ) + aY ( y j - y G ) + ( aZ + g ) ( zj - zG )
         """
         Max = 0
         V = lambda x, y, z: a[0] * (x - block.CG[0]) + a[1] * (y - block.CG[1]) + (a[2] + G) * (z - block.CG[2])
