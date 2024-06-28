@@ -146,7 +146,7 @@ class StiffPlate:
         self.plate = plate
         self.tag = plate.tag  # it doesn't make sense not to grab it here
         self.stiffener_groups = []
-        self.stiffeners = [] # simplify stiffener data acquisition
+        self.stiffeners : list[Stiffener] = [] # simplify stiffener data acquisition
         self.null = null
         self.psm_spacing = psm_spacing
         self.b_eff = 0
@@ -181,6 +181,7 @@ class StiffPlate:
         self.Ixx_c, self.Iyy_c = self.calc_I(n50=False)
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
+        self.pressure_grid = self.plate.calculate_grid()
         # renew stiffener
 
     def L_eff(self):
