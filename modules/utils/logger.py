@@ -17,11 +17,8 @@ class Logger:
         "DEBUG": 4,
     }
 
-    LOG_LEVELS_INV = dict(zip(LOG_LEVELS.values(), LOG_LEVELS.keys()))
-
     try:
-        tmp_ = LOG_LEVELS_INV[int(os.environ["CSR_LOG_LEVEL"])]
-        LEVEL = LOG_LEVELS[tmp_]
+        LEVEL = LOG_LEVELS[os.environ["CSR_LOG_LEVEL"]]
     except KeyError:
         print(f"Couldn't set LOG_LEVEL from CSR_LOG_LEVEL environment! Continuing with LOG_LEVEL: {LEVEL}", file=OUT)
 
