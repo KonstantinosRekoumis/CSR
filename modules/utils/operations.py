@@ -102,10 +102,10 @@ def linespace(start: int, end: int, step: int, skip=0, truncate_end=True):
     return out
 
 
-def normals_2d(geom: list, flip_n=False):
-    eta = []
+def normals_2d(geom: list[list[float]], flip_n:bool=False):  # noqa: ANN201
+    eta : list[list[float]] = []
     for i in range(len(geom) - 1):
-        _eta = [0, 0]
+        _eta = [0., 0.]
         xba = geom[i + 1][0] - geom[i][0]
         yba = geom[i + 1][1] - geom[i][1]
         if flip_n:

@@ -7,6 +7,7 @@ from modules.baseclass.plating.linear_plate import LinearPlate
 from modules.baseclass.plating.quart_circ_plate import QuartCircPlate
 from modules.baseclass.plating.spline_plate import SplinePlate
 from modules.baseclass.plating.stiffener import Stiffener
+from modules.baseclass.pressure_container import PressureContainer
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import linespace
@@ -181,6 +182,7 @@ class StiffPlate:
         self.Ixx_c, self.Iyy_c = self.calc_I(n50=False)
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I(n50=True)
         self.Pressure = {}
+        self.pressure_containers : list[PressureContainer] = []
         self.pressure_grid = self.plate.calculate_grid()
         # renew stiffener
 

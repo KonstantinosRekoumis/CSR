@@ -3,14 +3,14 @@ import os
 import sys
 from datetime import datetime
 
-from modules.utils.colours import LogLevelColours, Colours
+from modules.utils.colours import Colours, LogLevelColours
 
 
 class Logger:
     LEVEL = 4
     OUT = sys.stderr
 
-    LOG_LEVELS = {
+    LOG_LEVELS = {  # noqa: RUF012
         "NONE": 0,
         "ERROR": 1,
         "WARNING": 2,
@@ -22,32 +22,32 @@ class Logger:
     except KeyError:
         print(f"Couldn't set LOG_LEVEL from CSR_LOG_LEVEL environment! Continuing with LOG_LEVEL: {LEVEL}", file=OUT)
 
-    def __init__(self):
+    def __init__(self) -> None:
         Logger.error("Cannot instantiate static class!")
 
     @staticmethod
-    def success(*args):
+    def success(*args) -> None:
         print(Logger.get_prefix(LogLevelColours.SUCCESS, "SUCCESS"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
-    def info(*args):
+    def info(*args) -> None:
         print(Logger.get_prefix(LogLevelColours.INFO, "INFO"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
-    def debug(*args):
-        if Logger.LEVEL < 4:
+    def debug(*args) -> None:
+        if Logger.LEVEL < 4:  # noqa: PLR2004
             return
         print(Logger.get_prefix(LogLevelColours.DEBUG, "DEBUG"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
-    def warning(*args):
-        if Logger.LEVEL < 2:
+    def warning(*args) -> None:
+        if Logger.LEVEL < 2:  # noqa: PLR2004
             return
 
         print(Logger.get_prefix(LogLevelColours.WARNING, "WARNING"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
 
     @staticmethod
-    def error(*args, die=True, rethrow: Exception = None):
+    def error(*args, die=True, rethrow: Exception | None = None) -> None:
         """
         Highest-priority logging function.
         :param die: Whether to die or not upon calling this function. Useful for unexpected errors. Defaults to True.
@@ -57,7 +57,7 @@ class Logger:
 
         if Logger.LEVEL < 1:
             return
-        print(Logger.get_prefix(LogLevelColours.ERROR, "ERROR"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)
+        print(Logger.get_prefix(LogLevelColours.ERROR, "ERROR"), *args, f"{Colours.NOCOLOUR}", file=Logger.OUT)  # noqa: E501
         # noinspection PyExceptionInherit
         if rethrow is not None:
             raise rethrow
@@ -71,8 +71,8 @@ class Logger:
 
     @staticmethod
     def get_file() -> str:
-        return inspect.stack()[3][1].split(os.sep)[-1]
+        return inspect.stack()[3][1].split(os.sep)[-1]  # noqa: PTH206
 
     @staticmethod
-    def get_prefix(colour: LogLevelColours, name) -> str:
-        return f"{colour}{datetime.now().strftime('%H:%M:%S')}|{name}|{Logger.get_file()}|{Logger.get_parent()} :"
+    def get_prefix(colour: LogLevelColours, name:str) -> str:
+        return f"{colour}{datetime.now().strftime('%H:%M:%S')}|{name}|{Logger.get_file()}|{Logger.get_parent()} :"  # noqa: DTZ005, E501

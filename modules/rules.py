@@ -702,12 +702,13 @@ def corrosion_assign(ship: Ship, offload: bool):
             # maybe redundant but a good sanity check
             assert stiff_plate.plate.net_thickness > 0
 
-            for stiffener in stiff_plate.stiffener_groups:
-                for plate in stiffener.plates:
-                    plate.cor_thickness = (round_to_p5(c_t['out'] + c_t['in']) + 0.5) * 1e-3
-                    plate.net_thickness = plate.thickness - plate.cor_thickness
-                    if plate.net_thickness < 0:
-                        plate.net_thickness = 1e-3
+            for stif_gr in stiff_plate.stiffener_groups:
+                for stiffener in stif_gr.stiffeners:
+                    for plate in stiffener.plates:
+                        plate.cor_thickness = (round_to_p5(c_t['out'] + c_t['in']) + 0.5) * 1e-3
+                        plate.net_thickness = plate.thickness - plate.cor_thickness
+                        if plate.net_thickness < 0:
+                            plate.net_thickness = 1e-3
         return
 
     for stiff_plate in ship.stiff_plates:

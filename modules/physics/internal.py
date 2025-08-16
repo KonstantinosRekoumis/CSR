@@ -1,11 +1,12 @@
 from modules.baseclass.block import Block, SpaceType
+from modules.baseclass.pressure_container import PressureContainer
 from modules.physics.data import Data
 from modules.physics.operations import hydrostatic_pressure
 from modules.utils.constants import G
 from modules.utils.logger import Logger
 
 
-def static_liquid_pressure(block: Block):
+def static_liquid_pressure(pc: PressureContainer):
     """
     Static Liquid Pressure : Normal Operations at sea and Harbour/Sheltered water operations\n
     To access the Normal Operations at sea component use the key 'S-NOS' and the key 'S-HSWO' for the \n
@@ -15,34 +16,33 @@ def static_liquid_pressure(block: Block):
     # Ppv : Design vapour Pressure not to be taken less than 25 kPa
     # When the Code is made universal for Dry and Tankers it shall be taken to consideration
     # For the time is left as it is. IF AN LC BLOCK IS CREATED THE RESULT WILL BE USELESS
+    block = pc.block
     if block.space_type is SpaceType.DryCargo:
         return [None, None]
 
-    P_nos = [None] * len(block.pressure_coords)
-    P_hswo = [None] * len(block.pressure_coords)
-    Ztop = max(block.coords, key=lambda x: x[1])[1]
+    P_nos = [None] * len(pc.pressure_grid)
+    P_hswo = [None] * len(pc.pressure_grid)
+    Ztop = block.max_z
 
     if block.space_type is SpaceType.LiquidCargo:
         F_nos = lambda z: hydrostatic_pressure(z, Ztop, max(block.payload['rho'], 1.025)) + block.payload['Ppv']
     else:
         F_nos = lambda z: hydrostatic_pressure(z, (Ztop + block.payload['hair'] / 2), max(block.payload['rho'], 1.025))
 
-    for i, point in enumerate(block.pressure_coords):
+    for i, point in enumerate(pc.pressure_grid):
         P_nos[i] = F_nos(point[1])
-
-    block.Pressure['STATIC'] = P_nos
     return P_nos
 
 
-def static_dry_cargo_pressure(block: Block):
+def static_dry_cargo_pressure(pc: PressureContainer):
     '''
     Static Dry Cargo Pressure: Evaluates the pressure distribution of the static load applied by the cargo to the stiffened plates.
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
     '''
 
-    zc = block.pressure_coords[0][
-        1]  # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
+    zc = pc.block.max_z   # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
 
+    block = pc.block
     rho = block.payload['rho'] if (block.payload['rho'] >= 1.0) else 1.0
 
     def static(z, Kc):
@@ -51,12 +51,10 @@ def static_dry_cargo_pressure(block: Block):
         else:
             return 0
 
-    P = [None] * len(block.pressure_coords)
+    P = [None] * len(pc.pressure_grid)
 
-    for i, point in enumerate(block.pressure_coords):
+    for i, point in enumerate(pc.pressure_grid):
         P[i] = static(point[1], block.Kc[i])
-
-    block.Pressure['STATIC'] = P
     return P
 
 

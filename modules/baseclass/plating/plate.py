@@ -1,8 +1,6 @@
 import math
 
-import numpy as np
 from matplotlib import pyplot as plt
-
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import normals_2d
@@ -23,6 +21,8 @@ _PLACE_ = {
     5: "WeatherDeck",
     6: "Girder",
 }
+
+
 @auto_str
 class Plate:
     """
@@ -30,6 +30,7 @@ class Plate:
     Initializing a plate item requires the start and end point coordinates in meters, the plate's thickness in mm,
     and the plate's chosen material.
     """
+
     # The subclassing system is inspired by the following mCoding video
     # https://youtu.be/-zsV0_QrfTw?t=478
 
@@ -43,22 +44,28 @@ class Plate:
         prefix = ""
         if "prefix" in kwargs:
             prefix = kwargs["prefix"]
-        
+
         subclass = cls._lookup[prefix]
         obj = object.__new__(subclass)
         obj.__init__(*args, **kwargs)
         return obj
 
     def __init__(
-            self, start: tuple, end: tuple, thickness: float, material: str, tag: str, **kwargs
-            ):
+        self,
+        start: tuple,
+        end: tuple,
+        thickness: float,
+        material: str,
+        tag: str,
+        **kwargs,
+    ) -> None:
         try:
             self.tag = _PLACE_[tag]
         except KeyError:
             self.tag = _PLACE_["InnerBottom"]  # Worst Case Scenario
             warn = (
-                    self.__str__
-                    + "\nThe plate's original tag is non existent. The existing tags are:"
+                self.__str__
+                + "\nThe plate's original tag is non existent. The existing tags are:"
             )
             Logger.warning(warn)
             [print(_PLACE_[i], ") ->", i) for i in _PLACE_ if isinstance(i, str)]
@@ -88,17 +95,17 @@ class Plate:
 
     def __str__(self):
         return f"PLATE {self.__class__}: @[{self.start},{self.end}], material: {self.material}, thickness: {self.thickness}, tag: {self.tag} ({_PLACE_[self.tag]}) "
-            
+
     def calc_length(self, dx, dy):
         raise NotImplementedError
-    
-    def calc_angle(self, dx, dy):
+
+    def calc_angle(self, dx:float, dy:float) -> float:
         try:
             return math.atan2(dy, dx)
         except ZeroDivisionError:
             if dy > 0:
                 return math.pi / 2
-            elif dy <= 0:
+            if dy <= 0:
                 return -math.pi / 2
 
     def calc_lna(self):
@@ -115,7 +122,7 @@ class Plate:
             b (float) : The desired thickness to perform calculations with
         """
         raise NotImplementedError
-        
+
     def calc_CoA(self):
         # calculates Center of Area relative to the Global (0,0)
         raise NotImplementedError
@@ -141,7 +148,7 @@ class Plate:
             plt.plot(X, Y, color="b", marker=marker)
             plt.plot(self.CoA[0], self.CoA[1], color="red", marker="+")
 
-    def calculate_grid(self, res=10):
+    def calculate_grid(self, res: int = 10) -> list[list[float]]:
         raise NotImplementedError
 
     def render_data(self) -> tuple[tuple, tuple, float, str, str]:
@@ -152,23 +159,28 @@ class Plate:
             thickness, material, locality tag
         """
         raise NotImplementedError
-    
-    def save_data(self) -> tuple[tuple, tuple, float, str, str, str]:
+
+    def save_data(self) -> dict[str, tuple[float, float] | float | str]:
         """return the necessary data for saving the plate's information
 
         Returns:
-            tuple[tuple, tuple, float, str, str]: start coords [m], end coords [m],
-            thickness [mm],  material, locality tag, Plate tag
-        """
+            dict[str, tuple[float, float] | float | str]: 
+                - start coords [m], 
+                - end coords [m], 
+                - thickness [mm],
+                - material,
+                - locality tag,
+                - Plate tag
+        """  # noqa: W291
         return {
             "start": self.start,
             "end": self.end,
-            "thickness": round(self.thickness * 1e3, 3), # mm
+            "thickness": round(self.thickness * 1e3, 3),  # mm
             "material": self.material,
             "tag": _PLACE_[self.tag],
         }
 
-    def calc_I_global(self, Ixx_c: float, Iyy_c: float, axis: str="x") -> float:
+    def calc_I_global(self, Ixx_c: float, Iyy_c: float, axis: str = "x") -> float:
         """
         Calculate the moments relative to an axis. The axis argument is either passed as an string 'x' or 'y'
         (to indicate the Global Axis) or a custom Vertical or Horizontal Axis as a dictionary
@@ -179,21 +191,25 @@ class Plate:
             # Default Global axis for the prime forces
             Ixx = Ixx_c + self.CoA[1] ** 2 * self.area
             return Ixx
-        elif axis == "y":
+        if axis == "y":
             Iyy = Iyy_c + self.CoA[0] ** 2 * self.area
             return Iyy
-        elif isinstance(axis, dict):
+        if isinstance(axis, dict):
             try:
                 if axis["axis"] == "x":
                     Ixx = Ixx_c + (self.CoA[1] - axis["offset"]) ** 2 * self.area
                     return Ixx
-                elif axis["axis"] == "y":
+                if axis["axis"] == "y":
                     Iyy = Iyy_c + (self.CoA[0] - axis["offset"]) ** 2 * self.area
                     return Iyy
-                Logger.error(f"{axis["axis"]=} is not a valid option! valid axes are 'x', 'y'!")
+                Logger.error(
+                    f"{axis["axis"]=} is not a valid option! valid axes are 'x', 'y'!"
+                )
             except KeyError | TypeError as e:
                 if isinstance(e, KeyError):
-                    Logger.error("The axis dictionary is not properly structured", rethrow=e)
+                    Logger.error(
+                        "The axis dictionary is not properly structured", rethrow=e
+                    )
         Logger.error(f"Improper axis values {axis}", rethrow=e)
 
     def eta_eval(self):
@@ -208,14 +224,9 @@ class Plate:
         """Call to update the plate after every  modification done on the
         plate's parameters.
         """
-        if self.net_thickness < max(
-                self.net_thickness_calc, self.net_thickness_empi, self.net_thickness_buck
-        ):
-            self.net_thickness = max(
-                self.net_thickness_calc,
-                self.net_thickness_empi,
-                self.net_thickness_buck,
-            )
+        self.net_thickness = max(self.net_thickness, max(
+            self.net_thickness_calc, self.net_thickness_empi, self.net_thickness_buck
+        ))
         self.thickness = self.net_thickness + self.cor_thickness
         # They are not supposed to change for the time being
         self.area = self.length * self.thickness
@@ -225,5 +236,3 @@ class Plate:
         self.n50_thickness = self.net_thickness + 0.5 * self.cor_thickness
         self.n50_area = self.length * self.n50_thickness
         self.n50_Ixx_c, self.n50_Iyy_c = self.calc_I_center(b=self.n50_thickness)
-
-

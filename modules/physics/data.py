@@ -1,28 +1,32 @@
 import math
 
 from modules.baseclass.ship import Ship
-from modules.physics.environmental import hsm_wave_pressure, bsp_wave_pressure
+from modules.physics.environmental import bsp_wave_pressure, hsm_wave_pressure
 from modules.utils.constants import RHO_S, G
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import d2r, lin_int_dict
 
-DYNAMIC_CONDITIONS_TAGS = [ 'HSM-1', 'HSM-2',
-                            'HSA-1', 'HSA-2',
-                            'FSM-1', 'FSM-2', 
-                            'BSR-1P', 'BSR-2P',
-                            'BSP-1P', 'BSP-2P',
-                            'OST-1P', 'OST-2P',
-                            'OSA-1P', 'OSA-2P']  
-def _check_cond(cond: str):
+DYNAMIC_CONDITIONS_TAGS = [ "HSM-1", "HSM-2",
+                            "HSA-1", "HSA-2",
+                            "FSM-1", "FSM-2",
+                            "BSR-1P", "BSR-2P",
+                            "BSP-1P", "BSP-2P",
+                            "OST-1P", "OST-2P",
+                            "OSA-1P", "OSA-2P"]
+
+def _check_cond(cond: str)->str|None:
     if cond in DYNAMIC_CONDITIONS_TAGS:
         return cond
     Logger.error(f"""{cond} is not a valid Dynamic Condition abbreviation.
                 Invalid condition to study. Enter an appropriate Condition out of :
-                {["{i}" for i in DYNAMIC_CONDITIONS_TAGS]}
+                {[f"{i}" for i in DYNAMIC_CONDITIONS_TAGS]}
                 Currently supported conditions are : HSM and BSP.
                 The other conditions will result in invalid results
                 The Program Terminates...""", rethrow=KeyError)
+    raise RuntimeError
+
+
 
 @auto_str
 class Data:
@@ -61,15 +65,15 @@ class Data:
         if self.Tlc > ship.Tsc:
             Logger.error("Your current Draught must not exceed the Scantling Draught.\n The program Terminates....")
         self.ft = self.Tlc / ship.Tsc
-        if self.ft < 0.5: self.ft = 0.5
+        self.ft = max(self.ft, 0.5)
         self.fbeta = {
-            'HSM-1': 1.05, 'HSM-2': 1.05,
-            'HSA-1': 1.00, 'HSA-2': 1.00,
-            'FSM-1': 1.05, 'FSM-2': 1.05,
-            'BSR-1P': 0.80, 'BSR-2P': 0.80,
-            'BSP-1P': 0.80, 'BSP-2P': 0.80,
-            'OST-1P': 1.00, 'OST-2P': 1.00,
-            'OSA-1P': 1.00, 'OSA-2P': 1.00,
+            "HSM-1": 1.05, "HSM-2": 1.05,
+            "HSA-1": 1.00, "HSA-2": 1.00,
+            "FSM-1": 1.05, "FSM-2": 1.05,
+            "BSR-1P": 0.80, "BSR-2P": 0.80,
+            "BSP-1P": 0.80, "BSP-2P": 0.80,
+            "OST-1P": 1.00, "OST-2P": 1.00,
+            "OSA-1P": 1.00, "OSA-2P": 1.00,
         }  # pp. 186 Part 1 Chapter 4, Section 4
         self.fb = self.fbeta[self.cond]
         self.flp = 1.0 if (self.fxL >= 0.5) else -1.0
@@ -86,14 +90,14 @@ class Data:
         self.a_pitch = self.fps * ((3.1 / math.sqrt(G * self.Lsc)) + 1) * self.phi * math.pi / 180 * (
                 2 * math.pi / self.T_phi) ** 2
         self.a_roll = self.fps * self.theta * math.pi / 180 * (2 * math.pi / self.T_theta) ** 2
-        self.flp_osa_d = {'< 0.4': -(0.2 + 0.3 * self.ft),
-                          '[0.4,0.6]': (-(0.2 + 0.3 * self.ft)) * (5.6 - 11.5 * self.fxL),
-                          '> 0.6': 1.3 * (0.2 + 0.3 * self.ft)}
-        self.flp_ost_d = {'< 0.2': 5 * self.fxL, '[0.2,0.4]': 1.0, '[0.4,0.65]': -7.6 * self.fxL + 4.04,
-                          '[0.65,0.85]': -0.9, '> 0.85': 6 * (self.fxL - 1)}
+        self.flp_osa_d = {"< 0.4": -(0.2 + 0.3 * self.ft),
+                          "[0.4,0.6]": (-(0.2 + 0.3 * self.ft)) * (5.6 - 11.5 * self.fxL),
+                          "> 0.6": 1.3 * (0.2 + 0.3 * self.ft)}
+        self.flp_ost_d = {"< 0.2": 5 * self.fxL, "[0.2,0.4]": 1.0, "[0.4,0.65]": -7.6 * self.fxL + 4.04,
+                          "[0.65,0.85]": -0.9, "> 0.85": 6 * (self.fxL - 1)}
         # as fxl = 0.5
-        self.flp_osa = self.flp_osa_d['[0.4,0.6]']
-        self.flp_ost = self.flp_ost_d['[0.4,0.65]']
+        self.flp_osa = self.flp_osa_d["[0.4,0.6]"]
+        self.flp_ost = self.flp_ost_d["[0.4,0.65]"]
         self.wave_pressure = 0
         self.wave_pressure_functions()
         self.Cwv, self.Cqw, self.Cwh, self.Cwt, self.Cxs, self.Cxp, self.Cxg, self.Cys, self.Cyr, self.Cyg, self.Czh, self.Czr, self.Czp = self.Combination_Factors()
@@ -101,9 +105,9 @@ class Data:
         self.Mwv_lc, self.Qwv_lc, self.Mwh_lc, self.Mws = self.moments_eval()  # maybe later add torsional calculations
         self.sigma = lambda y, z: 1e-3 * (
                 (self.Mwv_lc + self.Mws) / self.Ixx * (z - self.yn) - self.Mwh_lc / self.Iyy * y)
-        
+
     def external_loadsC(self):
-        '''
+        """
         -------------------------------------------------------------------------------------------------------------------
         Function that returns data for the constants that need to be passed to the external forces calculating functions.
         Output:\n
@@ -114,7 +118,7 @@ class Data:
             Tlc ->  <float> Loading Condition Draught, Depth\n
 
         ---------+----------------------------------------------------------------------------------------------------------
-        '''
+        """
         return self.fxL, self.fps, self.fb, self.ft, self.rho, self.LBP, self.B, self.Cw, self.Lsc, self.Tlc, self.D
 
     def Combination_Factors(self):
@@ -135,11 +139,11 @@ class Data:
                   0.7 - 0.3 * self.ft, 0.2 * self.ft - 0.45, 0, 0.4 * self.ft - 0.25, 0.1 - 0.2 * self.ft,
                   0.2 * self.ft - 0.05, 0.4 * self.ft - 0.25, 0.7 - 0.3 * self.ft]
 
-        MAP = {'HSM': HSM_1, 'HSA': HSA_1, 'FSM': FSM_1, 'BSR': BSR_1P, 'BSP': BSP_1P, 'OSA': OSA_1P, 'OST': OST_1P}
+        MAP = {"HSM": HSM_1, "HSA": HSA_1, "FSM": FSM_1, "BSR": BSR_1P, "BSP": BSP_1P, "OSA": OSA_1P, "OST": OST_1P}
 
         try:
             RES = MAP[self.cond[:3]]
-            if '_2' in self.cond:
+            if "_2" in self.cond:
                 RES = [-1 * i for i in RES]
             return RES
         except KeyError:
@@ -173,12 +177,12 @@ class Data:
 
     def wave_pressure_functions(self):
         functions = {
-            'HSM': hsm_wave_pressure,
-            'BSP': bsp_wave_pressure
+            "HSM": hsm_wave_pressure,
+            "BSP": bsp_wave_pressure
         }
 
         try:
-            if ('-1P' in self.cond) or ('-2P' in self.cond):
+            if ("-1P" in self.cond) or ("-2P" in self.cond):
                 self.wave_pressure = functions[self.cond[:-3]]
             else:
                 self.wave_pressure = functions[self.cond[:-2]]
@@ -187,9 +191,9 @@ class Data:
                          f"Program terminates to avoid unpredictable behavior...", rethrow=e)
 
     def moments_eval(self):
-        '''
+        """
         IACS, CSR Part 1 Chapter 4 Section 4
-        '''
+        """
         fnl_h = 1.0  # strength assessment Hogging
         fnl_s = 0.58 * (self.Cb + 0.7) / self.Cb  # strength assessment Sagging
         fm_ = {

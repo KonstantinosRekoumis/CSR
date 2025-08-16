@@ -1,0 +1,35 @@
+[tool.pyright]
+include = ["venv/**/*/py"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+]
+
+[tool.ruff]
+src = ["*modules/*"]
+include = ["venv/**/*/py"]
+
+[tool.ruff.analyze]
+detect-string-imports = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+ignore = [
+    "RUF012",
+    "F405",   # I like lambdas, so f** off
+    "S101",   # I like asserts, so f** off
+    "D",      # pydocstyle
+    "TD",     # flake8-todos
+    "FIX",    # flake8-fixme
+    "COM812", # trailing comma
+    "ERA",    # commented-out-code
+    "S608",   # hardcoded-sql-expression
+    "SIM108", # if else one-liner
+    "FA100",  # future annotations - Optional
+    "FA102",  # future annotations
+    "FBT002", # boolean as default
+    "FBT001", # boolean as parameter
+    "T201",   # print found
+    "ISC001", # single-line-implicit-string-concatenation - ruff format complains
+    "RET504", # Unnecessary assignment to `instance` before `return` statement
+]
