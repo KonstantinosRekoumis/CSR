@@ -41,7 +41,7 @@ class PressureContainer:
             f"No static pressure was calculated for {self.plate} in {self.block}"
         )
         Logger.warning("Returning Zeros!")
-        return self.unit_distr(magn=0)
+        return self.unif_distr(magn=0)
 
     @static_pressure.setter
     def static_pressure(self, value: list[float]) -> None:
@@ -56,13 +56,13 @@ class PressureContainer:
                         calculated for {self.plate} in {self.block}"
         )
         Logger.warning("Returning Zeros!")
-        return self.unit_distr(magn=0)
+        return self.unif_distr(0)
 
     def set_dynamic_press(self, cond: str, values: list[float]) -> None:
         _ = _check_cond(cond)
         self.__pressure_distro[cond] = values
 
-    def unit_distr(self, magn:float=1.0, *args)->list[float]:
+    def unif_distr(self, magn:float)->list[float]:
         return [magn]*len(self.pressure_grid)
 
 

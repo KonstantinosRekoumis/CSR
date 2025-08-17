@@ -260,7 +260,7 @@ class Block:
             __p = (
                 cont.dynamic_pressure(pressure_index)
                 if not graphical
-                else cont.unit_distr()
+                else cont.unif_distr(1.0)
             )
             p = [*p, *__p]
 

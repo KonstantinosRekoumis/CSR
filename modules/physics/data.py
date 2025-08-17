@@ -174,7 +174,7 @@ class Data:
             Logger.error("The Program Terminates...")
             sys.exit()
 
-    def accel_eval(self, point):
+    def accel_eval(self, point:list[float])->list[float]:
         R = min((self.D / 4 + self.Tlc / 2, self.D / 2))
         x, y, z = point
 
