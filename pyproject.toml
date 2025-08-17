@@ -5,7 +5,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.ruff]
-src = ["*modules/*"]
+src = ["*modules/*", "cli.py", "gui.py"]
 include = ["venv/**/*/py"]
 
 [tool.ruff.analyze]
@@ -17,6 +17,7 @@ select = ["ALL"]
 ignore = [
     "RUF012",
     "F405",   # I like lambdas, so f** off
+    "E731",   # I like lambdas, // // //
     "S101",   # I like asserts, so f** off
     "D",      # pydocstyle
     "TD",     # flake8-todos

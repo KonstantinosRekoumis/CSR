@@ -3,9 +3,11 @@
 # #############################
 
 # Materials Constant Array see. CSR ... to be filled
+# TODO: This script is a dumpster fire and needs reafactoring eventually
 import math
-from modules.baseclass.plating.stiff_plate import StiffPlate
+
 from modules.baseclass.block import Block, SpaceType
+from modules.baseclass.plating.stiff_plate import StiffPlate
 from modules.baseclass.ship import Ship
 from modules.io.datalogger import DataLogger
 from modules.physics.data import Data
@@ -339,10 +341,10 @@ def stiffener_plating_net_thickness_calculation(plate: StiffPlate, case: Data, d
         Logger.warning(f"Consider fixing it manually, as an automatic solution is not currently possible.")
 
 
-def buckling_evaluator(ship: Ship):
+def buckling_evaluator(ship: Ship) -> None:
     """
     IACS PART 1 CHAPTER 8 SECTION 2
-    Slenderness requirements 
+    Slenderness requirements
     """
     cwcf = {
         "fb": (22,),
@@ -525,7 +527,7 @@ def ship_scantlings(ship: Ship):
             f"Zrn50: {zrn50:0.5g} calculated by the rules")
 
 
-def net_scantling(ship: Ship, case: Data, dynamics: str, debug=True):
+def net_scantling(ship: Ship, case: Data, dynamics: str, debug=True) -> None:
     _Dynamic = False
     if "d" in dynamics or "D" in dynamics:
         _Dynamic = True

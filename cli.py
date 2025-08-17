@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
 import os
 import sys
-import modules.io.IO as IO
+
 import modules.physics.evaluators
 import modules.render as rnr
 import modules.rules as csr
+from modules.baseclass.block import SpaceType
+from modules.io import IO
 from modules.io.datalogger import DataLogger
 from modules.io.latex import generate_latex_rep
 from modules.utils.constants import RHO_S
 from modules.utils.logger import Logger
-from modules.baseclass.block import SpaceType
-from modules.baseclass.plating.plate import Plate
 
 
 def evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, condition: dict[str, str], logger: DataLogger):
     for case in (hsm1, hsm2, bsp1, bsp2):
         csr.loading_cases_eval(ship, case, condition, logger)
         logger.update_stiff_plates()
-    Logger.info(' Pressure offloading to plates concluded. Evaluating plating thickness...')
-    Logger.info(' Evaluating Local Scantlings of stiffened plates...')
+    Logger.info(" Pressure offloading to plates concluded. Evaluating plating thickness...")
+    Logger.info(" Evaluating Local Scantlings of stiffened plates...")
     for case in (hsm1, hsm2, bsp1, bsp2):
-        csr.net_scantling(ship, case, condition['Dynamics'])
+        csr.net_scantling(ship, case, condition["Dynamics"])
 
 
-def main(filepath, ship_plots, pressure_plots, export_to_TeX):
+def main(filepath:os.PathLike, ship_plots:bool, pressure_plots:bool, export_to_TeX:bool) -> None:
     print(r"""
        ____  ____    _      __  __ ____  ____    
       / ___||  _ \  / \    |  \/  / ___||  _ \  
@@ -42,39 +42,39 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
     # import geometry data
     ship = IO.load_ship(filepath)
     logger = DataLogger(ship)
-    Logger.success(f' The ship at location {filepath} has been successfully loaded.')
+    Logger.success(f" The ship at location {filepath} has been successfully loaded.")
     if ship_plots:
         rnr.lines_plot(ship)
-        for i in ('id', 'tag', 'thickness', 'material'):
+        for i in ("id", "tag", "thickness", "material"):
             rnr.contour_plot(ship, key=i)
         rnr.block_plot(ship)
     # calculate pressure distribution
-    Logger.info(' Evaluating Corrosion Reduction for stiffened plates...')
+    Logger.info(" Evaluating Corrosion Reduction for stiffened plates...")
     csr.corrosion_assign(ship, offload=True)
-    Logger.info(' Proceeding to calculating the Specified Static and Dynamic Cases..')
+    Logger.info(" Proceeding to calculating the Specified Static and Dynamic Cases..")
     modules.physics.evaluators.static_total_eval(ship, 16, RHO_S)
-    hsm1, hsm2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'HSM')
-    bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, 'BSP')
+    hsm1, hsm2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, "HSM")
+    bsp1, bsp2 = modules.physics.evaluators.dynamic_total_eval(ship, 16, "BSP")
     logger.load_conds([x.cond for x in (hsm1, hsm2, bsp1, bsp2)])
     if pressure_plots:
         st  = [SpaceType.Atmosphere, SpaceType.Sea]
-        rnr.pressure_plot(ship, 'HSM-1', st, path='./essay/HSM1_Shell.pdf')
-        rnr.pressure_plot(ship, 'STATIC', st, path='./essay/STATIC_Shell.pdf')
-        rnr.pressure_plot(ship, 'Normals', [SpaceType.Sea], True, path='./essay/NORMALS.png')
-        rnr.pressure_plot(ship, 'HSM-2', st, path='./essay/HSM2_Shell.pdf')
-        rnr.pressure_plot(ship, 'BSP-1P', st, path='./essay/BSP1_Shell.pdf')
-        rnr.pressure_plot(ship, 'BSP-2P', st, path='./essay/BSP2_Shell.pdf')
+        rnr.pressure_plot(ship, "HSM-1", st, path="./essay/HSM1_Shell.pdf")
+        rnr.pressure_plot(ship, "STATIC", st, path="./essay/STATIC_Shell.pdf")
+        rnr.pressure_plot(ship, "Normals", [SpaceType.Sea], True, path="./essay/NORMALS.png")
+        rnr.pressure_plot(ship, "HSM-2", st, path="./essay/HSM2_Shell.pdf")
+        rnr.pressure_plot(ship, "BSP-1P", st, path="./essay/BSP1_Shell.pdf")
+        rnr.pressure_plot(ship, "BSP-2P", st, path="./essay/BSP2_Shell.pdf")
 
-    Logger.info('Evaluating Stiffened Plates Slenderness Requirements...')
+    Logger.info("Evaluating Stiffened Plates Slenderness Requirements...")
     ship.evaluate_beff()
     csr.buckling_evaluator(ship)
 
-    Logger.info('Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..')
+    Logger.info("Static and Dynamic cases successfully evaluated. Proceeding to plating calculations..")
     # calculation Recipes
     flc = {
-        'Dynamics': 'S+D',
-        'max value': [SpaceType.DryCargo],
-        'skip value': [
+        "Dynamics": "S+D",
+        "max value": [SpaceType.DryCargo],
+        "skip value": [
             SpaceType.LiquidCargo,
             SpaceType.WaterBallast,
             SpaceType.OilTank,
@@ -82,9 +82,9 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
             SpaceType.VoidSpace]
     }
     wb = {
-        'Dynamics': 'S+D',
-        'max value': [],
-        'skip value': [
+        "Dynamics": "S+D",
+        "max value": [],
+        "skip value": [
             SpaceType.LiquidCargo,
             SpaceType.DryCargo,
             SpaceType.OilTank,
@@ -92,28 +92,28 @@ def main(filepath, ship_plots, pressure_plots, export_to_TeX):
             SpaceType.VoidSpace]
     }
 
-    Logger.info(f'Evaluating Full Load Condition...')
+    Logger.info("Evaluating Full Load Condition...")
     evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, flc, logger)
 
-    Logger.info(f'Evaluating Water Ballast Condition...')
+    Logger.info("Evaluating Water Ballast Condition...")
     evaluate_condition(hsm1, hsm2, bsp1, bsp2, ship, wb, logger)
 
-    Logger.info('Evaluating the Sections Moments and Checking with the Rules...')
+    Logger.info("Evaluating the Sections Moments and Checking with the Rules...")
     csr.ship_scantlings(ship)
 
-    Logger.info('Evaluating Corrosion Addition for stiffened plates...')
+    Logger.info("Evaluating Corrosion Addition for stiffened plates...")
     csr.corrosion_assign(ship, offload=False)
 
     if ship_plots:
-        for i in ('tag', 'thickness'):
+        for i in ("tag", "thickness"):
             rnr.contour_plot(ship, key=i)
 
-    Logger.info('Outputting Data to /out.json file...')
-    IO.ship_save(ship, 'out.json')
+    Logger.info("Outputting Data to /out.json file...")
+    IO.ship_save(ship, "out.json")
     if export_to_TeX:
-        Logger.info('Generating LaTeX Report Data to /out.json file...')
-        generate_latex_rep(logger, path='./essay/', standalone=False)
-        Logger.success('Program terminated successfully!')
+        Logger.info("Generating LaTeX Report Data to /out.json file...")
+        generate_latex_rep(logger, path="./essay/", standalone=False)
+        Logger.success("Program terminated successfully!")
 
 
 
