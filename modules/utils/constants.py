@@ -1,5 +1,26 @@
 from math import sqrt
 
+from modules.utils.logger import Logger
+
+DYNAMIC_CONDITIONS_TAGS = [ "HSM-1", "HSM-2",
+                            "HSA-1", "HSA-2",
+                            "FSM-1", "FSM-2",
+                            "BSR-1P", "BSR-2P",
+                            "BSP-1P", "BSP-2P",
+                            "OST-1P", "OST-2P",
+                            "OSA-1P", "OSA-2P"]
+
+def verify_dynamic_condition(cond: str)->str:
+    if cond in DYNAMIC_CONDITIONS_TAGS:
+        return cond
+    Logger.error(f"""{cond} is not a valid Dynamic Condition abbreviation.
+                Invalid condition to study. Enter an appropriate Condition out of :
+                {[f"{i}" for i in DYNAMIC_CONDITIONS_TAGS]}
+                Currently supported conditions are : HSM and BSP.
+                The other conditions will result in invalid results
+                The Program Terminates...""", rethrow=KeyError)
+    raise RuntimeError
+
 RHO_S = 1.025  # tn/m^3 seawater @ 17 Celsius
 RHO_F = 0.997  # tn/m^3 fresh water @ 17 Celsius
 G = 9.8063  # gravitational acceleration

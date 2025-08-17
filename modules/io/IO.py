@@ -118,19 +118,20 @@ def geometry_parser(geo_t: list):
     for st_pl_dict in geo_t:
         tmp_p = load_plate(st_pl_dict["plate"])
         tmp_s = [load_stiff_group(data, tmp_p) for data in st_pl_dict["stiffeners"]]
-        if st_pl_dict['id'] is int:
-            Logger.error(f'Id is not an integer')
-        if st_pl_dict['id'] in temp_id:
+        tmp_id = st_pl_dict['id']
+        if not isinstance(tmp_id, int) or (tmp_id < 0):
+            Logger.error("Id is not a positive integer")
+        if tmp_id in temp_id:
             Logger.error(
-                f'There was an overlap between the '
-                f'ids of two stiffened plates. \nCONFLICTING ID : ' + str(st_pl_dict['id']))
+                "There was an overlap between the "
+                "ids of two stiffened plates. \nCONFLICTING ID : " + str(st_pl_dict['id']))
         if 'null' in st_pl_dict:
             null = st_pl_dict['null']
         else:
             null = False
-        tmp = StiffPlate(st_pl_dict['id'], tmp_p, tmp_s, st_pl_dict['psm_spacing'], null=null)
+        tmp = StiffPlate(tmp_id, tmp_p, tmp_s, st_pl_dict['psm_spacing'], null=null)
         out.append(tmp)
-        temp_id.append(st_pl_dict['id'])
+        temp_id.append(tmp_id)
 
     return out
 

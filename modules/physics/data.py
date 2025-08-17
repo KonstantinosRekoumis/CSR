@@ -4,30 +4,10 @@ from typing import Callable
 
 from modules.baseclass.ship import Ship
 from modules.physics.environmental import bsp_wave_pressure, hsm_wave_pressure
-from modules.utils.constants import RHO_S, G
+from modules.utils.constants import RHO_S, G, verify_dynamic_condition
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import d2r, lin_int_dict
-
-DYNAMIC_CONDITIONS_TAGS = [ "HSM-1", "HSM-2",
-                            "HSA-1", "HSA-2",
-                            "FSM-1", "FSM-2",
-                            "BSR-1P", "BSR-2P",
-                            "BSP-1P", "BSP-2P",
-                            "OST-1P", "OST-2P",
-                            "OSA-1P", "OSA-2P"]
-
-def _check_cond(cond: str)->str:
-    if cond in DYNAMIC_CONDITIONS_TAGS:
-        return cond
-    Logger.error(f"""{cond} is not a valid Dynamic Condition abbreviation.
-                Invalid condition to study. Enter an appropriate Condition out of :
-                {[f"{i}" for i in DYNAMIC_CONDITIONS_TAGS]}
-                Currently supported conditions are : HSM and BSP.
-                The other conditions will result in invalid results
-                The Program Terminates...""", rethrow=KeyError)
-    raise RuntimeError
-
 
 
 @auto_str
@@ -45,7 +25,7 @@ class Data:
     def __init__(self, tlc: float, ship: Ship, cond: str, rho=RHO_S, kr_p=.35, gm_p=0.12, fbk=1.2):
         # Ship Data and General Data
         # The dynamic condition we are interested in
-        self.cond = _check_cond(cond)
+        self.cond = verify_dynamic_condition(cond)
         self.wave_pressure_lock = False
 
         self.Tlc = tlc

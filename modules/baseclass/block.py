@@ -116,10 +116,8 @@ class Block:
             dx = end[0] - start[0]
             dy = end[1] - start[1]
             alpha = math.atan2(dy, dx)
-            # self.Kc.append(kc(alpha))
             return kc(alpha)
-        # self.Kc.append(0)
-        return 0
+        return 0.0
 
     def get_coords(self, stiff_plates: list[StiffPlate])->None:
         """
@@ -135,17 +133,20 @@ class Block:
         while c < len(self.list_plates_id):
             for j in stiff_plates:
                 if j.id == abs(self.list_plates_id[c]):
-                    if self.list_plates_id[c] >= 0:
-                        start = j.plate.start
-                        end = j.plate.end
-                        flip_norm = False
-                    elif self.list_plates_id[c] < 0:
+                    start = j.plate.start
+                    end = j.plate.end
+                    flip_norm = False
+                    if self.list_plates_id[c] < 0:
                         start = j.plate.end
                         end = j.plate.start
                         flip_norm = True
+                    if self.list_plates_id[c]==0:
+                        Logger.error("You cannot provide a plate with id 0")
                     self.pressure_cont.append(
-                        PressureContainer(j.plate, self, flip_norm)
+                        PressureContainer(j, flip_norm)
                     )
+                    if self.space_type is SpaceType.DryCargo:
+                        self.pressure_cont[-1].Kc = self.Kc_eval(j.plate.start, j.plate.end, j.tag)
                     self.max_z = max(start[1], end[1], self.max_z)
                     if len(self.coords) != 0:
                         c += 1
@@ -193,7 +194,7 @@ class Block:
 
         self.CG = [Mx / A, My / A] if not self.symmetrical else [0, My / A]
 
-        self.calculate_pressure_grid(10)
+        # self.calculate_pressure_grid(10)
         # self.calculate_CG()
 
     def calculate_pressure_grid(self, resolution: int):

@@ -1,16 +1,19 @@
 import math
+from typing import TYPE_CHECKING
 
 from matplotlib import pyplot as plt
-
-from modules.baseclass.plating.plate import Plate
 from modules.baseclass.plating.linear_plate import LinearPlate
+from modules.baseclass.plating.plate import Plate
 from modules.baseclass.plating.quart_circ_plate import QuartCircPlate
 from modules.baseclass.plating.spline_plate import SplinePlate
 from modules.baseclass.plating.stiffener import Stiffener
-from modules.baseclass.pressure_container import PressureContainer
 from modules.utils.decorators import auto_str
 from modules.utils.logger import Logger
 from modules.utils.operations import linespace
+
+if TYPE_CHECKING:
+    from modules.baseclass.pressure_container import PressureContainer
+
 @auto_str
 class StiffGroup:
 
