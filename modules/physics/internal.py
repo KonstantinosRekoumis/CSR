@@ -91,8 +91,7 @@ def dynamic_liquid_pressure(block: Block, case: Data):
         full_l = 1.0
         full_t = 1.0
 
-    P = [None] * len(block.pressure_coords)
-    Pld = lambda x, y, z: case.fb * max(block.payload['rho'], 1.025) * (
+    Pld = lambda x, y, z: case.fb * max(block.payload["rho"], 1.025) * (
             az * (z0 - z) + full_l * ax * (x0 - x) + full_t * ay * (y0 - y))
 
     for i, point in enumerate(block.pressure_coords):
@@ -108,29 +107,24 @@ def dynamic_dry_cargo_pressure(block: Block, case: Data):
     \nWe assume that the ship is homogeneously loaded with Fully Filled Cargo (table 1 page 227, CSR Part 1 Chapter 4 Section 6)
 
     """
-    zc = block.pressure_coords[0][
-        1]  # max of the coordinates may be redundant as there is a specific order the plates shall be (clockwise)
+    zc = block.max_z
+    rho = max(block.payload["rho"], 1.0)
 
-    rho = block.payload['rho'] if (block.payload['rho'] >= 1.0) else 1.0
-
-    def Pbd(x, y, z, ax, ay, az, Kc):
+    def pbd(x, y, z, ax, ay, az, Kc):
         if z <= zc:
             return case.fb * rho * (Kc * az * (zc - z) + 0.25 * ax * (block.CG[0] - x) + 0.25 * ay * (block.CG[1] - y))
-        else:
-            return 0
+        return 0.0
 
     ax, ay, az = case.accel_eval(block.CG)  # 221
-    P = [None] * len(block.pressure_coords)
 
     for i, point in enumerate(block.pressure_coords):
-        P[i] = Pbd(block.CG[0], *point, ax, ay, az, block.Kc[i])
+        P[i] = pbd(block.CG[0], *point, ax, ay, az, block.Kc[i])
 
     block.Pressure[case.cond] = P
     return P
 
 
-def void_pressure(block: Block, case: Data):
-    P = [0] * len(block.pressure_coords)
-    block.Pressure[case.cond] = P
-    block.Pressure['STATIC'] = P
-    return P
+def void_pressure(block: Block, case: Data) -> None:
+    for cont in block.pressure_cont:
+        cont.static_pressure = cont.unit_distr(0)
+        cont.set_dynamic_press(case.cond, cont.unit_distr(0))

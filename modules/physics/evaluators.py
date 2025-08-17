@@ -12,38 +12,30 @@ from modules.physics.internal import (
 from modules.utils.logger import Logger
 
 
-def dynamic_total_eval(ship: Ship, Tlc: float, case: str):
+def dynamic_total_eval(ship: Ship, Tlc: float, case: str) -> tuple[Data, Data]:  # noqa: N803
+    _1, _2 = "-1", "-2"
     if case in ("BSR", "BSP", "OSA", "OST"):
         _1, _2 = "-1P", "-2P"
-    elif case in ("HSM", "HSA", "FSM"):
-        _1, _2 = "-1", "-2"
-    else:
-        Logger.error(
-            f"(physics.py) Dynamic_total_eval: {case} is not a valid Dynamic condition. "
-            f"The available conditions are ; HSM, HSA, FSM, BSR, BSP,OST,OSA."
-        )
 
     case_1 = Data(Tlc, ship, case + _1)
     case_2 = Data(Tlc, ship, case + _2)
     for c in (case_1, case_2):
         for i in ship.blocks:
-            args = lambda x: (i, x)
-
+            args = (i, c)
             if i.space_type in (SpaceType.Atmosphere, SpaceType.Sea):
-                F = c.wave_pressure
-
-                args = lambda x: (x.external_loadsC(), "1" in x.cond, i)
+                func = c.wave_pressure
+                args = (c.external_loadsC(), "1" in c.cond, i)
             elif i.space_type is SpaceType.DryCargo:
-                F = dynamic_dry_cargo_pressure
+                func = dynamic_dry_cargo_pressure
             elif i.space_type in (SpaceType.WaterBallast,
                                   SpaceType.LiquidCargo,
                                   SpaceType.OilTank,
                                   SpaceType.FreshWater):
-                F = dynamic_liquid_pressure
+                func = dynamic_liquid_pressure
             elif i.space_type is SpaceType.VoidSpace:
-                F = void_pressure
+                func = void_pressure
 
-            Pd = F(*args(c))
+            pd = func(*args)
             if None not in Pd:
                 Logger.debug(f"{c.cond} CASE STUDY:\nCalculated block: ", i.name)
                 Logger.debug(" ---- X ----  ---- Y ----  ---- P ----")

@@ -1,4 +1,6 @@
 import math
+import sys
+from typing import Callable
 
 from modules.baseclass.ship import Ship
 from modules.physics.environmental import bsp_wave_pressure, hsm_wave_pressure
@@ -15,7 +17,7 @@ DYNAMIC_CONDITIONS_TAGS = [ "HSM-1", "HSM-2",
                             "OST-1P", "OST-2P",
                             "OSA-1P", "OSA-2P"]
 
-def _check_cond(cond: str)->str|None:
+def _check_cond(cond: str)->str:
     if cond in DYNAMIC_CONDITIONS_TAGS:
         return cond
     Logger.error(f"""{cond} is not a valid Dynamic Condition abbreviation.
@@ -44,6 +46,7 @@ class Data:
         # Ship Data and General Data
         # The dynamic condition we are interested in
         self.cond = _check_cond(cond)
+        self.wave_pressure_lock = False
 
         self.Tlc = tlc
         self.rho = rho
@@ -93,20 +96,22 @@ class Data:
         self.flp_osa_d = {"< 0.4": -(0.2 + 0.3 * self.ft),
                           "[0.4,0.6]": (-(0.2 + 0.3 * self.ft)) * (5.6 - 11.5 * self.fxL),
                           "> 0.6": 1.3 * (0.2 + 0.3 * self.ft)}
-        self.flp_ost_d = {"< 0.2": 5 * self.fxL, "[0.2,0.4]": 1.0, "[0.4,0.65]": -7.6 * self.fxL + 4.04,
+        self.flp_ost_d = {"< 0.2": 5 * self.fxL,
+                          "[0.2,0.4]": 1.0,
+                          "[0.4,0.65]": -7.6 * self.fxL + 4.04,
                           "[0.65,0.85]": -0.9, "> 0.85": 6 * (self.fxL - 1)}
         # as fxl = 0.5
         self.flp_osa = self.flp_osa_d["[0.4,0.6]"]
         self.flp_ost = self.flp_ost_d["[0.4,0.65]"]
-        self.wave_pressure = 0
         self.wave_pressure_functions()
-        self.Cwv, self.Cqw, self.Cwh, self.Cwt, self.Cxs, self.Cxp, self.Cxg, self.Cys, self.Cyr, self.Cyg, self.Czh, self.Czr, self.Czp = self.Combination_Factors()
+        self.Cwv, self.Cqw, self.Cwh, self.Cwt, self.Cxs, self.Cxp, self.Cxg, self.Cys,\
+        self.Cyr, self.Cyg, self.Czh, self.Czr, self.Czp = self.condition_coefficients()
         # Bending Moments and Shear Forces calculation
         self.Mwv_lc, self.Qwv_lc, self.Mwh_lc, self.Mws = self.moments_eval()  # maybe later add torsional calculations
         self.sigma = lambda y, z: 1e-3 * (
                 (self.Mwv_lc + self.Mws) / self.Ixx * (z - self.yn) - self.Mwh_lc / self.Iyy * y)
 
-    def external_loadsC(self):
+    def external_loadsC(self)->tuple[float,...]:
         """
         -------------------------------------------------------------------------------------------------------------------
         Function that returns data for the constants that need to be passed to the external forces calculating functions.
@@ -119,36 +124,44 @@ class Data:
 
         ---------+----------------------------------------------------------------------------------------------------------
         """
-        return self.fxL, self.fps, self.fb, self.ft, self.rho, self.LBP, self.B, self.Cw, self.Lsc, self.Tlc, self.D
+        return  self.fxL, self.fps, self.fb, self.ft, self.rho, self.LBP, self.B,\
+                self.Cw, self.Lsc, self.Tlc, self.D
 
-    def Combination_Factors(self):
-
-        # C = ['Cwv','Cqw','Cwh','Cwt','Cxs','Cxp','Cxg','Cys','Cyr','Cyg','Czh','Czr','Czp']
-        HSM_1 = [-1, -self.fps, 0, 0, 0.3 - 0.2 * self.ft, -0.7, 0.6, 0, 0, 0, 0.5 * self.ft - 0.15, 0, 0.7]
-        HSA_1 = [-0.7, -0.6 * self.flp, 0, 0, 0.2, -0.4 * (self.ft + 1), 0.4 * (self.ft + 1), 0, 0, 0,
-                 0.4 * self.ft - 0.1, 0, -0.4 * (self.ft + 1)]
-        FSM_1 = [-0.4 * self.ft - 0.6, -self.fps, 0, 0, 0.2 - 0.4 * self.ft, 0.15, -0.2, 0, 0, 0, 0, 0, 0.15]
-        BSR_1P = [0.1 - 0.2 * self.ft, (0.1 - 0.2 * self.ft) * self.flp, 1.2 * 1.1 * self.ft, 0, 0, 0, 0,
-                  0.2 - 0.2 * self.ft, 1, -1, 0.7 - 0.4 * self.ft, 1, 0]
-        BSP_1P = [0.3 - 0.8 * self.ft, (0.3 - 0.8 * self.ft) * self.flp, 0.7 - 0.7 * self.ft, 0, 0, 0.1 - 0.3 * self.ft,
-                  0.3 * self.ft - 0.1, -0.9, 0.3, -0.2, 1, 0.3, 0.1 - 0.3 * self.ft]
-        OSA_1P = [0.75 - 0.5 * self.ft, (0.6 - 0.4 * self.ft) * self.flp, .55 + 0.2 * self.ft, -self.flp_osa,
-                  0.1 * self.ft - 0.45, 1, -1, -0.2 - 0.1 * self.ft, 0.3 - 0.2 * self.ft, 0.1 * self.ft - 0.2,
-                  -0.2 * self.ft, 0.3 - 0.2 * self.ft, 1]
-        OST_1P = [-0.3 - 0.2 * self.ft, (-.35 - .2 * self.ft) * self.flp, -.9, -self.flp_ost, 0.1 * self.ft - 0.15,
-                  0.7 - 0.3 * self.ft, 0.2 * self.ft - 0.45, 0, 0.4 * self.ft - 0.25, 0.1 - 0.2 * self.ft,
+    def condition_coefficients(self)->list[float]:
+        # C = ['Cwv','Cqw','Cwh','Cwt','Cxs','Cxp','Cxg','Cys','Cyr','Cyg','Czh','Czr','Czp']  # noqa: E501
+        HSM_1 = [-1., -self.fps, 0., 0., 0.3 - 0.2 * self.ft, -0.7, 0.6, 0., 0.,  # noqa: N806
+                 0., 0.5 * self.ft - 0.15, 0., 0.7]
+        HSA_1 = [-0.7, -0.6 * self.flp, 0., 0., 0.2, -0.4 * (self.ft + 1),  # noqa: N806
+                 0.4 * (self.ft + 1), 0., 0., 0., 0.4 * self.ft - 0.1, 0.,
+                 -0.4 * (self.ft + 1)]
+        FSM_1 = [-0.4 * self.ft - 0.6, -self.fps, 0., 0., 0.2 - 0.4 * self.ft,  # noqa: N806
+                 0.15, -0.2, 0., 0., 0., 0., 0., 0.15]
+        BSR_1P = [0.1 - 0.2 * self.ft, (0.1 - 0.2 * self.ft) * self.flp,  # noqa: N806
+                  1.2 * 1.1 * self.ft, 0., 0., 0., 0., 0.2 - 0.2 * self.ft, 1.,
+                  -1., 0.7 - 0.4 * self.ft, 1., 0.]
+        BSP_1P = [0.3 - 0.8 * self.ft, (0.3 - 0.8 * self.ft) * self.flp,  # noqa: N806
+                  0.7 - 0.7 * self.ft, 0., 0., 0.1 - 0.3 * self.ft,
+                  0.3 * self.ft - 0.1, -0.9, 0.3, -0.2, 1., 0.3, 0.1 - 0.3 * self.ft]
+        OSA_1P = [0.75 - 0.5 * self.ft, (0.6 - 0.4 * self.ft) * self.flp,  # noqa: N806
+                  .55 + 0.2 * self.ft, -self.flp_osa, 0.1 * self.ft - 0.45, 1.,
+                  -1., -0.2 - 0.1 * self.ft, 0.3 - 0.2 * self.ft,
+                  0.1 * self.ft - 0.2, -0.2 * self.ft, 0.3 - 0.2 * self.ft, 1]
+        OST_1P = [-0.3 - 0.2 * self.ft, (-.35 - .2 * self.ft) * self.flp, -.9,  # noqa: N806
+                  -self.flp_ost, 0.1 * self.ft - 0.15, 0.7 - 0.3 * self.ft,
+                  0.2 * self.ft - 0.45, 0., 0.4 * self.ft - 0.25, 0.1 - 0.2 * self.ft,
                   0.2 * self.ft - 0.05, 0.4 * self.ft - 0.25, 0.7 - 0.3 * self.ft]
 
-        MAP = {"HSM": HSM_1, "HSA": HSA_1, "FSM": FSM_1, "BSR": BSR_1P, "BSP": BSP_1P, "OSA": OSA_1P, "OST": OST_1P}
+        MAP = {"HSM": HSM_1, "HSA": HSA_1, "FSM": FSM_1, "BSR": BSR_1P,   # noqa: N806
+               "BSP": BSP_1P, "OSA": OSA_1P, "OST": OST_1P}
 
         try:
-            RES = MAP[self.cond[:3]]
+            RES = MAP[self.cond[:3]]  # noqa: N806
             if "_2" in self.cond:
-                RES = [-1 * i for i in RES]
-            return RES
+                RES = [-1 * i for i in RES]  # noqa: N806
+            return RES  # noqa: TRY300
         except KeyError:
             Logger.error(
-                f"PhysicsData/Combination_Factors: {self.cond} is not a valid Dynamic Condition abbreviation.",
+                f"PhysicsData/condition_coefficients: {self.cond} is not a valid Dynamic Condition abbreviation.",
                 die=False
             )
             Logger.error("Invalid condition to study. Enter an appropriate Condition out of :", die=False)
@@ -159,6 +172,7 @@ class Data:
                 die=False
             )
             Logger.error("The Program Terminates...")
+            sys.exit()
 
     def accel_eval(self, point):
         R = min((self.D / 4 + self.Tlc / 2, self.D / 2))
@@ -175,20 +189,31 @@ class Data:
 
         return ax, ay, az
 
-    def wave_pressure_functions(self):
+    @property
+    def wave_pressure(self):
+        return self.wave_pressure
+    @wave_pressure.setter
+    def wave_pressure(self, func: Callable) -> None:
+        if not self.wave_pressure_lock:
+            self.wave_pressure = func
+            self.wave_pressure_lock = True
+        else:
+            Logger.debug("There was an illegal access call that was ignored")
+
+    def wave_pressure_functions(self)->None:
         functions = {
             "HSM": hsm_wave_pressure,
             "BSP": bsp_wave_pressure
         }
-
         try:
             if ("-1P" in self.cond) or ("-2P" in self.cond):
                 self.wave_pressure = functions[self.cond[:-3]]
             else:
                 self.wave_pressure = functions[self.cond[:-2]]
         except KeyError as e:
-            Logger.error(f"(physics.py) PhysicsData/wave_pressure_functions: '{self.cond[:-2]}' is not yet supported. "
-                         f"Program terminates to avoid unpredictable behavior...", rethrow=e)
+            Logger.error(f"(physics.py) PhysicsData/wave_pressure_functions: \
+            '{self.cond[:-2]}' is not yet supported. \
+            Program terminates to avoid unpredictable behavior...", rethrow=e)
 
     def moments_eval(self):
         """
