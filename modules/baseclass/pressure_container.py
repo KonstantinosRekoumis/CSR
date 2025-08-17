@@ -62,7 +62,7 @@ class PressureContainer:
         _ = _check_cond(cond)
         self.__pressure_distro[cond] = values
 
-    def unit_distr(self, magn:float=1.0, *args):  # noqa: ARG002
+    def unit_distr(self, magn:float=1.0, *args)->list[float]:
         return [magn]*len(self.pressure_grid)
 
 
