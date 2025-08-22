@@ -27,6 +27,7 @@ class Data:
         # The dynamic condition we are interested in
         self.cond = verify_dynamic_condition(cond)
         self.wave_pressure_lock = False
+        self.__wave_pressure_func : Callable = lambda *x : None
 
         self.Tlc = tlc
         self.rho = rho
@@ -170,16 +171,17 @@ class Data:
         return ax, ay, az
 
     @property
-    def wave_pressure(self):
-        return self.wave_pressure
-    @wave_pressure.setter
-    def wave_pressure(self, func: Callable) -> None:
-        if not self.wave_pressure_lock:
-            self.wave_pressure = func
-            self.wave_pressure_lock = True
-        else:
-            Logger.debug("There was an illegal access call that was ignored")
-
+    def wave_pressure(self)->Callable:
+        return self.__wave_pressure_func
+    # @wave_pressure.setter
+    # def wave_pressure(self, func: Callable) -> None:
+    #     if not self.wave_pressure_lock:
+    #         self.wave_pressure_lock = True
+    #         self.wave_pressure = func
+    #         self.wave_pressure_lock = True
+    #     else:
+    #         Logger.debug("There was an illegal access call that was ignored")
+    #
     def wave_pressure_functions(self)->None:
         functions = {
             "HSM": hsm_wave_pressure,
@@ -187,9 +189,9 @@ class Data:
         }
         try:
             if ("-1P" in self.cond) or ("-2P" in self.cond):
-                self.wave_pressure = functions[self.cond[:-3]]
+                self.__wave_pressure_func = functions[self.cond[:-3]]
             else:
-                self.wave_pressure = functions[self.cond[:-2]]
+                self.__wave_pressure_func = functions[self.cond[:-2]]
         except KeyError as e:
             Logger.error(f"(physics.py) PhysicsData/wave_pressure_functions: \
             '{self.cond[:-2]}' is not yet supported. \

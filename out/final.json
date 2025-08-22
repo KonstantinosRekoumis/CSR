@@ -52,7 +52,7 @@
 "stiffeners":[{"stiffener_type":{"type": "tb", "dimensions": {"lw":350.0000000000001, "bw":15.0, "lf":200.00000000000284, "bf":15.0}, "material": "AH32"},"spacing":820.0000000000002,"start_pad":250.0,"end_pad":100.0}]},
 {"id":103,
 "psm_spacing":2.76,
-"plate":{"start":[20, 0.0], "end":[22.5, 2.5], "thickness":19.5, "material": "AH32", "tag":"Bilge", "prefix":"LINEAR"},"stiffeners": {}},
+"plate":{"start":[20, 0.0], "end":[22.5, 2.5], "thickness":19.5, "material": "AH32", "tag":"Bilge", "prefix":"QUART_C"},"stiffeners": {}},
 {"id":104,
 "psm_spacing":2.76,
 "plate":{"start":[22.5, 2.5], "end":[22.5, 6], "thickness":19.0, "material": "AH32", "tag":"Shell", "prefix":"LINEAR"},

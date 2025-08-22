@@ -2,7 +2,7 @@ from modules.baseclass.block import Block, SpaceType
 from modules.baseclass.pressure_container import PressureContainer
 from modules.physics.data import Data
 from modules.physics.operations import hydrostatic_pressure
-from modules.utils.constants import G
+from modules.utils.constants import G, verify_dynamic_condition
 from modules.utils.logger import Logger
 
 
@@ -29,6 +29,7 @@ def static_liquid_pressure(block: Block) -> None:
         F_nos = lambda z: hydrostatic_pressure(z, (ztop + block.payload["hair"] / 2), max(block.payload["rho"], 1.025))  # noqa: E501, N806
 
     for pc in block.pressure_cont:
+        P_nos = pc.unif_distr(0.0)
         for i, point in enumerate(pc.pressure_grid):
             P_nos[i] = F_nos(point[1])
         pc.static_pressure = P_nos
@@ -126,11 +127,13 @@ def dynamic_dry_cargo_pressure(block: Block, case: Data)->None:
     for cont in block.pressure_cont:
         p = cont.unif_distr(0)
         for i, point in enumerate(cont.pressure_grid):
-            p[i] = pbd((block.CG[0], *point), a_vec, block.Kc[i])
+            p[i] = pbd((block.CG[0], *point), a_vec, cont.Kc)
         cont.set_dynamic_press(case.cond, p)
 
 
-def void_pressure(block: Block, case: Data) -> None:
+def void_pressure(block: Block, case: Data | None, static_only: bool = False) -> None:
     for cont in block.pressure_cont:
         cont.static_pressure = cont.unif_distr(magn=0)
-        cont.set_dynamic_press(case.cond, cont.unif_distr(magn=0))
+        if not static_only:
+            assert isinstance(case, Data), "You accessed the dynamic pressure branch with a Dummy case."  # noqa: E501
+            cont.set_dynamic_press(case.cond, cont.unif_distr(magn=0))

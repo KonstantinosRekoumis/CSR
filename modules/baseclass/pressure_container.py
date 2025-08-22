@@ -57,6 +57,7 @@ class PressureContainer:
         self.__pressure_distro["STATIC"] = value
 
     def dynamic_pressure(self, key: str) -> list[float]:
+        if "STATIC" : return self.static_pressure #for the occasional bozo (me)
         _ = verify_dynamic_condition(key)
         if key in self.__pressure_distro:
             return self.__pressure_distro[key]

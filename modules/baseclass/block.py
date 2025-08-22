@@ -239,12 +239,12 @@ class Block:
             self.Kc = K
         self.eta = normals_2d(self.pressure_coords)
 
-    def render_data(self) -> tuple[list[float], list[float], SpaceType, float]:
+    def render_data(self) -> tuple[list[float], list[float], SpaceType, list[float]]:
         x = [i[0] for i in self.coords]
         y = [i[1] for i in self.coords]
         x.append(x[0])
         y.append(y[0])
-        return x, y, self.space_type, self.CG[-1]
+        return x, y, self.space_type, self.CG[1:]
 
     def pressure_data(
         self, pressure_index: str, graphical: bool = False
@@ -255,15 +255,27 @@ class Block:
         """
         x, y, p = [], [], []
 
-        for cont in self.pressure_cont:
-            x = [*x, *[i[0] for i in cont.pressure_grid]]
-            y = [*y, *[i[1] for i in cont.pressure_grid]]
+        for cont in self.pressure_cont[:-1]:
+            x = [*x, *[i[0] for i in cont.pressure_grid[:-1]]]
+            y = [*y, *[i[1] for i in cont.pressure_grid[:-1]]]
             __p = (
                 cont.dynamic_pressure(pressure_index)
                 if not graphical
                 else cont.unif_distr(1.0)
             )
-            p = [*p, *__p]
+            p = [*p, *__p[:-1]]
+
+        cont = self.pressure_cont[-1]
+
+        x = [*x, *[i[0] for i in cont.pressure_grid]]
+        y = [*y, *[i[1] for i in cont.pressure_grid]]
+        __p = (
+            cont.dynamic_pressure(pressure_index)
+            if not graphical
+            else cont.unif_distr(1.0)
+        )
+        p = [*p, *__p]
+
 
         return x, y, p
 

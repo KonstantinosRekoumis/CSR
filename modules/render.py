@@ -1,14 +1,14 @@
 import math
 
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import numpy as np
 from matplotlib.cm import ScalarMappable
+from matplotlib.figure import Figure
 
-from modules.utils.logger import Logger
-from modules.baseclass.ship import Ship
 from modules.baseclass.block import SpaceType
-from modules.utils.operations import normals_2d_np, normalize
+from modules.baseclass.ship import Ship
+from modules.utils.logger import Logger
+from modules.utils.operations import normalize, normals_2d_np
 
 
 def lines_plot(ship: Ship, show_w=False, color="black", axis_padding=(3, 1), fig=None, ax=None):
@@ -37,7 +37,7 @@ def lines_plot(ship: Ship, show_w=False, color="black", axis_padding=(3, 1), fig
     return fig, ax
 
 
-def block_plot(ship: Ship, show_w=True, color="black", fill=True, fig=None, ax=None):
+def block_plot(ship: Ship, show_w=True, fill=True, fig=None, ax=None):
     marker = ""
     if show_w:
         marker = "*"
@@ -62,8 +62,8 @@ def block_plot(ship: Ship, show_w=True, color="black", fill=True, fig=None, ax=N
         ax.fill(x, y, color=colors[i.space_type]) if fill else ax.plot(x, y, color=colors[i.space_type], marker=marker)
         ax.annotate(tag, pos, color=colors[i.space_type])
 
-    ax.set_ylim([-3, ship.D + 3])
-    ax.set_xlim([-3, ship.B / 2 + 3])
+    ax.set_ylim((-3., ship.D + 3))
+    ax.set_xlim((-3., ship.B / 2 + 3))
     return fig, ax
 
 
@@ -154,12 +154,12 @@ def pressure_plot(ship: Ship, pressure_index: str, block_types: str | list[Space
 
         for j, _ in enumerate(x):
             if j == 0:
-                eta = normals_2d_np(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=True, show_norms=False)
+                eta = normals_2d_np(np.array([[x[0], y[0]], [x[1], y[1]]]), flip_n=not True, show_norms=False)
                 _Px_.append(eta[0, 0] * p[j])
                 _Py_.append(eta[0, 1] * p[j])
                 continue
 
-            eta = normals_2d_np(np.array([[x[j], y[j]], [x[j - 1], y[j - 1]]]), flip_n=False, show_norms=False)
+            eta = normals_2d_np(np.array([[x[j], y[j]], [x[j - 1], y[j - 1]]]), flip_n=not False, show_norms=False)
             _Px_.append(eta[0, 0] * p[j])
             _Py_.append(eta[0, 1] * p[j])
 

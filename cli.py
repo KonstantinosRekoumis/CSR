@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import matplotlib.pyplot as plt
 
 import modules.physics.evaluators
 import modules.render as rnr
@@ -65,6 +66,7 @@ def main(filepath:os.PathLike, ship_plots:bool, pressure_plots:bool, export_to_T
         rnr.pressure_plot(ship, "BSP-1P", st, path="./essay/BSP1_Shell.pdf")
         rnr.pressure_plot(ship, "BSP-2P", st, path="./essay/BSP2_Shell.pdf")
 
+    plt.show()
     Logger.info("Evaluating Stiffened Plates Slenderness Requirements...")
     ship.evaluate_beff()
     csr.buckling_evaluator(ship)

@@ -35,44 +35,42 @@ def dynamic_total_eval(ship: Ship, Tlc: float, case: str) -> tuple[Data, Data]: 
             elif i.space_type is SpaceType.VoidSpace:
                 func = void_pressure
 
-            pd = func(*args)
-            if None not in Pd:
-                Logger.debug(f"{c.cond} CASE STUDY:\nCalculated block: ", i.name)
-                Logger.debug(" ---- X ----  ---- Y ----  ---- P ----")
-                for j in range(len(Pd)):
+            func(*args)
+            Logger.debug(f"{c.cond} CASE STUDY:\nCalculated block: ", i.name)
+            Logger.debug(" ---- X ----  ---- Y ----  ---- P ----")
+            for pc in i.pressure_cont:
+                for j in range(len(pc.pressure_grid)):
                     Logger.debug(
-                        f"{round(i.pressure_coords[j][0], 4): =11f} "
-                        f"{round(i.pressure_coords[j][1], 4): =11f} "
-                        f"{round(Pd[j], 4): =11f}"
+                        f"{round(pc.pressure_grid[j][0], 4): =11f} "
+                        f"{round(pc.pressure_grid[j][1], 4): =11f} "
+                        f"{round(pc.static_pressure[j], 4): =11f}"
                     )
     return case_1, case_2
 
 
 def static_total_eval(ship: Ship, Tlc: float, rho: float):
     for b in ship.blocks:
+        args = (b, )
         if b.space_type is SpaceType.Sea:
             F = block_hydrostatic_pressure
             args = (b, Tlc, rho)
         elif b.space_type is SpaceType.DryCargo:
             F = static_dry_cargo_pressure
-            args = (b, )
-        elif b.space_type is SpaceType.Atmosphere:
-            continue
+        elif b.space_type in (SpaceType.VoidSpace, SpaceType.Atmosphere):
+            F = lambda x : void_pressure(x, None, static_only=True)
         elif b.space_type in (SpaceType.WaterBallast,
                               SpaceType.LiquidCargo,
                               SpaceType.OilTank,
                               SpaceType.FreshWater):
             F = static_liquid_pressure
-            args = (b, )
-        elif b.space_type is SpaceType.VoidSpace: continue
 
-        Pd = F(*args)
-        if None not in Pd:
-            Logger.debug("STATIC CASE STUDY:\nCalculated block: ", b.name)
-            Logger.debug(" ---- X ----  ---- Y ----  ---- P ----")
-            for j in range(len(Pd)):
+        F(*args)
+        Logger.debug("STATIC CASE STUDY:\nCalculated block: ", b.name)
+        Logger.debug(" ---- X ----  ---- Y ----  ---- P ----")
+        for pc in b.pressure_cont:
+            for j in range(len(pc.pressure_grid)):
                 Logger.debug(
-                    f"{round(b.pressure_coords[j][0], 4): =11f} "
-                    f"{round(b.pressure_coords[j][1], 4): =11f} "
-                    f"{round(Pd[j], 4): =11f}"
+                    f"{round(pc.pressure_grid[j][0], 4): =11f} "
+                    f"{round(pc.pressure_grid[j][1], 4): =11f} "
+                    f"{round(pc.static_pressure[j], 4): =11f}"
                 )
