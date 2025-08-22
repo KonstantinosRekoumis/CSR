@@ -3,6 +3,7 @@ import math
 import numpy as np
 from modules.baseclass.plating.plate import _PLACE_, Plate
 from modules.utils.decorators import auto_str
+from modules.utils.logger import Logger
 
 
 @auto_str
@@ -27,7 +28,7 @@ class LinearPlate(Plate, prefix="LINEAR"):
     def calculate_grid(self, res: int = 10) -> list[list[float]]:
         lin_ = np.linspace(0, self.length, res, endpoint=True)
         x = self.start[0] + lin_ * np.cos(self.angle)
-        y = self.start[1] + lin_ * np.cos(self.angle)
+        y = self.start[1] + lin_ * np.sin(self.angle)
         # return np.transpose(np.array((x,y)))
         return [[x[i], y[i]] for i in range(len(x))]
 
